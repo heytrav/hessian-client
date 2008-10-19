@@ -10,6 +10,8 @@ my $builder = Module::Build->new(
     requires => {
         'Test::More' => 0,
         'version'    => 0,
+        'Contextual::Return' => 0,
+
     },
     add_to_cleanup      => [ 'Hessian-*' ],
 );
