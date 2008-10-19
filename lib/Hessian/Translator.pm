@@ -10,39 +10,71 @@ use List::MoreUtils qw/apply/;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
 use Math::BigInt;
 
-sub write_string {    #{{{
+sub write_chunk {    #{{{
     my $string = shift;
-    my $message = pack 'n/a*', $string;
-    return $message;
+    my $hessian_message = pack 'n/a*', $string;
+    return $hessian_message;
 }    #}}}
 
-sub write_string_chunks : Export(:to_hessian) {    #{{{
+sub write_string : Export(:to_hessian) {    #{{{
     my @string_chunks = @_;
-    my $message = hessianify_string_chunks( 's', @string_chunks );
+    my $message = hessianify_chunks( 's', @string_chunks );
     return $message;
 }    #}}}
 
-sub write_xml {    #{{{
-    my $xml_chunk = shift;
-    return write_string($xml_chunk);
-}    #}}}
+sub  read_string :Export(:from_hessian) { #{{{
+    my $string_body = shift;
+    my $message = de_hessianify_chunks('s', $string_body);
+    return $message;
+} #}}}
 
-sub write_xml_chunks : Export(:to_hessian) {    #{{{
+sub  read_xml :Export(:from_hessian) { #{{{
+    my $xml_body = shift;
+    my $message = de_hessianify_chunks('x', $xml_body);
+    return $message;
+} #}}}
+
+sub  read_chunk { #{{{
+    my $string_chunk = shift;
+    my ( $message ) = unpack 'n/a', $string_chunk;
+    return $message;
+} #}}}
+
+sub write_xml : Export(:to_hessian) {    #{{{
     my @xml_chunks = @_;
-    my $message = hessianify_string_chunks( 'x', @xml_chunks );
+    my $message = hessianify_chunks( 'x', @xml_chunks );
     return $message;
 }    #}}}
 
-sub hessianify_string_chunks {    #{{{
+sub  de_hessianify_chunks { #{{{
+    my ( $prefix, $body) = @_;
+    my $first_prefix = lc $prefix;
+    my $prefix_regex = qr/
+       $prefix 
+       (
+        \d+  
+         (?:  
+             (?! $prefix \d+ ) 
+             . 
+         ) * 
+       ) 
+    /x;
+    my @chunks = apply { read_chunk($_) } $body =~ /$prefix_regex/g;
+    my $message = join "" => @chunks;
+    return $message;
+} #}}}
+
+sub hessianify_chunks {    #{{{
     my ( $prefix, @chunks ) = @_;
     my $last_chunk = pop @chunks;
-    my $message    = apply {
-        $prefix . write_string($_);
+    my @message    = apply {
+        ( lc $prefix) . write_chunk($_);
     }
     @chunks[ 0 .. ( $#chunks - 1 ) ];
     my $last_prefix = uc $prefix;
-    $message .= $last_prefix . write_string($last_chunk);
-
+    push @message, $last_prefix . write_chunk($last_chunk);
+    my $result = join "" => @message;
+    return $result;
 }    #}}}
 
 sub write_integer : Export(:to_hessian) {    #{{{
@@ -65,6 +97,7 @@ sub write_date : Export(:to_hessian ) {    #{{{
 
 sub read_date : Export(:from_hessian) {    #{{{
     my $hessian_date = shift;
+    $hessian_date =~ s/^d(.*)/$1/;
 
     # Assume caller has already filtered out the leading 'd'
     my @unpacked_input = unpack 'CCCCCCCC', $hessian_date;
@@ -109,5 +142,40 @@ Hessian.
 =head1 DESCRIPTION
 
 =head1 INTERFACE
+
+=head2 write_chunk
+
+Proxy method for preparing I<chunks> of character sequences (a.k.a strings)
+for transmission as Hessian strings.  This entails putting a 16 bit short at
+the start of each chunk indicating the length of each chunk.
+
+=head2 write_string
+
+What to call to translate an ordinary text string into Hessian string.
+
+=head2 read_string
+
+The inverse of L</read_string>. Reads a Hessian string and returns a normal
+text string.
+
+=head2 read_xml
+
+Like L</read_string> except intended for xml documents.
+
+=head2 read_chunk
+
+=head2 write_xml
+
+=head2 de_hessianify_chunks
+
+=head2 hessianify_chunks
+
+=head2 write_integer
+
+=head2 write_date
+
+=head2 read_date
+
+=head2 write_boolean
 
 

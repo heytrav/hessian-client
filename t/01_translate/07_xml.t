@@ -6,5 +6,5 @@ use warnings;
 use version; our $VERSION = qv('0.0.1');
 
 
-
-use Hessian::Translator ':to_hessian';
+use Test::More qw( no_plan ); 
+use Hessian::Translator qw/:to_hessian :from_hessian/; 

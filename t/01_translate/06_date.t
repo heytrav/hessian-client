@@ -34,15 +34,12 @@ TODO: {
         "Simple translation of date."
     );
 
-    my $processed_time    = read_date($byte_string);
+    my $processed_time    = read_date('d'.$byte_string);
     my $from_hessian_date = $formatter->parse_datetime($processed_time);
     $from_hessian_date->set_time_zone('UTC');
 
     my $cmp = DateTime->compare( $date, $from_hessian_date );
-    is($cmp, 
-    0, 
-    "Hessian date as expected."
-    );
+    is( $cmp, 0, "Hessian date as expected." );
 
 }
 

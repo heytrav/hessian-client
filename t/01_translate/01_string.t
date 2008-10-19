@@ -11,10 +11,14 @@ use DateTime::Format::Epoch::Unix;
 
 use Hessian::Translator ':to_hessian';
 use utf8;
-my $hessian_string = write_string_chunks("hello");
+my $hessian_string = write_string("hello");
 
 like(
     $hessian_string,
     qr/ S \x{00}\x{05} hello /xms,
     'Simple translation of string.'
 );
+
+
+
+
