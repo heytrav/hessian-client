@@ -5,7 +5,7 @@ use warnings;
 
 
 use Test::More qw( no_plan );
-use Hessian::Translator ':to_hessian';
+use Hessian::Translator qw/:to_hessian :from_hessian/;
 
 
 
