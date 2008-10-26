@@ -1,5 +1,6 @@
 Build
 MANIFEST
+MANIFEST.bak
 _build
 blib
 cover_db
