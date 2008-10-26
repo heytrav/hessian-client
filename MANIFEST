@@ -9,6 +9,9 @@ lib/Hessian/Message/Request/Envelope.pm
 lib/Hessian/Message/Request/Top.pm
 lib/Hessian/Message/Response.pm
 lib/Hessian/Translator.pm
+lib/Hessian/Translator/Date.pm
+lib/Hessian/Translator/Numeric.pm
+lib/Hessian/Translator/String.pm
 Makefile.PL
 MANIFEST
 output.xml

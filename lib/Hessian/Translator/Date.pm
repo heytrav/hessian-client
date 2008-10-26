@@ -41,15 +41,6 @@ sub read_date : Export(:from_hessian) {    #{{{
     return $int;
 }    #}}}
 
-sub write_boolean {    #{{{
-    my $bool_val = shift;
-    return
-        $bool_val =~ /t(?:rue)?/i  ? 'T'
-      : $bool_val =~ /f(?:alse)?/i ? 'F'
-      :                              'N';
-
-    # throw a fault
-}    #}}}
 
 "one, but we're not the same";
 

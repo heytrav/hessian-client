@@ -8,7 +8,7 @@ use version; our $VERSION = qv('0.0.1');
 use Test::More qw( no_plan );
 use DateTime;
 use DateTime::Format::Epoch::Unix;
-use Hessian::Translator qw/:to_hessian :from_hessian/;
+use Hessian::Translator::Date qw/:to_hessian :from_hessian/;
 
 my $date = DateTime->new(
     year      => 1998,

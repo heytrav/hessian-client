@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More qw( no_plan );
 
-use Hessian::Translator qw/:to_hessian :from_hessian/;
+use Hessian::Translator::String qw/:to_hessian :from_hessian/;
 my $hessian_string = write_string("hello");
 
 like(
