@@ -5,6 +5,7 @@ use strict;
 #use warnings;
 
 use version; our $VERSION = qv('0.0.1');
+
 use integer;
 use Perl6::Export::Attrs;
 use List::MoreUtils qw/apply/;
@@ -28,32 +29,30 @@ sub write_quadruple_octet {    #{{{
 }    #}}}
 
 sub write_single_octet {    #{{{
-    my $number = shift;
+    my ($number, $octet_shift) = @_;
 
     # {-16 >= x >= 31: x + x90 = b0}
-    my $new_int = pack "C*", ( $number + 0x90 );
+    my $new_int = pack "C*", ( $number + $octet_shift );
     return $new_int;
 }    #}}}
 
 sub write_double_octet {    #{{{
-    my $integer = shift;
-
+    my ($integer, $octet_shift) = @_;
     # {-2048 >= x >= 2047: x = 256 * (b0 - xd8) + b1 }
     my $big_short = pack "n", $integer;
     my @bytes = reverse unpack "C*", $big_short;
-    my $high_bit = ( ( $integer - $bytes[0] ) >> 8 ) + 0xc8;
+    my $high_bit = ( ( $integer - $bytes[0] ) >> 8 ) + $octet_shift;
     my $new_int = pack 'C*', $high_bit, $bytes[0];
     return $new_int;
 }    #}}}
 
 sub write_triple_octet {    #{{{
-    my $integer = shift;
-
+    my ( $integer, $octet_shift) = @_;
     # { -262144 >= x >= 262143: x = 65536 * (b0 - x5c) + 256 * b1 + b0}
     my $big_short = pack "N", $integer;
     my @bytes = reverse unpack "C*", $big_short;
     my $high_bit =
-      ( ( $integer - $bytes[0] - ( $bytes[1] >> 8 ) ) >> 16 ) + 0xd4;
+      ( ( $integer - $bytes[0] - ( $bytes[1] >> 8 ) ) >> 16 ) + $octet_shift;
     my $new_int = pack 'C*', $high_bit, $bytes[1], $bytes[0];
     return $new_int;
 }    #}}}
