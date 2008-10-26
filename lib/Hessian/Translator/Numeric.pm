@@ -15,10 +15,12 @@ use Math::BigInt;
 sub write_integer : Export(:to_hessian) {    #{{{
     my $integer = shift;
     my $result =
-        -16 <= $integer     && $integer <= 47     ? write_single_octet($integer)
-      : -2048 <= $integer   && $integer <= 2047   ? write_double_octet($integer)
-      : -262144 <= $integer && $integer <= 262143 ? write_triple_octet($integer)
-      :   write_quadruple_octet($integer);
+        -16 <= $integer && $integer <= 47 ? write_single_octet( $integer, 0x90 )
+      : -2048 <= $integer
+      && $integer <= 2047 ? write_double_octet( $integer, 0xc8 )
+      : -262144 <= $integer
+      && $integer <= 262143 ? write_triple_octet( $integer, 0xd4 )
+      :                       write_quadruple_octet($integer);
     return 'I' . $result;
 }    #}}}
 
@@ -29,15 +31,14 @@ sub write_quadruple_octet {    #{{{
 }    #}}}
 
 sub write_single_octet {    #{{{
-    my ($number, $octet_shift) = @_;
-
-    # {-16 >= x >= 31: x + x90 = b0}
+    my ( $number, $octet_shift ) = @_;
     my $new_int = pack "C*", ( $number + $octet_shift );
     return $new_int;
 }    #}}}
 
 sub write_double_octet {    #{{{
-    my ($integer, $octet_shift) = @_;
+    my ( $integer, $octet_shift ) = @_;
+
     # {-2048 >= x >= 2047: x = 256 * (b0 - xd8) + b1 }
     my $big_short = pack "n", $integer;
     my @bytes = reverse unpack "C*", $big_short;
@@ -47,7 +48,8 @@ sub write_double_octet {    #{{{
 }    #}}}
 
 sub write_triple_octet {    #{{{
-    my ( $integer, $octet_shift) = @_;
+    my ( $integer, $octet_shift ) = @_;
+
     # { -262144 >= x >= 262143: x = 65536 * (b0 - x5c) + 256 * b1 + b0}
     my $big_short = pack "N", $integer;
     my @bytes = reverse unpack "C*", $big_short;
@@ -73,31 +75,60 @@ sub read_integer : Export(:from_hessian) {    #{{{
     my @chars = unpack 'C*', $raw_octets;
     my $octet_count = scalar @chars;
     my $result =
-        $octet_count == 1 ? read_single_octet(@chars)
-      : $octet_count == 2 ? read_double_octet( \@chars )
-      : $octet_count == 3 ? read_triple_octet( \@chars )
+        $octet_count == 1 ? read_single_octet($chars[0], 0x90)
+      : $octet_count == 2 ? read_double_octet( \@chars, 0xc8 )
+      : $octet_count == 3 ? read_triple_octet( \@chars, 0xd4 )
       :                     read_quadruple_octet( \@chars );
     return $result;
 }    #}}}
 
 sub read_single_octet {    #{{{
-    my $octet   = shift;
-    my $integer = $octet - 0x90;
+    my ( $octet, $octet_shift ) = @_;
+    my $integer = $octet - $octet_shift;
     return $integer;
 }    #}}}
 
 sub read_double_octet {    #{{{
-    my $bytes = shift;
-    my $integer = ( ( $bytes->[0] - 0xc8 ) << 8 ) + $bytes->[1];
+    my ( $bytes, $octet_shift ) = @_;
+    my $integer = ( ( $bytes->[0] - $octet_shift ) << 8 ) + $bytes->[1];
     return $integer;
 }    #}}}
 
 sub read_triple_octet {    #{{{
-    my $bytes = shift;
+    my ( $bytes, $octet_shift ) = @_;
     my $integer =
-      ( ( $bytes->[0] - 0xd4 ) << 16 ) + ( $bytes->[1] << 8 ) + $bytes->[2];
+      ( ( $bytes->[0] - $octet_shift ) << 16 ) +
+      ( $bytes->[1] << 8 ) +
+      $bytes->[2];
     return $integer;
 }    #}}}
+
+sub  read_long :Export(:from_hessian) { #{{{
+    my $hessian_data = shift;
+    ( my $raw_octets = $hessian_data ) =~ s/^L(.*)/$1/;
+    my @chars = unpack 'C*', $raw_octets;
+    my $octet_count = scalar @chars;
+    my $result =
+        $octet_count == 1 ? read_single_octet($chars[0], 0xe0)
+      : $octet_count == 2 ? read_double_octet( \@chars, 0xf8 )
+      : $octet_count == 3 ? read_triple_octet( \@chars, 0x3c )
+      :                     read_quadruple_octet( \@chars );
+    return $result;
+} #}}}
+
+sub  write_long :Export(:to_hessian) { #{{{
+    my $long = shift; 
+    my $result =
+        -8 <= $long && $long <= 15 ? write_single_octet( $long, 0xe0 )
+      : -2048 <= $long
+      && $long <= 2047 ? write_double_octet( $long, 0xf8 )
+      : -262144 <= $long
+      && $long <= 262143 ? write_triple_octet( $long, 0x3c )
+      :                       write_quadruple_octet($long);
+    return 'L' . $result;
+} #}}}
+
+
 
 "one, but we're not the same";
 
