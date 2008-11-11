@@ -2,8 +2,6 @@ package  Hessian::Translator::Numeric;
 
 use strict;
 
-#use warnings;
-
 use version; our $VERSION = qv('0.0.1');
 
 use integer;
@@ -11,6 +9,7 @@ use Perl6::Export::Attrs;
 use List::MoreUtils qw/apply/;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
 use Math::BigInt;
+use POSIX qw/floor ceil/;
 
 sub write_integer : Export(:to_hessian) {    #{{{
     my $integer = shift;
@@ -75,7 +74,7 @@ sub read_integer : Export(:from_hessian) {    #{{{
     my @chars = unpack 'C*', $raw_octets;
     my $octet_count = scalar @chars;
     my $result =
-        $octet_count == 1 ? read_single_octet($chars[0], 0x90)
+        $octet_count == 1 ? read_single_octet( $chars[0], 0x90 )
       : $octet_count == 2 ? read_double_octet( \@chars, 0xc8 )
       : $octet_count == 3 ? read_triple_octet( \@chars, 0xd4 )
       :                     read_quadruple_octet( \@chars );
@@ -103,32 +102,133 @@ sub read_triple_octet {    #{{{
     return $integer;
 }    #}}}
 
-sub  read_long :Export(:from_hessian) { #{{{
+sub read_quadruple_octet {    #{{{
+    my $bytes     = shift;
+    my $shift_val = 0;
+    my $sum;
+    foreach my $byte ( reverse @{$bytes} ) {
+        $sum += $byte << $shift_val;
+        $shift_val += 8;
+    }
+    return $sum;
+}    #}}}
+
+sub read_long : Export(:from_hessian) {    #{{{
     my $hessian_data = shift;
     ( my $raw_octets = $hessian_data ) =~ s/^L(.*)/$1/;
     my @chars = unpack 'C*', $raw_octets;
     my $octet_count = scalar @chars;
     my $result =
-        $octet_count == 1 ? read_single_octet($chars[0], 0xe0)
+        $octet_count == 1 ? read_single_octet( $chars[0], 0xe0 )
       : $octet_count == 2 ? read_double_octet( \@chars, 0xf8 )
       : $octet_count == 3 ? read_triple_octet( \@chars, 0x3c )
-      :                     read_quadruple_octet( \@chars );
+      : $octet_count == 4 ? read_quadruple_octet( \@chars )
+      :                     read_full_long( \@chars );
     return $result;
-} #}}}
+}    #}}}
 
-sub  write_long :Export(:to_hessian) { #{{{
-    my $long = shift; 
+sub read_full_long : Export(:utility) {    #{{{
+    my $bytes     = shift;
+    my $big_int   = Math::BigInt->new();
+    my $shift_val = 0;
+    foreach my $byte ( reverse @{$bytes} ) {
+        my $shift_byte = Math::BigInt->new($byte);
+        $shift_byte->blsft($shift_val);
+        $big_int->badd($shift_byte);
+        $shift_val += 8;
+    }
+    return $big_int;
+}    #}}}
+
+sub write_long : Export(:to_hessian) {    #{{{
+    my $long = shift;
     my $result =
         -8 <= $long && $long <= 15 ? write_single_octet( $long, 0xe0 )
-      : -2048 <= $long
-      && $long <= 2047 ? write_double_octet( $long, 0xf8 )
-      : -262144 <= $long
-      && $long <= 262143 ? write_triple_octet( $long, 0x3c )
-      :                       write_quadruple_octet($long);
+      : -2048 <= $long && $long <= 2047 ? write_double_octet( $long, 0xf8 )
+      : -262144 <= $long && $long <= 262143 ? write_triple_octet( $long, 0x3c )
+      :                                       write_full_long($long);
     return 'L' . $result;
-} #}}}
+}    #}}}
 
+sub write_full_long {    #{{{
+        # This will probably only work with Math::BigInt or similar
+    my $long       = shift;
+    my $int64      = int64($long);
+    my $net_string = int64_to_net($int64);
+    return $net_string;
+}    #}}}
 
+sub read_double : Export(:from_hessian) {    #{{{
+    my $octet = shift;
+    my $double_value =
+        $octet =~ /\x{5b}/                    ? 0.0
+      : $octet =~ /\x{5c}/                    ? 1.0
+      : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? read_compact_double($octet)
+      :                                         read_full_double($octet);
+}    #}}}
+
+sub read_compact_double {    #{{{
+    my $compact_octet = shift;
+    my @chars = unpack 'c*', $compact_octet;
+    shift @chars;
+    my $chars_size = scalar @chars;
+    my $float      = read_quadruple_octet( \@chars );
+    return $float;
+}    #}}}
+
+sub read_full_double {    #{{{
+    my $double = shift;
+    ( my $octets = $double ) =~ s/D (.*) /$1/x;
+    my @chars = unpack 'C*', $octets;
+    my $double = unpack 'F', pack 'C*', reverse @chars;
+    return $double;
+
+}    #}}}
+
+sub write_double : Export(:to_hessian) {    #{{{
+    my $double = shift;
+
+    my $hessian_string;
+    my $compare_with = $double < 0 ? ceil($double) : floor($double);
+    if ( $double eq $compare_with ) {
+        $hessian_string =
+             $double > -129
+          && $double < 128 ? "\x5d" . write_single_octet_float($double)
+          : $double > -32769
+          && $double < 32768 ? "\x5e" . write_double_octet_float($double)
+          :                    "D" . write_full_double($double);
+
+    }
+    else {
+        $hessian_string = "D" . write_full_double($double);
+    }
+
+    return $hessian_string;
+
+}    #}}}
+
+sub write_single_octet_float {    #{{{
+    my $double = shift;
+    my $hessian_string = pack 'c*', $double;
+
+    return $hessian_string;
+
+}    #}}}
+
+sub write_double_octet_float {    #{{{
+    my $double = shift;
+    my $hessian_string = pack 'n', unpack 'S', pack "s", $double;
+    return $hessian_string;
+
+}    #}}}
+
+sub write_full_double {    #{{{
+    my $double         = shift;
+    my $native_float   = pack 'F', $double;
+    my @chars          = unpack 'C*', $native_float;
+    my $hessian_string = pack 'C*', reverse @chars;
+    return $hessian_string;
+}    #}}}
 
 "one, but we're not the same";
 

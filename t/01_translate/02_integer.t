@@ -66,7 +66,7 @@ my $hessian_single_octet_data = "I\x{bf}"; # should be 0
  $value = read_integer($hessian_single_octet_data);
 is($value, 47, 'Read single octet 47');
 
-my $hessian_single_octet_data = "I\x{80}"; # should be 0
+ $hessian_single_octet_data = "I\x{80}"; # should be 0
  $value = read_integer($hessian_single_octet_data);
 is($value, -16, 'Read single octet -16');
 
@@ -81,6 +81,6 @@ is($value, 262143 , 'Read double octet 262143 ');
 
 
 
-my $hessian_triple_octet_data = "I\x{d0}\x{00}\x{00}"; # should also be 0
+$hessian_triple_octet_data = "I\x{d0}\x{00}\x{00}"; # should also be 0
 $value = read_integer($hessian_triple_octet_data);
 is($value, -262144 , 'Read double octet -262144 ');

@@ -5,7 +5,7 @@ use warnings;
 
 use version; our $VERSION = qv('0.0.1');
 
-use Test::More tests => 7; 
+use Test::More tests => 9; 
 
 use Hessian::Translator::Numeric qw/:to_hessian :from_hessian/;
 my $hessian_single_octet_long = write_long(0);
@@ -50,6 +50,20 @@ is($value, 0, 'Translated double octet 0');
 
 $value = read_long("L\x{3c}\x{00}\x{00}");
 is($value, 0, 'Translated triple octet 0');
+
+$value = read_long("L\x{00}\x{00}\x{00}\x{01}\x{2c}");
+is($value, 300, 'Translated length > 4 into   300');
+
+my $big_positive_long = Math::BigInt->new('1_999_999_999_999_999_999');
+my $hessian_big_long = write_long($big_positive_long);
+my $retranslated_long = read_long($hessian_big_long);
+
+is(
+$big_positive_long,
+$retranslated_long,
+'Correctly translated an arbitrary long value'
+);
+
 
 
 

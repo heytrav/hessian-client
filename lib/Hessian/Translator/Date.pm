@@ -8,39 +8,38 @@ use version; our $VERSION = qv('0.0.1');
 use Perl6::Export::Attrs;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
 use Math::BigInt;
-
+use Hessian::Translator::Numeric qw/:from_hessian :to_hessian :utility/;
 
 sub write_date : Export(:to_hessian ) {    #{{{
-    my $epoch_time    = shift;
-    my $epoch_big_int = Math::BigInt->new($epoch_time);
+    my $epoch_time = shift;
+    my $time =
+      $epoch_time <= 4_294_967_295
+      ? write_integer($epoch_time)
+      : write_long($epoch_time);
 
-    # Note: Hessian expects 64 bit dates.  Since some systems, including my
-    # are 32 bit, I need to some hacking to get around this.
-    $epoch_big_int->bmul(1000);            # to add milliseconds
-
-    my $time64          = int64($epoch_big_int);
-    my $time_in_network = int64_to_net($epoch_big_int);
-    return 'd' . $time_in_network;
+    $time =~ s/^L/\x{4a}/;
+    $time =~ s/^I/\x{4b}/;
+    return $time;
 }    #}}}
 
 sub read_date : Export(:from_hessian) {    #{{{
     my $hessian_date = shift;
-    $hessian_date =~ s/^d(.*)/$1/;
-
-    # Assume caller has already filtered out the leading 'd'
-    my @unpacked_input = unpack 'CCCCCCCC', $hessian_date;
-    my $int            = Math::BigInt->new(0);
-    my $shift_val      = 0;
-    foreach my $bit_pos ( reverse @unpacked_input ) {
-        my $to_shift = Math::BigInt->new($bit_pos);
-        $to_shift->blsft($shift_val);
-        $int->bxor($to_shift);
-        $shift_val += 8;
+    my ($date_string) = $hessian_date =~ / (?:^d)?  (.*) /x;
+    my $int;
+    if ( $date_string =~ /^\x{4a} (.*)/x ) {
+        $int = read_long($1);
     }
-    $int->bdiv(1000);    # drop milliseconds
+    elsif ( $date_string =~ /^\x{4b} (.*)/x ) {
+        $int = read_integer($1);
+        my $left_over = $1;
+        my @chars = unpack 'C*', $left_over;
+        print "Date hex thingy = ";
+        print join " " => map { sprintf "%#02x" => $_} @chars;
+        print "\n";
+    }
+
     return $int;
 }    #}}}
-
 
 "one, but we're not the same";
 
