@@ -8,15 +8,22 @@ use base 'Test::Class';
 use Test::More;
 use Hessian::Input;
 
-sub  string_handle : Test(setup) { #{{{
+sub string_handle : Test(setup) {    #{{{
     my $self = shift;
- 
-} #}}}
 
-sub  test010_initialize_input :Test(1) { #{{{
-    my $self = shift;
+}    #}}}
+
+sub t010_initialize_input : Test(1) {    #{{{
+    my $self         = shift;
     my $input_reader = Hessian::Input->new();
-isa_ok($input_reader, 'Hessian::Input', 'Successful object created');
+    isa_ok( $input_reader, 'Hessian::Input', 'Successful object created' );
+    my $object_type = ref $input_reader;
+    $self->SKIP_ALL('Can not instantiate a Hessian::Input object')
+      unless $object_type and $object_type eq 'Hessian::Input';
+}    #}}}
+
+sub  test020_read_simple { #{{{
+    my $self = shift;
 } #}}}
 
 
