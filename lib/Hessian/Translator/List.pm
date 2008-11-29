@@ -10,9 +10,11 @@ use Perl6::Export::Attrs;
 sub read_list : Export(:from_hessian) {    #{{{
     my $hessian_list = shift;
     my $array        = [];
-    if ( $hessian_list =~ /^\x57(.*)Z/)  {
+    if ( $hessian_list =~ /^  \x57  (.*)  Z/xms )  {
         $array =        read_variable_untyped_list($1);
     }
+
+
     return $array;
 }    #}}}
 

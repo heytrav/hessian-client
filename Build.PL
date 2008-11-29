@@ -31,7 +31,7 @@ my $builder = $class->new(
         'Test::More'         => 0,
         'version'            => 0,
         'Contextual::Return' => 0,
-
+'Moose' => 0,
     },
     add_to_cleanup => ['Hessian-*'],
 );
