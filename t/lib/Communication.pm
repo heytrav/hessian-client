@@ -16,16 +16,17 @@ sub string_handle : Test(setup) {    #{{{
 sub t010_initialize_input : Test(1) {    #{{{
     my $self         = shift;
     my $input_reader = Hessian::Input->new();
-    isa_ok( $input_reader, 'Hessian::Input', 'Successful object created' );
-    my $object_type = ref $input_reader;
-    $self->SKIP_ALL('Can not instantiate a Hessian::Input object')
-      unless $object_type and $object_type eq 'Hessian::Input';
+    my $desired_type = 'Hessian::Input';
+    isa_ok( $input_reader, $desired_type, 'Successful object created' )
+      or $self->SKIP_ALL("Can not instantiate a $desired_type object");
+
 }    #}}}
 
-sub  test020_read_simple { #{{{
+sub test020_read_simple : Test(2) {    #{{{
     my $self = shift;
-} #}}}
-
+    pass("just for the hell of it");
+    pass("also just for the hell of it");
+}    #}}}
 
 "one, but we're not the same";
 
