@@ -16,13 +16,13 @@ sub write_chunk {    #{{{
 
 sub write_string : Export(:to_hessian) {    #{{{
     my @string_chunks = @_;
-    my $message = hessianify_chunks( 's', @string_chunks );
+    my $message = hessianify_chunks( 'R', @string_chunks );
     return $message;
 }    #}}}
 
 sub read_string : Export(:from_hessian) {    #{{{
     my $string_body = shift;
-    my $message = de_hessianify_chunks( 's', $string_body );
+    my $message = de_hessianify_chunks( 'R', $string_body );
     return $message;
 }    #}}}
 
@@ -46,7 +46,6 @@ sub write_xml : Export(:to_hessian) {    #{{{
 
 sub de_hessianify_chunks {    #{{{
     my ( $prefix, $body ) = @_;
-    my $first_prefix = lc $prefix;
     my $prefix_regex = qr/
        $prefix 
        (
@@ -69,7 +68,7 @@ sub hessianify_chunks {    #{{{
         ( lc $prefix ) . write_chunk($_);
     }
     @chunks[ 0 .. ( $#chunks - 1 ) ];
-    my $last_prefix = uc $prefix;
+    my $last_prefix = 'S';# uc $prefix;
     push @message, $last_prefix . write_chunk($last_chunk);
     my $result = join "" => @message;
     return $result;

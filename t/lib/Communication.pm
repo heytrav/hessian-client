@@ -22,10 +22,15 @@ sub t010_initialize_input : Test(1) {    #{{{
 
 }    #}}}
 
-sub test020_read_simple : Test(2) {    #{{{
+sub t020_read_simple : Test(1) {    #{{{
     my $self = shift;
-    pass("just for the hell of it");
-    pass("also just for the hell of it");
+
+    my $simple_hessian_string = "S\x{00}\x{05}hello";
+    my $input_reader          = Hessian::Input->new();
+    my $message =
+      $input_reader->translate( { input_string => $simple_hessian_string } );
+    is( $message, 'hello', "Interpreted hessian string" );
+
 }    #}}}
 
 "one, but we're not the same";
