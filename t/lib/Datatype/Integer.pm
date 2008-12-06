@@ -4,11 +4,10 @@ use strict;
 use warnings;
 
 use version; our $VERSION = qv('0.0.1');
-use base 'Test::Class';
-
+use base 'Datatype';
 use Test::More;
 
-use Hessian::Translator::Numeric qw/:to_hessian :from_hessian/;
+use Hessian::Translator::Numeric qw/:to_hessian :from_hessian :input_handle/;
 
 sub t010_write_single_octet : Test(3) {    #{{{
     my $self = shift;
@@ -107,6 +106,38 @@ sub t060_read_triple_octet : Test(3) {    #{{{
     $value = read_integer($hessian_triple_octet_data);
     is( $value, -262144, 'Read double octet -262144 ' );
 }    #}}}
+
+sub t070_read_input_handle : Test(1) {    #{{{
+    my $self           = shift;
+    my $hessian_string = "I\x00\x00\x01\x2c";
+    my $first_bit;
+    my $ih = $self->get_string_file_input_handle($hessian_string);
+    read $ih, $first_bit, 1;
+    my $number = read_integer_handle_chunk( $first_bit, $ih );
+    is( $number, 300, "Correct value for hessian integer." );
+
+}    #}}}
+
+sub t071_read_input_handle_simple_integer : Test(1) {    #{{{
+    my $self           = shift;
+    my $hessian_string = "\x90";
+    my $ih             = $self->get_string_file_input_handle($hessian_string);
+    my $first_bit;
+    read $ih, $first_bit, 1;
+    my $number = read_integer_handle_chunk( $first_bit, $ih );
+    is( $number, 0, "Correct value for hessian integer." );
+
+}    #}}}
+
+sub  t072_read_input_handle_simple_integer : Test(1) { #{{{
+    my $self = shift;
+    my $hessian_double_octet_zero = "\x{c8}\x{00}";    # should also be 0
+    my $ih = $self->get_string_file_input_handle($hessian_double_octet_zero);
+    my $first_bit;
+    read $ih, $first_bit,1;
+    my $number = read_integer_handle_chunk( $first_bit, $ih );
+    is( $number, 0, "Correct value for hessian integer." );
+} #}}}
 
 "one, but we're not the same";
 

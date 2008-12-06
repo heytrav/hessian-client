@@ -8,7 +8,7 @@ use base 'Test::Class';
 use Test::More;
 use Carp;
 
-use Hessian::Translator::String qw/:to_hessian :from_hessian/;
+use Hessian::Translator::String qw/:to_hessian :from_hessian :input_handle/;
 
 sub t010_read_hessian_string : Test(1) {    #{{{
     my $self           = shift;

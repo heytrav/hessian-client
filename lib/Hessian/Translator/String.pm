@@ -75,7 +75,7 @@ sub hessianify_chunks {    #{{{
     return $result;
 }    #}}}
 
-sub read_string_handle_chunk : Export(:from_hessian) {    #{{{
+sub read_string_handle_chunk : Export(:input_handle) {    #{{{
     my ( $first_bit, $input_handle ) = @_;
     my ( $string, $data, $length );
     switch ($first_bit) {
@@ -90,7 +90,6 @@ sub read_string_handle_chunk : Export(:from_hessian) {    #{{{
             read $input_handle, $data, 2;
             $length = unpack "n", $data;
         }
-
     }
     binmode( $input_handle, 'utf8' );
     read $input_handle, $string, $length;
