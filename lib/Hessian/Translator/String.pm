@@ -74,6 +74,12 @@ sub hessianify_chunks {    #{{{
     return $result;
 }    #}}}
 
+sub  read_string_handle_chunk : Export(:from_hessian) { #{{{
+    my $input_handle = shift;
+binmode($input_handle, 'utf8');
+} #}}}
+
+
 "one, but we're not the same";
 
 __END__
