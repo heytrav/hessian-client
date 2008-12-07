@@ -15,7 +15,6 @@ sub read_binary_handle_chunk : Export(:input_handle) {    #{{{
         case /[\x42\x62]/ {
             read $input_handle, $data, 2;
             $length = unpack "n", $data;
-
         }
         case /[\x20-\x2f]/ {
             my $raw_octet = "\x00" . $first_bit;
@@ -25,7 +24,6 @@ sub read_binary_handle_chunk : Export(:input_handle) {    #{{{
     }
     read $input_handle, $binary, $length;
     return $binary;
-
 }    #}}}
 
 "one, but we're not the same";
