@@ -1,4 +1,4 @@
-package  Hessian::Datatype::Primitive;
+package Hessian::Datatype::Primitive;
 
 use strict;
 use warnings;
