@@ -37,12 +37,23 @@ sub read_complex_datastructure : Export(:input_handle) {    #{{{
     my ($datastructure);
     switch ($first_bit) {
         case /\x55/ {    # variable length list
-
+            my $type = read_list_type($input_handle);
         }
         case /\x56/ {    # fixed length list
-            my $type_length;
-            read $input_handle, $type_length, 1;
-            my $type = read_string_handle_chunk($type_length, $input_handle);
+            my $type = read_list_type($input_handle);
+            my $length;
+            read $input_handle, $length, 1;
+            my $array_length =
+              read_integer_handle_chunk( $length, $input_handle );
+            $datastructure = [];
+            foreach my $index ( 1 .. $array_length ) {
+                my $element;
+                read $input_handle, $element, 1;
+                my $integer =
+                  read_integer_handle_chunk( $element, $input_handle );
+                push @{$datastructure}, $integer;
+
+            }
 
         }
         case /\x57/ {    # variable length untyped list
@@ -59,7 +70,18 @@ sub read_complex_datastructure : Export(:input_handle) {    #{{{
         }
 
     }
+    return $datastructure;
 
+}    #}}}
+
+sub read_list_type {    #{{{
+    my $input_handle = shift;
+    my $type_length;
+    read $input_handle, $type_length, 1;
+    my $type = read_string_handle_chunk( $type_length, $input_handle );
+    print "Type $type\n";
+    binmode( $input_handle, 'bytes' );
+    return $type;
 }    #}}}
 
 sub read_list_file_handle : Export(:input_handle) {    #{{{
