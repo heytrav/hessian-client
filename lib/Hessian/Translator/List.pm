@@ -152,7 +152,6 @@ sub read_untyped_list_element {    #{{{
         case /[\x55-\x58\x70-\x7f]/ {
             $element = read_complex_datastructure( $first_bit, $input_handle );
         }
-
     }
     return $element;
 
