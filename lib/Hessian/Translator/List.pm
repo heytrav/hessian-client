@@ -84,7 +84,6 @@ sub read_list_length {    #{{{
         my $hex_bit = unpack 'C*', $first_bit;
         $array_length = $hex_bit - 0x78;
     }
-    print "Read list length = $array_length\n";
     return $array_length;
 }    #}}}
 
@@ -112,14 +111,31 @@ sub read_typed_list_element {    #{{{
     my ( $type, $input_handle ) = @_;
     my $element;
     my $first_bit;
+    binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     return $first_bit if $first_bit eq 'Z';
     switch ($type) {
         case /int/ {
-            binmode( $input_handle, 'bytes' );
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
-
+        case /long/ {
+            $element = read_long_handle_chunk($first_bit, $input_handle);
+            }
+        case /double/ { 
+           $element = read_double_handle_chunk($first_bit, $input_handle);
+            }
+        case /date/ {
+           $element = read_date_handle_chunk($first_bit, $input_handle);
+            }
+        case /string/ {  
+           $element = read_string_handle_chunk($first_bit, $input_handle);
+            }
+        case /binary/ { 
+           $element = read_binary_handle_chunk($first_bit, $input_handle);
+            }
+        case /object/ { }
+        case /list/ { }
+        case /map/ { }
     }
     return $element;
 }    #}}}
