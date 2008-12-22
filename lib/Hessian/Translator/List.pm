@@ -119,23 +119,23 @@ sub read_typed_list_element {    #{{{
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
         case /long/ {
-            $element = read_long_handle_chunk($first_bit, $input_handle);
-            }
-        case /double/ { 
-           $element = read_double_handle_chunk($first_bit, $input_handle);
-            }
+            $element = read_long_handle_chunk( $first_bit, $input_handle );
+        }
+        case /double/ {
+            $element = read_double_handle_chunk( $first_bit, $input_handle );
+        }
         case /date/ {
-           $element = read_date_handle_chunk($first_bit, $input_handle);
-            }
-        case /string/ {  
-           $element = read_string_handle_chunk($first_bit, $input_handle);
-            }
-        case /binary/ { 
-           $element = read_binary_handle_chunk($first_bit, $input_handle);
-            }
-        case /object/ { }
-        case /list/ { }
-        case /map/ { }
+            $element = read_date_handle_chunk( $first_bit, $input_handle );
+        }
+        case /string/ {
+            $element = read_string_handle_chunk( $first_bit, $input_handle );
+        }
+        case /binary/ {
+            $element = read_binary_handle_chunk( $first_bit, $input_handle );
+        }
+#        case /object/ { }
+#        case /list/   { }
+#        case /map/    { }
     }
     return $element;
 }    #}}}
@@ -144,13 +144,15 @@ sub read_untyped_list_element {    #{{{
     my $input_handle = shift;
     my $element;
     my $first_bit;
+    binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     return $first_bit if $first_bit eq 'Z';
+
     switch ($first_bit) {
         case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x4c\xd8-\xef\xf0-\xff\x38-\x3f\x59]/ {
+        case /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
             $element = read_long_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x44\x5b-\x5f]/ {
@@ -198,8 +200,6 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 =head1 VERSION
 
 =head1 SYNOPSIS
-
-=head1 DESCRIPTION
 
 =head1 DESCRIPTION
 
