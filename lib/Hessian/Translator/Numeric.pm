@@ -72,7 +72,7 @@ sub write_boolean : Export(:to_hessian) {    #{{{
 sub read_boolean : Export(:from_hessian) {    #{{{
     my $hessian_value = shift;
     return
-        $hessian_value =~ /T/ ? 1 
+        $hessian_value =~ /T/ ? 1
       : $hessian_value =~ /F/ ? 0
       :                         die "Not an acceptable boolean value";
 }    #}}}
@@ -302,12 +302,11 @@ sub read_double_handle_chunk : Export(:input_handle) {    #{{{
     return $number;
 }    #}}}
 
-sub  read_boolean_handle_chunk : Export(:input_handle) { #{{{
+sub read_boolean_handle_chunk : Export(:input_handle) {    #{{{
     my $first_bit = shift;
-return read_boolean($first_bit);
+    return read_boolean($first_bit);
 
-} #}}}
-
+}    #}}}
 
 "one, but we're not the same";
 

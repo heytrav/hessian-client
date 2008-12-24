@@ -42,6 +42,18 @@ sub read_complex_datastructure : Export(:input_handle) {    #{{{
         case /[\x57\x58\x78-\x7f]/ {                        # untyped lists
             $datastructure = read_untyped_list( $first_bit, $input_handle );
         }
+        case /\x48/ {
+            $datastructure = read_map_handle ( $input_handle );
+        }
+        case /\x4d/ {
+
+            # Get the type for this map. This seems to be more like a
+            # perl style object or "blessed hash".
+            my $map_type = read_list_type($input_handle);
+            my $map = read_map_handle($input_handle);
+            $datastructure = bless $map, $map_type;
+
+        }
     }
     return $datastructure;
 
@@ -66,6 +78,32 @@ sub read_typed_list {    #{{{
     }
     return $datastructure;
 }    #}}}
+
+sub read_map_handle {    #{{{
+    my $input_handle  = shift;
+
+    # For now only accept integers or strings as keys
+    my @key_value_pairs;
+  MAPLOOP:
+    {
+        my $key = read_untyped_list_element($input_handle);
+        last MAPLOOP if $key eq 'Z';
+        my $value = read_untyped_list_element($input_handle);
+        push @key_value_pairs, $key => $value;
+        redo MAPLOOP;
+    }
+
+    # should throw an exception if @key_value_pairs has an odd number of
+    # elements
+    my $datastructure = {@key_value_pairs};
+    return $datastructure;
+
+}    #}}}
+
+sub  read_untyped_map { #{{{
+    my ($first_bit, $input_handle) = @_;
+} #}}}
+
 
 sub read_list_length {    #{{{
     my ( $first_bit, $input_handle ) = @_;
@@ -114,7 +152,12 @@ sub read_typed_list_element {    #{{{
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     return $first_bit if $first_bit eq 'Z';
+    my $map_type = 'map';
+
     switch ($type) {
+        case /boolean/ {
+            $element = read_boolean_handle_chunk($first_bit);
+        }
         case /int/ {
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
@@ -133,9 +176,13 @@ sub read_typed_list_element {    #{{{
         case /binary/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
-#        case /object/ { }
-#        case /list/   { }
-#        case /map/    { }
+        case /object/ { }
+        case /list/ {
+            $element = read_complex_datastructure( $first_bit, $input_handle );
+        }
+        case /$map_type/ {
+
+        }
     }
     return $element;
 }    #}}}
@@ -149,6 +196,9 @@ sub read_untyped_list_element {    #{{{
     return $first_bit if $first_bit eq 'Z';
 
     switch ($first_bit) {
+        case /[\x46\x54]/ {
+            $element = read_boolean_handle_chunk($first_bit);
+        }
         case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
