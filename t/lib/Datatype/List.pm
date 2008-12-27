@@ -10,6 +10,8 @@ use Test::More;
 use Test::Deep;
 use YAML;
 use Hessian::Translator::List qw/:input_handle/;
+use Hessian::Translator::String qw/:input_handle/;
+use Simple;
 
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
@@ -83,8 +85,8 @@ sub t020_read_typed_map : Test(3) {    #{{{
 
 }    #}}}
 
-sub  t023_read_untyped_map : Test(1){ #{{{
-    my $self = shift;
+sub t023_read_untyped_map : Test(1) {    #{{{
+    my $self         = shift;
     my $hessian_data = "\x48\x91\x05hello\x04word\x06BeetleZ";
 
     my $ih = $self->get_string_file_input_handle($hessian_data);
@@ -93,11 +95,62 @@ sub  t023_read_untyped_map : Test(1){ #{{{
     my $datastructure = read_complex_datastructure( $first_bit, $ih );
     cmp_deeply(
         $datastructure,
-        {  1 => 'hello', word => 'Beetle'},
+        { 1 => 'hello', word => 'Beetle' },
         "Correctly interpreted datastructure."
     );
-} #}}}
+}    #}}}
 
+sub t030_read_class_definition : Test(2) {    #{{{
+    my $self         = shift;
+    my $hessian_data = "C\x0bexample.Car\x92\x05color\x05model";
+    my $ih           = $self->get_string_file_input_handle($hessian_data);
+    my $first_bit;
+    read $ih, $first_bit, 1;
+    my $datastructure = read_complex_datastructure( $first_bit, $ih );
+
+    # This will need to be linked to the class definition reference list
+    # somehow
+    push @{ $self->{class_ref} }, $datastructure;
+
+    $hessian_data = "C\x0bexample.Cap\x93\x03row\x04your\x04boat";
+    my $ih2 = $self->get_string_file_input_handle($hessian_data);
+    read $ih2, $first_bit, 1;
+    $datastructure = read_complex_datastructure( $first_bit, $ih2 );
+
+    #    close $ih;
+    #    close $ih2;
+
+    push @{ $self->{class_ref} }, $datastructure;
+    pass("Token test that only passes.");
+    pass("Token test that only passes.");
+}    #}}}
+
+sub t031_basic_object : Test(3) {    #{{{
+    my $self         = shift;
+    my $hessian_data = "\x60\x03RED\x06ferari";
+    my $ih           = $self->get_string_file_input_handle($hessian_data);
+    my $first_bit;
+    read $ih, $first_bit, 1;
+    my $class_definition_index = read_complex_datastructure( $first_bit, $ih );
+    my $class_definition       = $self->{class_ref}->[$class_definition_index];
+    my $class_type             = $class_definition->{type};
+    my $simple_obj             = Simple->new();
+    foreach my $field ( @{ $class_definition->{fields} } ) {
+        $simple_obj->meta()->add_attribute( $field, is => 'rw' );
+    }
+    can_ok( $simple_obj, @{ $class_definition->{fields} } );
+
+    my $field_index;
+    while ( read $ih, $first_bit, 1 ) {
+        my $field_value = read_string_handle_chunk( $first_bit, $ih );
+        my $field = $class_definition->{fields}->[ $field_index++ ];
+        $simple_obj->$field($field_value);
+    }
+
+    is( $simple_obj->model(), 'ferari', "Correct car from referenced class." );
+    is( $simple_obj->color(), 'RED',    "Car has the correct color." );
+
+}    #}}}
 
 "one, but we're not the same";
 

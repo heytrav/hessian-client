@@ -12,6 +12,7 @@ use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
+#use Template;
 
 sub read_list : Export(:from_hessian) {    #{{{
     my $hessian_list = shift;
@@ -43,16 +44,19 @@ sub read_complex_datastructure : Export(:input_handle) {    #{{{
             $datastructure = read_untyped_list( $first_bit, $input_handle );
         }
         case /\x48/ {
-            $datastructure = read_map_handle ( $input_handle );
+            $datastructure = read_map_handle($input_handle);
         }
         case /\x4d/ {
 
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
             my $map_type = read_list_type($input_handle);
-            my $map = read_map_handle($input_handle);
+            my $map      = read_map_handle($input_handle);
             $datastructure = bless $map, $map_type;
 
+        }
+        case /[\x43\x4f\x60-\x6f]/ {
+            $datastructure = read_class_handle( $first_bit, $input_handle );
         }
     }
     return $datastructure;
@@ -79,8 +83,40 @@ sub read_typed_list {    #{{{
     return $datastructure;
 }    #}}}
 
+sub read_class_handle {    #{{{
+    my ( $first_bit, $input_handle ) = @_;
+    switch ($first_bit) {
+        case /\x43/ {      # Read Class definition
+            my $class_type = read_list_type($input_handle);
+            $class_type =~ s/\./::/g;    # get rid of java stuff
+                                         # Get number of fields
+            my $length;
+            read $input_handle, $length, 1;
+            my $number_of_fields =
+              read_integer_handle_chunk( $length, $input_handle );
+            my @field_list;
+            foreach my $field_index ( 1 .. $number_of_fields ) {
+
+                # using the wrong function here, but who cares?
+                my $field = read_list_type($input_handle);
+                push @field_list, $field;
+
+            }
+            return { type => $class_type, fields => \@field_list};
+        }
+        case /\x4f/ {    # Read hessian data and create instance of class
+
+        }
+        case /[\x60-\x6f]/ {    # The class definition is in the ref list
+            my $hex_bit = unpack 'C*', $first_bit;
+            my $class_definition_number = $hex_bit - 0x60;
+            return $class_definition_number;
+        }
+    }
+}    #}}}
+
 sub read_map_handle {    #{{{
-    my $input_handle  = shift;
+    my $input_handle = shift;
 
     # For now only accept integers or strings as keys
     my @key_value_pairs;
@@ -100,10 +136,9 @@ sub read_map_handle {    #{{{
 
 }    #}}}
 
-sub  read_untyped_map { #{{{
-    my ($first_bit, $input_handle) = @_;
-} #}}}
-
+sub read_untyped_map {    #{{{
+    my ( $first_bit, $input_handle ) = @_;
+}    #}}}
 
 sub read_list_length {    #{{{
     my ( $first_bit, $input_handle ) = @_;
@@ -254,5 +289,7 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 =head1 DESCRIPTION
 
 =head1 INTERFACE
+
+
 
 
