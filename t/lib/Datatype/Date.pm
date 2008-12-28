@@ -4,13 +4,13 @@ use strict;
 use warnings;
 
 use version; our $VERSION = qv('0.0.1');
-use base 'Test::Class';
+use base 'Datatype';
 
 use Test::More;
 use DateTime;
 use DateTime::Format::Strptime;
 use DateTime::Format::Epoch;
-use Hessian::Translator::Date qw/:to_hessian :from_hessian/;
+use Hessian::Translator::Date qw/:to_hessian :from_hessian :input_handle/;
 
 sub prepare_date : Test(setup) {    #{{{
     my $self = shift;
@@ -60,16 +60,10 @@ sub t010_to_hessian : Test(1) {    #{{{
 }    #}}}
 
 sub t020_from_hessian : Test(1) {    #{{{
-    my $self              = shift;
-    my $byte_string       = $self->{byte_string};
-    my $processed_time    = read_date($byte_string);
-    my $from_hessian_date = DateTime->from_epoch( epoch => $processed_time );
-    my $readable_date     = $self->{formatter}->format_datetime($from_hessian_date);
-    $from_hessian_date->set_time_zone('UTC');
-
-    my $cmp = DateTime->compare( $self->{date}, $from_hessian_date );
-    is( $cmp, 0, "Hessian date as expected." );
-
+    my $self           = shift;
+    my $byte_string    = $self->{byte_string};
+    my $processed_time = read_date($byte_string);
+    $self->compare_date($processed_time);
 }    #}}}
 
 sub t030_eight_byte_dates : Test(2) {    #{{{
@@ -85,12 +79,32 @@ sub t030_eight_byte_dates : Test(2) {    #{{{
         "Simple translation of date." );
     my $processed_time    = read_date($byte_string);
     my $from_hessian_date = $formatter->parse_datetime($processed_time);
-    my $readable_date =
-      $self->{formatter}->format_datetime($from_hessian_date);
-#    print "Interpreted datetime: $readable_date\n";
+    my $readable_date = $self->{formatter}->format_datetime($from_hessian_date);
+
+    #    print "Interpreted datetime: $readable_date\n";
     $from_hessian_date->set_time_zone('UTC');
 
     my $cmp = DateTime->compare( $date, $from_hessian_date );
+    is( $cmp, 0, "Hessian date as expected." );
+}    #}}}
+
+sub t040_read_date_input_handle : Test(1) {    #{{{
+    my $self = shift;
+    my $ih   = $self->get_string_file_input_handle( $self->{byte_string} );
+    my $first_bit;
+    read $ih, $first_bit, 1;
+    my $date = read_date_handle_chunk( $first_bit, $ih );
+    $self->compare_date($date);
+
+}    #}}}
+
+sub compare_date {    #{{{
+    my ( $self, $processed_time ) = @_;
+    my $from_hessian_date = DateTime->from_epoch( epoch => $processed_time );
+    my $readable_date = $self->{formatter}->format_datetime($from_hessian_date);
+    $from_hessian_date->set_time_zone('UTC');
+
+    my $cmp = DateTime->compare( $self->{date}, $from_hessian_date );
     is( $cmp, 0, "Hessian date as expected." );
 }    #}}}
 

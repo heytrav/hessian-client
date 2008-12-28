@@ -4,10 +4,10 @@ use strict;
 use warnings;
 
 use version; our $VERSION = qv('0.0.1');
-use base 'Test::Class';
+use base 'Datatype';
 
 use Test::More;
-use Hessian::Translator::Numeric qw/:to_hessian :from_hessian/;
+use Hessian::Translator::Numeric qw/:to_hessian :from_hessian :input_handle/;
 
 sub t010_single_octet : Test(3) {    #{{{
     my $hessian_single_octet_long = write_long(0);
@@ -39,7 +39,7 @@ sub t020_double_octet : Test(3) {    #{{{
         'Translate 2047 into double octet'
     );
     my $hessian_double_octet_zero = "L\x{f8}\x{00}";
-    my $value = read_long($hessian_double_octet_zero);
+    my $value                     = read_long($hessian_double_octet_zero);
     is( $value, 0, 'Translated double octet 0' );
 }    #}}}
 
@@ -57,6 +57,25 @@ sub t030_long : Test(3) {    #{{{
 
     is( $big_positive_long, $retranslated_long,
         'Correctly translated an arbitrary long value' );
+}    #}}}
+
+sub t040_read_long_input_handle : Test(1) {    #{{{
+    my $self = shift;
+    my $ih   = $self->get_string_file_input_handle("\xf0\x00");
+    my $first_bit;
+    read $ih, $first_bit, 1;
+    my $long = read_long_handle_chunk( $first_bit, $ih );
+    is( $long, -2048, "Correct long value from file handle." );
+}    #}}}
+
+sub t041_read_long_input_handle : Test(1) {    #{{{
+    my $self = shift;
+    my $ih =
+      $self->get_string_file_input_handle("L\x00\x00\x00\x00\x00\x00\x01\x2c");
+    my $first_bit;
+    read $ih, $first_bit, 1;
+    my $long = read_long_handle_chunk( $first_bit, $ih );
+    is( $long, 300, "Correct 8 byte value from long handle." );
 }    #}}}
 
 "one, but we're not the same";

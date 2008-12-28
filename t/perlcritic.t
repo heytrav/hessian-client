@@ -6,4 +6,4 @@ if (!require Test::Perl::Critic) {
     );
 }
 
-Test::Perl::Critic::all_critic_ok();
+Test::Perl::Critic::all_critic_ok(qw/lib/);

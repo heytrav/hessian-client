@@ -10,6 +10,7 @@ use List::MoreUtils qw/apply/;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
 use Math::BigInt;
 use POSIX qw/floor ceil/;
+use Switch;
 
 sub write_integer : Export(:to_hessian) {    #{{{
     my $integer = shift;
@@ -61,11 +62,19 @@ sub write_triple_octet {    #{{{
 sub write_boolean : Export(:to_hessian) {    #{{{
     my $bool_val = shift;
     return
-        $bool_val =~ /t(?:rue)?/i  ? 'T'
-      : $bool_val =~ /f(?:alse)?/i ? 'F'
-      :                              'N';
+        $bool_val =~ /(?:1|t(?:rue)?)/i  ? 'T'
+      : $bool_val =~ /(?:0|f(?:alse)?)/i ? 'F'
+      :                                    'N';
 
     # throw a fault
+}    #}}}
+
+sub read_boolean : Export(:from_hessian) {    #{{{
+    my $hessian_value = shift;
+    return
+        $hessian_value =~ /T/ ? 1
+      : $hessian_value =~ /F/ ? 0
+      :                         die "Not an acceptable boolean value";
 }    #}}}
 
 sub read_integer : Export(:from_hessian) {    #{{{
@@ -182,12 +191,10 @@ sub read_full_double {    #{{{
     my @chars = unpack 'C*', $octets;
     my $double = unpack 'F', pack 'C*', reverse @chars;
     return $double;
-
 }    #}}}
 
 sub write_double : Export(:to_hessian) {    #{{{
     my $double = shift;
-
     my $hessian_string;
     my $compare_with = $double < 0 ? ceil($double) : floor($double);
     if ( $double eq $compare_with ) {
@@ -210,9 +217,7 @@ sub write_double : Export(:to_hessian) {    #{{{
 sub write_single_octet_float {    #{{{
     my $double = shift;
     my $hessian_string = pack 'c*', $double;
-
     return $hessian_string;
-
 }    #}}}
 
 sub write_double_octet_float {    #{{{
@@ -230,6 +235,79 @@ sub write_full_double {    #{{{
     return $hessian_string;
 }    #}}}
 
+sub read_integer_handle_chunk : Export(:input_handle) {    #{{{
+    my ( $first_bit, $input_handle ) = @_;
+    my ( $number, $data );
+    switch ($first_bit) {
+        case /\x49/ {
+            read $input_handle, $data, 4;
+            $number = read_integer($data);
+        }
+        case /[\x80-\xbf]/ {
+            $number = read_integer($first_bit);
+        }
+        case /[\xc0-\xcf]/ {
+            read $input_handle, $data, 1;
+            $number = read_integer( $first_bit . $data );
+        }
+        case /[\xd0-\xd7]/ {
+            read $input_handle, $data, 2;
+            $number = read_integer( $first_bit . $data );
+        }
+
+    }
+    return $number;
+
+}    #}}}
+
+sub read_long_handle_chunk : Export(:input_handle) {    #{{{
+    my ( $first_bit, $input_handle ) = @_;
+    my ( $number, $data );
+    switch ($first_bit) {
+        case /[\xd8-\xef]/ { $number = read_long($first_bit); }
+        case /[\xf0-\xff]/ {
+            read $input_handle, $data, 1;
+            return read_long( $first_bit . $data );
+        }
+        case /[\x38-\x3f]/ {
+            read $input_handle, $data, 2;
+            return read_long( $first_bit . $data );
+        }
+        case /\x4c/ {
+            read $input_handle, $data, 8;
+            $number = read_long($data);
+        }
+
+    }
+    return $number;
+}    #}}}
+
+sub read_double_handle_chunk : Export(:input_handle) {    #{{{
+    my ( $first_bit, $input_handle ) = @_;
+    my ( $number, $data );
+    switch ($first_bit) {
+        case /[\x5b-\x5c]/ { $data = $first_bit; }
+        case /\x5d/ { read $input_handle, $data, 1; }
+        case /\x5e/ { read $input_handle, $data, 2; }
+        case /\x5f/ {
+            read $input_handle, $data, 4;
+        }
+        case /\x44/ {
+            $first_bit = "";
+            read $input_handle, $data, 8;
+        }
+
+    }
+    $number = read_double( $first_bit . $data );
+    return $number;
+}    #}}}
+
+sub read_boolean_handle_chunk : Export(:input_handle) {    #{{{
+    my $first_bit = shift;
+    return read_boolean($first_bit);
+
+}    #}}}
+
 "one, but we're not the same";
 
 __END__
@@ -243,8 +321,6 @@ hessian.
 =head1 VERSION
 
 =head1 SYNOPSIS
-
-=head1 DESCRIPTION
 
 =head1 DESCRIPTION
 

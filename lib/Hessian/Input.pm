@@ -27,12 +27,12 @@ before 'translate' => sub {    #{{{
 
 sub translate {    #{{{
     my ( $self) = @_;
-    my $handle = $self->{input_handle};
+    my $handle = $self->input_handle();
     my $first;
     read $handle, $first, 1;
     print "First character received:\n $first\n";
     switch ($first) {
-       case 'S' { } 
+       case  { } 
         
         
         }
