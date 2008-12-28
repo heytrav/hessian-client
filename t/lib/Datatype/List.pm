@@ -159,16 +159,21 @@ sub  class_instance_generator { #{{{
     }
     foreach my $field ( @{ $class_definition->{fields} } ) {
         $simple_obj->meta()->add_attribute( $field, is => 'rw' );
+        # We're going to assume that fields are submitted in the same order
+        # the class fields were defined.  If a field should be empty, then a
+        # NULL should be submitted
+        my $value = read_untyped_list_element($ih);
+        $simple_obj->$field($value);
     }
     can_ok( $simple_obj, @{ $class_definition->{fields} } );
     isa_ok($simple_obj, $class_type, "New object type");
 
-    my $field_index;
-    while ( read $ih, $first_bit, 1 ) {
-        my $field_value = read_string_handle_chunk( $first_bit, $ih );
-        my $field = $class_definition->{fields}->[ $field_index++ ];
-        $simple_obj->$field($field_value);
-    }
+#    my $field_index;
+#    while ( read $ih, $first_bit, 1 ) {
+#        my $field_value = read_untyped_list_element( $first_bit, $ih );
+#        my $field = $class_definition->{fields}->[ $field_index++ ];
+#        $simple_obj->$field($field_value);
+#    }
     return $simple_obj;
 } #}}}
 

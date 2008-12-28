@@ -222,7 +222,7 @@ sub read_typed_list_element {    #{{{
     return $element;
 }    #}}}
 
-sub read_untyped_list_element {    #{{{
+sub read_untyped_list_element :Export(:input_handle) {    #{{{
     my $input_handle = shift;
     my $element;
     my $first_bit;
@@ -231,6 +231,9 @@ sub read_untyped_list_element {    #{{{
     return $first_bit if $first_bit eq 'Z';
 
     switch ($first_bit) {
+        case /\x4e/ {  # 'N' for NULL
+            $element = undef; 
+            }
         case /[\x46\x54]/ {
             $element = read_boolean_handle_chunk($first_bit);
         }
