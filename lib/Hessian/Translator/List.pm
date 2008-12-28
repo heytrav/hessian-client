@@ -12,6 +12,7 @@ use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
+
 #use Template;
 
 sub read_list : Export(:from_hessian) {    #{{{
@@ -46,7 +47,7 @@ sub read_complex_datastructure : Export(:input_handle) {    #{{{
         case /\x48/ {
             $datastructure = read_map_handle($input_handle);
         }
-        case /\x4d/ {
+        case /\x4d/ {   # typed map
 
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
@@ -86,7 +87,7 @@ sub read_typed_list {    #{{{
 sub read_class_handle {    #{{{
     my ( $first_bit, $input_handle ) = @_;
     switch ($first_bit) {
-        case /\x43/ {      # Read Class definition
+        case /\x43/ {      # Read class definition
             my $class_type = read_list_type($input_handle);
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
@@ -102,10 +103,14 @@ sub read_class_handle {    #{{{
                 push @field_list, $field;
 
             }
-            return { type => $class_type, fields => \@field_list};
+            return { type => $class_type, fields => \@field_list };
         }
         case /\x4f/ {    # Read hessian data and create instance of class
-
+            my $length;
+            read $input_handle, $length, 1;
+            my $class_definition_number =
+              read_integer_handle_chunk( $length, $input_handle );
+            return $class_definition_number;
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
             my $hex_bit = unpack 'C*', $first_bit;
@@ -222,7 +227,7 @@ sub read_typed_list_element {    #{{{
     return $element;
 }    #}}}
 
-sub read_untyped_list_element :Export(:input_handle) {    #{{{
+sub read_untyped_list_element : Export(:input_handle) {    #{{{
     my $input_handle = shift;
     my $element;
     my $first_bit;
@@ -231,9 +236,9 @@ sub read_untyped_list_element :Export(:input_handle) {    #{{{
     return $first_bit if $first_bit eq 'Z';
 
     switch ($first_bit) {
-        case /\x4e/ {  # 'N' for NULL
-            $element = undef; 
-            }
+        case /\x4e/ {                                      # 'N' for NULL
+            $element = undef;
+        }
         case /[\x46\x54]/ {
             $element = read_boolean_handle_chunk($first_bit);
         }

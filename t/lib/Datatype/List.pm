@@ -140,6 +140,16 @@ sub t031_basic_object : Test(7) {    #{{{
 
 }    #}}}
 
+sub  t032_object_long_form : Test(4) { #{{{
+    my $self = shift;
+    my $hessian_data1 = "O\x90\x05green\x05civic";
+    my $example_car = $self->class_instance_generator($hessian_data1);
+
+    is($example_car->model(), 'civic', "Correct car from referenced class.");
+    is($example_car->color(), 'green', "Correct color from class.");
+} #}}}
+
+
 sub  class_instance_generator { #{{{
     my ($self, $object_definition) = @_;
     my $ih           = $self->get_string_file_input_handle($object_definition);
@@ -168,12 +178,6 @@ sub  class_instance_generator { #{{{
     can_ok( $simple_obj, @{ $class_definition->{fields} } );
     isa_ok($simple_obj, $class_type, "New object type");
 
-#    my $field_index;
-#    while ( read $ih, $first_bit, 1 ) {
-#        my $field_value = read_untyped_list_element( $first_bit, $ih );
-#        my $field = $class_definition->{fields}->[ $field_index++ ];
-#        $simple_obj->$field($field_value);
-#    }
     return $simple_obj;
 } #}}}
 
