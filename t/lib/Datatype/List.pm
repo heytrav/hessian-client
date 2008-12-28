@@ -125,20 +125,43 @@ sub t030_read_class_definition : Test(2) {    #{{{
     pass("Token test that only passes.");
 }    #}}}
 
-sub t031_basic_object : Test(3) {    #{{{
+sub t031_basic_object : Test(7) {    #{{{
     my $self         = shift;
-    my $hessian_data = "\x60\x03RED\x06ferari";
-    my $ih           = $self->get_string_file_input_handle($hessian_data);
+    my $hessian_data1 = "\x60\x03RED\x06ferari";
+    my $example_car = $self->class_instance_generator($hessian_data1);
+
+    is( $example_car->model(), 'ferari', "Correct car from referenced class." );
+    is( $example_car->color(), 'RED',    "Car has the correct color." );
+
+    my $hessian_data2 = "\x61\x05dingy\x06thingy\x05wingy";
+    my $example_cap = $self->class_instance_generator($hessian_data2);
+
+    is($example_cap->boat(), 'wingy', "Boat is correct.");
+
+}    #}}}
+
+sub  class_instance_generator { #{{{
+    my ($self, $object_definition) = @_;
+    my $ih           = $self->get_string_file_input_handle($object_definition);
     my $first_bit;
     read $ih, $first_bit, 1;
     my $class_definition_index = read_complex_datastructure( $first_bit, $ih );
-    my $class_definition       = $self->{class_ref}->[$class_definition_index];
-    my $class_type             = $class_definition->{type};
-    my $simple_obj             = Simple->new();
+    my $class_definition = $self->{class_ref}->[$class_definition_index];
+
+    # This here will be part of the "class construction" code.
+    my $class_type = $class_definition->{type};
+    my $simple_obj = bless {}, $class_type;
+    {
+        # This is so we can take advantage of Class::MOP/Moose's meta object
+        # capabilities and add arbitrary fields to the new object.
+        no strict 'refs';
+        push @{ $class_type . '::ISA' }, 'Simple';
+    }
     foreach my $field ( @{ $class_definition->{fields} } ) {
         $simple_obj->meta()->add_attribute( $field, is => 'rw' );
     }
     can_ok( $simple_obj, @{ $class_definition->{fields} } );
+    isa_ok($simple_obj, $class_type, "New object type");
 
     my $field_index;
     while ( read $ih, $first_bit, 1 ) {
@@ -146,11 +169,9 @@ sub t031_basic_object : Test(3) {    #{{{
         my $field = $class_definition->{fields}->[ $field_index++ ];
         $simple_obj->$field($field_value);
     }
+    return $simple_obj;
+} #}}}
 
-    is( $simple_obj->model(), 'ferari', "Correct car from referenced class." );
-    is( $simple_obj->color(), 'RED',    "Car has the correct color." );
-
-}    #}}}
 
 "one, but we're not the same";
 
