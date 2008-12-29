@@ -7,7 +7,7 @@ use version; our $VERSION = qv('0.0.1');
 
 use Perl6::Export::Attrs;
 use Switch;
-
+use YAML;
 use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
@@ -28,19 +28,25 @@ sub write_list : Export(:to_hessian) {    #{{{
 }    #}}}
 
 sub read_composite_datastructure : Export(:input_handle) {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
-    my ($datastructure);
+    my ( $first_bit, $input_handle, $deserializer ) = @_;
+    my ( $datastructure, $save_reference );
     switch ($first_bit) {
-        case /[\x55\x56\x70-\x77]/ {                        # typed lists
+        case /[\x55\x56\x70-\x77]/ {                          # typed lists
+            $save_reference = 1;
             $datastructure = read_typed_list( $first_bit, $input_handle );
         }
-        case /[\x57\x58\x78-\x7f]/ {                        # untyped lists
+
+        case /[\x57\x58\x78-\x7f]/ {                          # untyped lists
+            $save_reference = 1;
             $datastructure = read_untyped_list( $first_bit, $input_handle );
         }
         case /\x48/ {
-            $datastructure = read_map_handle($input_handle);
+            $save_reference = 1;
+            $datastructure  = read_map_handle($input_handle);
         }
-        case /\x4d/ {   # typed map
+        case /\x4d/ {                                         # typed map
+
+            $save_reference = 1;
 
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
@@ -50,9 +56,13 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
 
         }
         case /[\x43\x4f\x60-\x6f]/ {
-            $datastructure = read_class_handle( $first_bit, $input_handle );
+            $datastructure =
+              read_class_handle( $first_bit, $input_handle, $deserializer );
+
         }
     }
+    push @{ $deserializer->reference_list() }, $datastructure
+      if $save_reference;
     return $datastructure;
 
 }    #}}}
@@ -78,7 +88,8 @@ sub read_typed_list {    #{{{
 }    #}}}
 
 sub read_class_handle {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+    my ( $first_bit, $input_handle, $deserializer ) = @_;
+    my $save_reference;
     switch ($first_bit) {
         case /\x43/ {      # Read class definition
             my $class_type = read_hessian_chunk($input_handle);
@@ -96,19 +107,23 @@ sub read_class_handle {    #{{{
                 push @field_list, $field;
 
             }
-            return { type => $class_type, fields => \@field_list };
+
+            my $class_definition =
+              { type => $class_type, fields => \@field_list };
+            push @{ $deserializer->class_definitions() }, $class_definition;
+            return $class_definition;
         }
         case /\x4f/ {    # Read hessian data and create instance of class
             my $length;
             read $input_handle, $length, 1;
             my $class_definition_number =
               read_integer_handle_chunk( $length, $input_handle );
-            return $class_definition_number;
+            return $deserializer->instantiate_class($class_definition_number);
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
-            return $class_definition_number;
+            return $deserializer->instantiate_class($class_definition_number);
         }
     }
 }    #}}}
@@ -220,21 +235,21 @@ sub read_typed_list_element {    #{{{
     return $element;
 }    #}}}
 
-sub read_hessian_chunk :Export(:deserialize) {    #{{{
-    my $input_handle = shift;
-    my ($first_bit,$element);
+sub read_hessian_chunk : Export(:deserialize) {    #{{{
+    my ( $input_handle, $deserializer ) = @_;
+    my ( $first_bit, $element );
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     return $first_bit if $first_bit eq 'Z';
 
     switch ($first_bit) {
-        case /\x4e/ {                                      # 'N' for NULL
+        case /\x4e/ {                              # 'N' for NULL
             $element = undef;
         }
-        case /[\x46\x54]/ { # 'T'rue or 'F'alse
+        case /[\x46\x54]/ {                        # 'T'rue or 'F'alse
             $element = read_boolean_handle_chunk($first_bit);
         }
-        case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ { 
+        case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
@@ -252,8 +267,20 @@ sub read_hessian_chunk :Export(:deserialize) {    #{{{
         case /[\x41\x42\x20-\x2f\x34-\x37]/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/ {   # recursive datastructure
-            $element = read_composite_datastructure( $first_bit, $input_handle );
+        case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
+        {    # recursive datastructure
+            $element = read_composite_datastructure( $first_bit, $input_handle,
+                $deserializer );
+        }
+        case /\x51/ {
+
+            # Return datastructure in reference
+            my $reference_id =
+              read_integer_handle_chunk( $first_bit, $input_handle );
+
+            #               return $deserializer->reference_list($reference_id);
+            return $deserializer->reference_list()->[$reference_id];
+
         }
     }
     binmode( $input_handle, 'bytes' );
