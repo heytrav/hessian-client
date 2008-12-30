@@ -20,8 +20,8 @@ sub write_integer : Export(:to_hessian) {    #{{{
       && $integer <= 2047 ? write_double_octet( $integer, 0xc8 )
       : -262144 <= $integer
       && $integer <= 262143 ? write_triple_octet( $integer, 0xd4 )
-      :                       write_quadruple_octet($integer);
-    return 'I' . $result;
+      :                       'I' . write_quadruple_octet($integer);
+    return $result;
 }    #}}}
 
 sub write_quadruple_octet {    #{{{
@@ -155,8 +155,8 @@ sub write_long : Export(:to_hessian) {    #{{{
         -8 <= $long && $long <= 15 ? write_single_octet( $long, 0xe0 )
       : -2048 <= $long && $long <= 2047 ? write_double_octet( $long, 0xf8 )
       : -262144 <= $long && $long <= 262143 ? write_triple_octet( $long, 0x3c )
-      :                                       write_full_long($long);
-    return 'L' . $result;
+      :                                       'L' . write_full_long($long);
+    return $result;
 }    #}}}
 
 sub write_full_long {    #{{{

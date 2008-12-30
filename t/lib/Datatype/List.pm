@@ -11,6 +11,7 @@ use Test::Deep;
 use YAML;
 use Hessian;
 use Simple;
+use Hessian::Translator::Numeric qw/:to_hessian/;
 
 sub t001_initialize_hessian : Test(2) {    #{{{
     my $self = shift;
@@ -85,7 +86,6 @@ sub t020_read_typed_map : Test(3) {    #{{{
         'Beetle', 'Model attribute has correct value.' );
     like( $datastructure->{mileage},
         qr/\d+/, 'Mileage attribute is an integer.' );
-
 }    #}}}
 
 sub t023_read_untyped_map : Test(1) {    #{{{
@@ -112,8 +112,8 @@ sub t030_read_class_definition : Test(2) {    #{{{
     push @{ $self->{class_ref} }, $datastructure;
 
     $hessian_data = "C\x0bexample.Cap\x93\x03row\x04your\x04boat";
-    $datastructure = $self->{deserializer}->deserialize({input_string =>
-    $hessian_data } ); 
+    $datastructure =
+      $self->{deserializer}->deserialize( { input_string => $hessian_data } );
     push @{ $self->{class_ref} }, $datastructure;
     pass("Token test that only passes.");
     pass("Token test that only passes.");
@@ -143,11 +143,24 @@ sub t032_object_long_form : Test(2) {    #{{{
     is( $example_car->color(), 'green', "Correct color from class." );
 }    #}}}
 
+sub t033_retrieve_object_from_reference : Test(2) {    #{{{
+    my $self       = shift;
+    my $last_index = scalar @{ $self->{deserializer}->reference_list() } - 1;
+    my $hessian_integer = write_integer($last_index);
+
+    my $hessian_data = "\x51" . $hessian_integer;
+    my $example_car =
+      $self->{deserializer}->deserialize( { input_string => $hessian_data } );
+    is( $example_car->model(), 'civic', "Correct car from referenced object." );
+    is( $example_car->color(), 'green', "Correct color from class." );
+
+}    #}}}
+
 sub class_instance_generator {    #{{{
     my ( $self, $object_definition ) = @_;
     my $ih = $self->get_string_file_input_handle($object_definition);
     my $simple_obj =
-      $self->{deserializer}->deserialize( { input_handle => $ih } ) ; 
+      $self->{deserializer}->deserialize( { input_handle => $ih } );
 
     return $simple_obj;
 }    #}}}

@@ -5,6 +5,7 @@ use version; our $VERSION = qv('0.0.1');
 use YAML;
 
 use Hessian::Translator::Composite ':deserialize';
+use Simple;
 
 has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
 
@@ -30,23 +31,22 @@ sub deserialize {    #{{{
     my ( $self, $args ) = @_;
     my $input_handle = $self->input_handle();
     my ( $line, $output );
-    
+
     # Yes, I'm passing the object itself as a parameter so I can add
     # references, class definitions and objects to the different lists as they
     # occur.
-    my $result = read_hessian_chunk($input_handle, $self); 
+    my $result = read_hessian_chunk( $input_handle, $self );
     return $result;
 }    #}}}
 
-sub  instantiate_class { #{{{
-    my ($self, $index) = @_;
+sub instantiate_class {    #{{{
+    my ( $self, $index ) = @_;
     my $class_definitions = $self->class_definitions;
-    my $class_definition = $self->class_definitions()->[$index];
+    my $class_definition  = $self->class_definitions()->[$index];
 
     my $class_type = $class_definition->{type};
     my $simple_obj = bless {}, $class_type;
     {
-
         # This is so we can take advantage of Class::MOP/Moose's meta object
         # capabilities and add arbitrary fields to the new object.
         no strict 'refs';
@@ -63,8 +63,7 @@ sub  instantiate_class { #{{{
         $simple_obj->$field($value);
     }
     return $simple_obj;
-} #}}}
-
+}    #}}}
 
 "one, but we're not the same";
 

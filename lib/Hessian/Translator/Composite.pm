@@ -33,7 +33,8 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {                          # typed lists
             $save_reference = 1;
-            $datastructure = read_typed_list( $first_bit, $input_handle );
+            $datastructure 
+                = read_typed_list( $first_bit, $input_handle, $deserializer );
         }
 
         case /[\x57\x58\x78-\x7f]/ {                          # untyped lists
@@ -42,7 +43,7 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
         }
         case /\x48/ {
             $save_reference = 1;
-            $datastructure  = read_map_handle($input_handle);
+            $datastructure  = read_map_handle($input_handle, $deserializer);
         }
         case /\x4d/ {                                         # typed map
 
@@ -51,6 +52,12 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
             my $map_type = read_hessian_chunk($input_handle);
+            if ( $map_type !~ /^\d+$/) {
+               push @{ $deserializer->type_list() }, $map_type; 
+            }
+            else {
+                  $map_type = $deserializer->type_list()->[$map_type];
+            }
             my $map      = read_map_handle($input_handle);
             $datastructure = bless $map, $map_type;
 
@@ -68,7 +75,7 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
 }    #}}}
 
 sub read_typed_list {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+    my ( $first_bit, $input_handle, $deserializer ) = @_;
     my $type = read_hessian_chunk($input_handle);
     my $array_length = read_list_length( $first_bit, $input_handle );
 
@@ -77,7 +84,8 @@ sub read_typed_list {    #{{{
   LISTLOOP:
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element = read_typed_list_element( $type, $input_handle );
+        my $element 
+            = read_typed_list_element( $type, $input_handle, $deserializer );
         last LISTLOOP if $first_bit =~ /\x55/ && $element eq 'Z';
 
         push @{$datastructure}, $element;
@@ -89,7 +97,7 @@ sub read_typed_list {    #{{{
 
 sub read_class_handle {    #{{{
     my ( $first_bit, $input_handle, $deserializer ) = @_;
-    my $save_reference;
+    my ( $save_reference, $datastructure);
     switch ($first_bit) {
         case /\x43/ {      # Read class definition
             my $class_type = read_hessian_chunk($input_handle);
@@ -111,21 +119,28 @@ sub read_class_handle {    #{{{
             my $class_definition =
               { type => $class_type, fields => \@field_list };
             push @{ $deserializer->class_definitions() }, $class_definition;
-            return $class_definition;
+            $datastructure = $class_definition;
         }
         case /\x4f/ {    # Read hessian data and create instance of class
             my $length;
+            $save_reference = 1;
             read $input_handle, $length, 1;
             my $class_definition_number =
               read_integer_handle_chunk( $length, $input_handle );
-            return $deserializer->instantiate_class($class_definition_number);
+             $datastructure =
+              $deserializer->instantiate_class($class_definition_number);
+            
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
+            $save_reference = 1;
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
-            return $deserializer->instantiate_class($class_definition_number);
+            $datastructure =  $deserializer->instantiate_class($class_definition_number);
         }
     }
+    push @{ $deserializer->reference_list() }, $datastructure
+      if $save_reference;
+    return $datastructure;
 }    #}}}
 
 sub read_map_handle {    #{{{
@@ -194,13 +209,21 @@ sub read_untyped_list {    #{{{
 }    #}}}
 
 sub read_typed_list_element {    #{{{
-    my ( $type, $input_handle ) = @_;
-    my $element;
-    my $first_bit;
+    my ( $entity_type, $input_handle, $deserializer ) = @_;
+    my ($type, $element, $first_bit);
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     return $first_bit if $first_bit eq 'Z';
     my $map_type = 'map';
+
+    if ( $entity_type !~ /^\d+$/) {
+        $type = $entity_type;
+        push @{ $deserializer->type_list() }, $type;
+
+    }
+    else {
+        $type = $deserializer->type_list()->[$entity_type];
+    }
 
     switch ($type) {
         case /boolean/ {
@@ -224,13 +247,12 @@ sub read_typed_list_element {    #{{{
         case /binary/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
-        case /object/ { }
         case /list/ {
-            $element = read_complex_datastructure( $first_bit, $input_handle );
+            $element = read_composite_datastructure( $first_bit, $input_handle );
         }
-        case /$map_type/ {
+#        case /$map_type/ {
 
-        }
+#        }
     }
     return $element;
 }    #}}}
@@ -273,13 +295,9 @@ sub read_hessian_chunk : Export(:deserialize) {    #{{{
                 $deserializer );
         }
         case /\x51/ {
-
-            # Return datastructure in reference
             my $reference_id =
-              read_integer_handle_chunk( $first_bit, $input_handle );
-
-            #               return $deserializer->reference_list($reference_id);
-            return $deserializer->reference_list()->[$reference_id];
+              read_hessian_chunk($input_handle );
+            $element = $deserializer->reference_list()->[$reference_id];
 
         }
     }
