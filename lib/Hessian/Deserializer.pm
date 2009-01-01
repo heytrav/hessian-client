@@ -5,6 +5,7 @@ use version; our $VERSION = qv('0.0.1');
 use YAML;
 
 use Hessian::Translator::Composite ':deserialize';
+use Hessian::Translator::Envelope ':deserialize';
 use Simple;
 
 has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
@@ -41,6 +42,9 @@ sub deserialize_chunk {    #{{{
 
 sub  deserialize_message { #{{{
     my ($self, $args) = @_;
+    my $input_handle = $self->input_handle();
+    my $result = read_message_chunk($input_handle, $self);
+    return $result;
 } #}}}
 
 

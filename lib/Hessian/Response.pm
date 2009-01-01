@@ -1,10 +1,17 @@
-package Hessian::Message;
+package Hessian::Response;
 
 use Moose;
 use version; our $VERSION = qv('0.0.1');
+use Hessian::Message;
 
-has 'content' => (is => 'rw');
-has 'fault' => (is => 'rw');
+has 'content' => (
+    is      => 'rw',
+    isa     => 'Hessian::Message',
+    default => sub {
+        Hessian::Message->new();
+    }
+);
+has 'is_success' => ( is => 'rw', isa => 'Bool' );
 
 "one, but we're not the same";
 
@@ -13,7 +20,7 @@ __END__
 
 =head1 NAME
 
-Hessian::Message - Encapsulate a Hessian message.
+Hessian::Response - Object representing a response from a hessian service.
 
 =head1 VERSION
 
@@ -22,5 +29,15 @@ Hessian::Message - Encapsulate a Hessian message.
 =head1 DESCRIPTION
 
 =head1 INTERFACE
+
+=head2 content
+
+Contains the L<message|Hessian::Message> or I<fault> object that was sent by
+the remote service.
+
+
+=head2 is_success
+
+Boolean attribute for response object.
 
 

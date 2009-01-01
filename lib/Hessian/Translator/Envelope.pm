@@ -13,10 +13,8 @@ use YAML;
 use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
 
-sub read_message {    #{{{
-}                     #}}}
 
-sub read_message_chunk {    #{{{
+sub read_message_chunk :Export(:deserialize) {    #{{{
     my ( $input_handle, $deserializer_obj ) = @_;
     my $deserializer = $deserializer_obj;
     $deserializer =
@@ -27,11 +25,13 @@ sub read_message_chunk {    #{{{
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     return $first_bit if $first_bit eq 'Z';
-
+    my $datastructure;
     switch ($first_bit) {
         case /\x48/ {    # TOP with version
             my $version;
             read $input_handle, $version, 2;
+            my @values = unpack 'C*', $version;
+            $datastructure = $values[0];
         }
         case /\x43/ {    # Hessian Remote Procedure Call
 
@@ -46,6 +46,7 @@ sub read_message_chunk {    #{{{
 
         }
     }
+    return $datastructure;
 }    #}}}
 
 sub read_envelope {    #{{{
@@ -75,7 +76,6 @@ sub read_packet {    #{{{
         }
         case /[\x80-\x8f]/ {
         }
-
     }
 }    #}}}
 
