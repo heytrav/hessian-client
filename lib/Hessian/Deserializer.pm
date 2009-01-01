@@ -9,7 +9,7 @@ use Simple;
 
 has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
 
-before 'deserialize' => sub {    #{{{
+before qw/deserialize_chunk deserialize_message / => sub {    #{{{
     my ( $self, $input ) = @_;
 
     my $input_handle;
