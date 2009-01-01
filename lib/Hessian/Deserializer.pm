@@ -9,7 +9,7 @@ use Simple;
 
 has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
 
-before qw/deserialize_chunk deserialize_message / => sub {    #{{{
+before qw/deserialize_chunk deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
 
     my $input_handle;
@@ -27,7 +27,7 @@ before qw/deserialize_chunk deserialize_message / => sub {    #{{{
     $self->input_handle($input_handle);
 };    #}}}
 
-sub deserialize {    #{{{
+sub deserialize_chunk {    #{{{
     my ( $self, $args ) = @_;
     my $input_handle = $self->input_handle();
     my ( $line, $output );
@@ -38,6 +38,13 @@ sub deserialize {    #{{{
     my $result = read_hessian_chunk( $input_handle, $self );
     return $result;
 }    #}}}
+
+sub  deserialize_message { #{{{
+    my ($self, $args) = @_;
+} #}}}
+
+
+
 
 sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;
@@ -59,7 +66,7 @@ sub instantiate_class {    #{{{
         # the class fields were defined.  If a field should be empty, then a
         # NULL should be submitted
         my $value =
-          $self->deserialize( { input_handle => $self->input_handle() } );
+          $self->deserialize_chunk( { input_handle => $self->input_handle() } );
         $simple_obj->$field($value);
     }
     return $simple_obj;
