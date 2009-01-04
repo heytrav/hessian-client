@@ -47,9 +47,6 @@ sub  deserialize_message { #{{{
     return $result;
 } #}}}
 
-
-
-
 sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;
     my $class_definitions = $self->class_definitions;

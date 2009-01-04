@@ -12,9 +12,9 @@ use YAML;
 
 use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
+use Hessian::Exception;
 
-
-sub read_message_chunk :Export(:deserialize) {    #{{{
+sub read_message_chunk : Export(:deserialize) {    #{{{
     my ( $input_handle, $deserializer_obj ) = @_;
     my $deserializer = $deserializer_obj;
     $deserializer =
@@ -34,49 +34,123 @@ sub read_message_chunk :Export(:deserialize) {    #{{{
             $datastructure = $values[0];
         }
         case /\x43/ {    # Hessian Remote Procedure Call
-
+             # call will need to be dispatched to object designated in some kind of
+             # service descriptor
+            $datastructure =
+              "Server side remote procedure " . "calls not implemented.";
         }
         case /\x45/ {    # Envelope
+            $datastructure = read_envelope($input_handle);
 
         }
         case /\x46/ {    # Fault
-
+            my $result = $deserializer->deserialize_chunk(
+                { input_handle => $input_handle } );
+            my $exception_name        = $result->{code};
+            my $exception_description = $result->{message};
+            $datastructure =
+              $exception_name->new( error => $exception_description );
         }
         case /\x52/ {    # Reply
-
+            my $reply_data = $deserializer->deserialize_chunk(
+                { input_handle => $input_handle } );
+            $datastructure = { reply_data => $reply_data };
         }
     }
     return $datastructure;
 }    #}}}
 
 sub read_envelope {    #{{{
+    my ($input_handle) = @_;
+    my ( $first_bit, @chunks );
+    read $input_handle, $first_bit, 1;
+    return if $first_bit eq 'Z';
 
+    # Just the word "Header" as far as I understand
+    my $header_string = read_string_handle_chunk( $first_bit, $input_handle );
+    binmode( $input_handle, 'bytes' );
+  ENVELOPECHUNKS: {
+        my ( $header_count, $footer_count, $packet_size );
+        my ( @headers,      @footers,      @packets );
+        read $input_handle, $first_bit, 1;
+        last ENVELOPECHUNKS if $first_bit eq 'Z';
+        $header_count = read_integer_handle_chunk( $first_bit, $input_handle );
+        foreach ( 1 .. $header_count ) {
+            push @headers, read_header_or_footer($input_handle);
+        }
+
+      PACKETCHUNKS: {
+            read $input_handle, $first_bit, 1;
+            my $length = unpack "C*", $first_bit;
+            $packet_size =
+                $first_bit =~ /[\x70-\x7f]/
+              ? $length - 0x70
+              : $length - 0x80;
+            my $packet = read_packet( $packet_size, $input_handle );
+            push @packets, $packet;
+
+            last PACKETCHUNKS if $first_bit =~ /[\x80-\x8f]/;
+            redo PACKETCHUNKS;
+        }
+
+        read $input_handle, $first_bit, 1;
+        $footer_count = read_integer_handle_chunk( $first_bit, $input_handle );
+        foreach ( 1 .. $footer_count ) {
+            push @footers, read_header_or_footer($input_handle);
+        }
+        push @chunks,
+          {
+            headers => \@headers,
+            packets => \@packets,
+            footers => \@footers
+          };
+        redo ENVELOPECHUNKS;
+    }
+    return \@chunks;
+
+}    #}}}
+
+sub read_header_or_footer {    #{{{
+    my $input_handle = shift;
+    my $first_bit;
+    read $input_handle, $first_bit, 1;
+    my $header = read_string_handle_chunk( $first_bit, $input_handle );
+    binmode( $input_handle, 'bytes' );
+    return $header;
 }    #}}}
 
 sub read_envelope_chunk {    #{{{
     my ( $first_bit, $input_handle ) = @_;
     my $deserializer = __PACKAGE__->get_deserializer();
     switch ($first_bit) {
-        case /[\x4f\x50\x70-\x7f\x80-\x8f]/ {
+        case /[\x4f\x50\x70-\x7f\x80-\x8f]/ {    # packet
 
         }
     }
 }    #}}}
 
 sub read_packet {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+    my ( $packet_size, $input_handle ) = @_;
+    my $packet_string;
+    read $input_handle, $packet_string, $packet_size;
     my $deserializer = __PACKAGE__->get_deserializer();
+    my $deserialized =
+        $packet_string =~ /^[\x00-\x3f\x44\x46\x48-\x4f\x53-\x59]/
+      ? $deserializer->deserialize_chunk( { input_string => $packet_string } )
+      : $deserializer->deserialize_message(
+        { input_string => $packet_string } );
+    return $deserialized;
 
-    switch ($first_bit) {
-        case /\x4f/ {
-        }
-        case /\x50/ {
-        }
-        case /[\x70-\x7f]/ {
-        }
-        case /[\x80-\x8f]/ {
-        }
-    }
+    #    switch ($first_bit) {
+    #        case /\x4f/ {
+    #        }
+    #        case /\x50/ {
+    #        }
+    #        case /[\x70-\x7f]/ {
+    #        }
+    #        case /[\x80-\x8f]/ {
+    #        }
+    #    }
 }    #}}}
 
 "one, but we're not the same";
