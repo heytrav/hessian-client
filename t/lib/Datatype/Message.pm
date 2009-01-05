@@ -42,44 +42,38 @@ sub t015_read_envelope : Test(2) {    #{{{
     my $input_handle = $deserializer->input_handle();
     $result =
       $deserializer->deserialize_message( { input_handle => $input_handle } );
-    cmp_deeply( $result->[0]->{packets}->[0],
+    cmp_deeply(
+        $result->[0]->{packets}->[0],
         superhashof( { reply_data => 'hello' } ),
         "Parsed expected datastructure."
-        );
+    );
 
 }    #}}}
 
-sub t016_multi_chunk_envelope : Test(2){    #{{{
+sub t016_multi_chunk_envelope : Test(2) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
-    my $hessian_data =
-      "H\x02\x00E\x06Header\x90\x88C\x05hello"
-      ."\x91\x90\x90\x8d\x0chello, world\x90Z";
+    my $hessian_data = "H\x02\x00E\x06Header\x90\x88C\x05hello"
+      . "\x91\x90\x90\x8d\x0chello, world\x90Z";
     my $result =
       $deserializer->deserialize_message( { input_string => $hessian_data } );
     is( $result, 2, "Parsed hessian version 2." );
     my $input_handle = $deserializer->input_handle();
     $result =
       $deserializer->deserialize_message( { input_handle => $input_handle } );
-      cmp_deeply(
-      $result->[1]->{packets}->[0],
-      'hello, world',
-      "Parsed expected datastructure."
-      );
+    cmp_deeply( $result->[1]->{packets}->[0],
+        'hello, world', "Parsed expected datastructure." );
 }    #}}}
 
-sub  t017_hessian_fault : Test(1) { #{{{
-    my $self = shift;
+sub t017_hessian_fault : Test(1) {    #{{{
+    my $self         = shift;
     my $deserializer = $self->{deserializer};
     my $hessian_data = "FH\x04code\x10ServiceException\x07message"
-    ."\x0eFile Not Found\x06detailM\x1djava.io.FileNotFoundExceptionZZ";
-    my $result = $deserializer->deserialize_message( { input_string =>
-    $hessian_data});
-    isa_ok($result,
-    'ServiceException',
-    "Object received from deserializer");
-} #}}}
-
+      . "\x0eFile Not Found\x06detailM\x1djava.io.FileNotFoundExceptionZZ";
+    my $result =
+      $deserializer->deserialize_message( { input_string => $hessian_data } );
+    isa_ok( $result, 'ServiceException', "Object received from deserializer" );
+}    #}}}
 
 "one, but we're not the same";
 

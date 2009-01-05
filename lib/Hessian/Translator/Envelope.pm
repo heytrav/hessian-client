@@ -44,7 +44,7 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
 
         }
         case /\x46/ {    # Fault
-            my $result = $deserializer->deserialize_chunk(
+            my $result = $deserializer->deserialize_data(
                 { input_handle => $input_handle } );
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
@@ -52,7 +52,7 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
               $exception_name->new( error => $exception_description );
         }
         case /\x52/ {    # Reply
-            my $reply_data = $deserializer->deserialize_chunk(
+            my $reply_data = $deserializer->deserialize_data(
                 { input_handle => $input_handle } );
             $datastructure = { reply_data => $reply_data };
         }
@@ -136,7 +136,7 @@ sub read_packet {    #{{{
     my $deserializer = __PACKAGE__->get_deserializer();
     my $deserialized =
         $packet_string =~ /^[\x00-\x3f\x44\x46\x48-\x4f\x53-\x59]/
-      ? $deserializer->deserialize_chunk( { input_string => $packet_string } )
+      ? $deserializer->deserialize_data( { input_string => $packet_string } )
       : $deserializer->deserialize_message(
         { input_string => $packet_string } );
     return $deserialized;

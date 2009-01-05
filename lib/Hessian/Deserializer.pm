@@ -8,9 +8,9 @@ use Hessian::Translator::Composite ':deserialize';
 use Hessian::Translator::Envelope ':deserialize';
 use Simple;
 
-has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
+#has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
 
-before qw/deserialize_chunk deserialize_message/ => sub {    #{{{
+before qw/deserialize_data deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
 
     my $input_handle;
@@ -28,7 +28,7 @@ before qw/deserialize_chunk deserialize_message/ => sub {    #{{{
     $self->input_handle($input_handle);
 };    #}}}
 
-sub deserialize_chunk {    #{{{
+sub deserialize_data {    #{{{
     my ( $self, $args ) = @_;
     my $input_handle = $self->input_handle();
     my ( $line, $output );
@@ -40,12 +40,12 @@ sub deserialize_chunk {    #{{{
     return $result;
 }    #}}}
 
-sub  deserialize_message { #{{{
-    my ($self, $args) = @_;
+sub deserialize_message {    #{{{
+    my ( $self, $args ) = @_;
     my $input_handle = $self->input_handle();
-    my $result = read_message_chunk($input_handle, $self);
+    my $result = read_message_chunk( $input_handle, $self );
     return $result;
-} #}}}
+}    #}}}
 
 sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;
@@ -55,6 +55,7 @@ sub instantiate_class {    #{{{
     my $class_type = $class_definition->{type};
     my $simple_obj = bless {}, $class_type;
     {
+
         # This is so we can take advantage of Class::MOP/Moose's meta object
         # capabilities and add arbitrary fields to the new object.
         no strict 'refs';
@@ -67,7 +68,7 @@ sub instantiate_class {    #{{{
         # the class fields were defined.  If a field should be empty, then a
         # NULL should be submitted
         my $value =
-          $self->deserialize_chunk( { input_handle => $self->input_handle() } );
+          $self->deserialize_data( { input_handle => $self->input_handle() } );
         $simple_obj->$field($value);
     }
     return $simple_obj;
