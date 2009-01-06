@@ -52,6 +52,14 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
 
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
+
+
+            # fucked up 't' processing
+            if ( $deserializer->is_version_1()) {
+                # Read token 't'
+                my $version_1_t;
+                read $input_handle, $version_1_t, 1;
+            }
             my $map_type = read_hessian_chunk($input_handle);
             if ( $map_type !~ /^\d+$/ ) {
                 push @{ $deserializer->type_list() }, $map_type;
@@ -152,7 +160,7 @@ sub read_map_handle {    #{{{
   MAPLOOP:
     {
         my $key = read_hessian_chunk($input_handle);
-        last MAPLOOP if $key eq 'Z';
+        last MAPLOOP if $key =~ /z/i;
         my $value = read_hessian_chunk($input_handle);
         push @key_value_pairs, $key => $value;
         redo MAPLOOP;
@@ -196,7 +204,7 @@ sub read_untyped_list {    #{{{
         last if $index == 10;
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element = read_hessian_chunk($input_handle);
-        last LISTLOOP if $first_bit =~ /\x57/ && $element eq 'Z';
+        last LISTLOOP if $first_bit =~ /\x57/ && $element =~ /z/i;
 
         push @{$datastructure}, $element;
         $index++;
@@ -266,7 +274,7 @@ sub read_hessian_chunk : Export(:deserialize) {    #{{{
     my ( $first_bit, $element );
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
-    return $first_bit if $first_bit eq 'Z';
+    return 0 if $first_bit =~ /z/i;
 
     switch ($first_bit) {
         case /\x4e/ {                              # 'N' for NULL
@@ -287,10 +295,10 @@ sub read_hessian_chunk : Export(:deserialize) {    #{{{
         case /[\x4a\x4b]/ {
             $element = read_date_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x52\x53\x00-\x1f\x30-\x33]/ {
+        case /[\x52\x53\x00-\x1f\x30-\x33\x73]/ {
             $element = read_string_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x41\x42\x20-\x2f\x34-\x37]/ {
+        case /[\x41\x42\x20-\x2f\x34-\x37\x62]/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/

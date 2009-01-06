@@ -8,6 +8,9 @@ use Hessian::Translator::Composite ':deserialize';
 use Hessian::Translator::Envelope ':deserialize';
 use Simple;
 
+has 'is_nested' => (is => 'rw', isa => 'Bool', default => 0);
+has 'is_version_1' => (is => 'rw', isa => 'Bool', default => 0);
+
 before qw/deserialize_data deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
     my $input_string = $input->{input_string};
@@ -29,12 +32,12 @@ sub deserialize_message {    #{{{
     return read_message_chunk($self->input_handle(), $self);
 }    #}}}
 
-sub  next_token { #{{{
+sub next_token { #{{{
     my $self = shift;
     return $self->deserialize_message();
 } #}}}
 
-sub  process_message { #{{{
+sub process_message { #{{{
     my $self = shift;
     my @tokens;
     while (  my $token = $self->next_token()) {
@@ -42,7 +45,6 @@ sub  process_message { #{{{
     }
     return \@tokens;
 } #}}}
-
 
 sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;

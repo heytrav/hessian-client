@@ -86,7 +86,7 @@ sub read_string_handle_chunk : Export(:input_handle) {    #{{{
             read $input_handle, $data, 1;
             $length = unpack "n", $first_bit. $data;
         }
-        case /[\x52-\x53]/ {
+        case /[\x52-\x53\x73]/ {
             read $input_handle, $data, 2;
             $length = unpack "n", $data;
         }

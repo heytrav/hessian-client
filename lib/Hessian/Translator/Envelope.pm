@@ -24,15 +24,12 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
     my ( $first_bit, $element );
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1 or return 0;
-    return $first_bit if $first_bit eq 'Z';
+    return 0 if $first_bit =~ /z/i;
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {    # TOP with version
-            my $version;
-            read $input_handle, $version, 2;
-            my @values = unpack 'C*', $version;
-            my $hessian_version = join "." => @values;
-            $datastructure = { hessian_version => $hessian_version};
+            my $hessian_version = $self->read_version($input_handle);
+            $datastructure = { hessian_version => $hessian_version };
         }
         case /\x43/ {    # Hessian Remote Procedure Call
              # call will need to be dispatched to object designated in some kind of
@@ -45,20 +42,44 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
 
         }
         case /\x46/ {    # Fault
-            my $result = $deserializer->deserialize_data(
-                { input_handle => $input_handle } );
+            my $result                = $deserializer->deserialize_data();
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
             $datastructure =
               $exception_name->new( error => $exception_description );
         }
+        case /\x66/ {    # version 1 fault
+            $deserializer->is_version_1(1);
+            my @tokens;
+            while ( my $token = $deserializer->deserialize_data() ) {
+                push @tokens, $token;
+            }
+            my $exception_name        = $tokens[1];
+            my $exception_description = $tokens[3];
+
+        }
+        case /\x72/ {    # version 1 reply
+            $deserializer->is_version_1(1);
+            my $hessian_version = $self->read_version($input_handle);
+            $datastructure =
+              { hessian_version => $hessian_version, message => 'reply' };
+        }
         case /\x52/ {    # Reply
-            my $reply_data = $deserializer->deserialize_data(
-                { input_handle => $input_handle } );
+            my $reply_data = $deserializer->deserialize_data();
             $datastructure = { reply_data => $reply_data };
         }
     }
     return $datastructure;
+}    #}}}
+
+sub read_version {    #{{{
+    my ( $self, $input_handle ) = @_;
+    my $version;
+    read $input_handle, $version, 2;
+    my @values = unpack 'C*', $version;
+    my $hessian_version = join "." => @values;
+    return $hessian_version;
+
 }    #}}}
 
 sub read_envelope {    #{{{
