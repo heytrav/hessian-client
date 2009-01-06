@@ -15,40 +15,42 @@ has 'input_string'      => (
     is  => 'rw',
     isa => 'Str',
 );
+after 'input_string' => sub {
+    my $self = shift;
+    # Get rid of the input file handle if user has given us a new string to
+    # process. input handle should then re-initialize itself the next time it
+    # is called.
+    delete $self->{input_handle} if $self->{input_handle};
+};
+
 has 'input_handle' => (
     is      => 'rw',
     isa     => 'GlobRef',
-    lazy => 1,
+    lazy    => 1,
     default => sub {
         my $self = shift;
         my $input_handle;
-        my $input_string = $self->input_string();
+        my $input_string = $self->{input_string};
         if ($input_string) {
             open $input_handle, "<", \$input_string
               or InputOutput::X->throw(
                 error => "Unable to read from string input." );
-            my $ih_type = ref $input_handle;
-
-            print "handle type is $ih_type\n";
-            Hessian::Exception->throw( error => "Must pass an input handle "
-                  . "('input_handle') or string "
-                  . "('input_string') to translate" )
-              unless $ih_type and $ih_type eq 'GLOB';
-            print "setting input handle\n";
             return $input_handle;
         }
-      }
-
+    }
 );
 
 sub BUILD {    #{{{
     my ( $self, $params ) = @_;
-    print "Data to Build\n".Dump($params)."\n";
-        if ( any { defined $params->{$_} } qw/input_string input_handle/ ) {
-            print "composing deserializer\n";
-            load 'Hessian::Deserializer';
-            Hessian::Deserializer->meta()->apply($self);
-        }
+    if ( any { defined $params->{$_} } qw/input_string input_handle/ ) {
+        print "composing deserializer\n";
+        load 'Hessian::Deserializer';
+        Hessian::Deserializer->meta()->apply($self);
+    }
+
+    if ( any { defined $params->{$_} } qw/output_string output_handle/ ) {
+        print "composing serialier\n";
+    }
 }    #}}}
 
 "one, but we're not the same";

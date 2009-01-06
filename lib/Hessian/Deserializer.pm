@@ -8,44 +8,41 @@ use Hessian::Translator::Composite ':deserialize';
 use Hessian::Translator::Envelope ':deserialize';
 use Simple;
 
-#has 'input_handle' => ( is => 'rw', isa => 'GlobRef' );
-
 before qw/deserialize_data deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
-
-    my $input_handle;
-    $input_handle = $input->{input_handle};
-    if ( !$input_handle and $input->{input_string} ) {
-        open $input_handle, "<", \$input->{input_string}
-          or
-          InputOutput::X->throw( error => "Unable to read from string input." );
-    }
-    my $ih_type = ref $input_handle;
-    Parameter::X->throw( error => "Must pass an input handle "
-          . "('input_handle') or string "
-          . "('input_string') to translate" )
-      unless $ih_type and $ih_type eq 'GLOB';
-    $self->input_handle($input_handle);
+    my $input_string = $input->{input_string};
+    $self->input_string($input_string) if $input_string;
 };    #}}}
 
 sub deserialize_data {    #{{{
     my ( $self, $args ) = @_;
-    my $input_handle = $self->input_handle();
-    my ( $line, $output );
 
     # Yes, I'm passing the object itself as a parameter so I can add
     # references, class definitions and objects to the different lists as they
     # occur.
-    my $result = read_hessian_chunk( $input_handle, $self );
+    my $result = read_hessian_chunk( $self->input_handle(), $self );
     return $result;
 }    #}}}
 
 sub deserialize_message {    #{{{
     my ( $self, $args ) = @_;
-    my $input_handle = $self->input_handle();
-    my $result = read_message_chunk( $input_handle, $self );
-    return $result;
+    return read_message_chunk($self->input_handle(), $self);
 }    #}}}
+
+sub  next_token { #{{{
+    my $self = shift;
+    return $self->deserialize_message();
+} #}}}
+
+sub  process_message { #{{{
+    my $self = shift;
+    my @tokens;
+    while (  my $token = $self->next_token()) {
+        push @tokens, $token;
+    }
+    return \@tokens;
+} #}}}
+
 
 sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;
@@ -67,8 +64,7 @@ sub instantiate_class {    #{{{
         # We're going to assume that fields are submitted in the same order
         # the class fields were defined.  If a field should be empty, then a
         # NULL should be submitted
-        my $value =
-          $self->deserialize_data( { input_handle => $self->input_handle() } );
+        my $value = $self->deserialize_data();
         $simple_obj->$field($value);
     }
     return $simple_obj;

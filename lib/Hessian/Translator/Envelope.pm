@@ -23,7 +23,7 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
       : __PACKAGE__->get_deserializer();
     my ( $first_bit, $element );
     binmode( $input_handle, 'bytes' );
-    read $input_handle, $first_bit, 1;
+    read $input_handle, $first_bit, 1 or return 0;
     return $first_bit if $first_bit eq 'Z';
     my $datastructure;
     switch ($first_bit) {
@@ -31,7 +31,8 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
             my $version;
             read $input_handle, $version, 2;
             my @values = unpack 'C*', $version;
-            $datastructure = $values[0];
+            my $hessian_version = join "." => @values;
+            $datastructure = { hessian_version => $hessian_version};
         }
         case /\x43/ {    # Hessian Remote Procedure Call
              # call will need to be dispatched to object designated in some kind of
