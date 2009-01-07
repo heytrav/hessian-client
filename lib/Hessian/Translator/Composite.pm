@@ -54,21 +54,22 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
             # perl style object or "blessed hash".
 
 
-            # fucked up 't' processing
+            # Handle fucked up 't' processing
+            my $map;
             if ( $deserializer->is_version_1()) {
-                # Read token 't'
-                my $version_1_t;
-                read $input_handle, $version_1_t, 1;
-            }
-            my $map_type = read_hessian_chunk($input_handle);
-            if ( $map_type !~ /^\d+$/ ) {
-                push @{ $deserializer->type_list() }, $map_type;
+
             }
             else {
-                $map_type = $deserializer->type_list()->[$map_type];
+                my $map_type = read_hessian_chunk($input_handle);
+                if ( $map_type !~ /^\d+$/ ) {
+                    push @{ $deserializer->type_list() }, $map_type;
+                }
+                else {
+                    $map_type = $deserializer->type_list()->[$map_type];
+                }
+                $map = read_map_handle($input_handle);
+                $datastructure = bless $map, $map_type;
             }
-            my $map = read_map_handle($input_handle);
-            $datastructure = bless $map, $map_type;
 
         }
         case /[\x43\x4f\x60-\x6f]/ {
@@ -81,6 +82,36 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
     return $datastructure;
 
 }    #}}}
+
+sub  read_version1_map { #{{{
+    my $input_handle = shift;
+    my $deserializer = __PACKAGE__->get_deserializer();
+    my $version1_t;
+    read $input_handle, $version1_t, 1;
+    my ($type, $first_key_value_pair);
+    if ( $version1_t eq 't') {
+       $type = read_hessian_chunk($input_handle); 
+    }
+    else {
+          # no type, so read the rest of the chunk to get the actual
+          # datastructure
+          my $key;
+          switch ( $version1_t) {
+        case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
+            $key = read_integer_handle_chunk( $version1_t, $input_handle );
+        }
+        case /[\x52\x53\x00-\x1f\x30-\x33\x73]/ {
+            $key = read_string_handle_chunk( $version1_t, $input_handle );
+        }
+          }
+          # now read the next element out to make sure the remaining has has
+          # an even number of elements
+          my $value = read_hessian_chunk($input_handle);
+    }
+
+
+} #}}}
+
 
 sub read_typed_list {    #{{{
     my ( $first_bit, $input_handle ) = @_;

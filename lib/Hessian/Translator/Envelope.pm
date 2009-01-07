@@ -28,7 +28,7 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {    # TOP with version
-            my $hessian_version = $self->read_version($input_handle);
+            my $hessian_version = $deserializer->read_version($input_handle);
             $datastructure = { hessian_version => $hessian_version };
         }
         case /\x43/ {    # Hessian Remote Procedure Call
@@ -60,7 +60,7 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
         }
         case /\x72/ {    # version 1 reply
             $deserializer->is_version_1(1);
-            my $hessian_version = $self->read_version($input_handle);
+            my $hessian_version = $deserializer->read_version($input_handle);
             $datastructure =
               { hessian_version => $hessian_version, message => 'reply' };
         }
