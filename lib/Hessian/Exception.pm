@@ -44,7 +44,11 @@ use Exception::Class (
     'ServiceException' => {
         isa         => 'StandardHessian::X',
         description => 'The called method threw an exception.'
-    }
+    },
+    'EndOfInput::X' => {
+        isa => 'Hessian::Exception',
+        description => 'Not an error. Should interrupt loop processing.'
+        }
 );
 
 "one, but we're not the same";

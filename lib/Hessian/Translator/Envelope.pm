@@ -12,6 +12,7 @@ use YAML;
 
 use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
+use Hessian::Translator::Composite qw/:input_handle/;
 use Hessian::Exception;
 
 sub read_message_chunk : Export(:deserialize) {    #{{{
@@ -23,12 +24,14 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
       : __PACKAGE__->get_deserializer();
     my ( $first_bit, $element );
     binmode( $input_handle, 'bytes' );
-    read $input_handle, $first_bit, 1 or return 0;
-    return 0 if $first_bit =~ /z/i;
+    read $input_handle, $first_bit, 1
+      or EndOfInput->throw( error => "Reached end of input" );
+    EndOfInput->throw( error => "Encountered end of datastructure." )
+      if $first_bit =~ /z/i;
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {    # TOP with version
-            my $hessian_version = $deserializer->read_version($input_handle);
+            my $hessian_version = read_version($input_handle);
             $datastructure = { hessian_version => $hessian_version };
         }
         case /\x43/ {    # Hessian Remote Procedure Call
@@ -60,20 +63,25 @@ sub read_message_chunk : Export(:deserialize) {    #{{{
         }
         case /\x72/ {    # version 1 reply
             $deserializer->is_version_1(1);
-            my $hessian_version = $deserializer->read_version($input_handle);
+            my $hessian_version = read_version($input_handle);
             $datastructure =
-              { hessian_version => $hessian_version, message => 'reply' };
+              { hessian_version => $hessian_version, state => 'reply' };
         }
         case /\x52/ {    # Reply
             my $reply_data = $deserializer->deserialize_data();
             $datastructure = { reply_data => $reply_data };
+        }
+        else {
+            print "Processing datastructure...\n";
+            $datastructure =
+              $deserializer->deserialize_data( { first_bit => $first_bit } );
         }
     }
     return $datastructure;
 }    #}}}
 
 sub read_version {    #{{{
-    my ( $self, $input_handle ) = @_;
+    my ($input_handle) = @_;
     my $version;
     read $input_handle, $version, 2;
     my @values = unpack 'C*', $version;
@@ -86,7 +94,7 @@ sub read_envelope {    #{{{
     my ($input_handle) = @_;
     my ( $first_bit, @chunks );
     read $input_handle, $first_bit, 1;
-    return if $first_bit eq 'Z';
+    EndOfInput::X->throw(error => 'End of datastructure.') if $first_bit eq 'Z';
 
     # Just the word "Header" as far as I understand
     my $header_string = read_string_handle_chunk( $first_bit, $input_handle );
@@ -95,7 +103,7 @@ sub read_envelope {    #{{{
         my ( $header_count, $footer_count, $packet_size );
         my ( @headers,      @footers,      @packets );
         read $input_handle, $first_bit, 1;
-        last ENVELOPECHUNKS if $first_bit eq 'Z';
+        last ENVELOPECHUNKS if $first_bit =~ /z/i;
         $header_count = read_integer_handle_chunk( $first_bit, $input_handle );
         foreach ( 1 .. $header_count ) {
             push @headers, read_header_or_footer($input_handle);

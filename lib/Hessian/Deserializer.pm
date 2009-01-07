@@ -6,10 +6,11 @@ use YAML;
 
 use Hessian::Translator::Composite ':deserialize';
 use Hessian::Translator::Envelope ':deserialize';
+use Hessian::Exception;
 use Simple;
 
-has 'is_nested' => (is => 'rw', isa => 'Bool', default => 0);
-has 'is_version_1' => (is => 'rw', isa => 'Bool', default => 0);
+has 'is_nested'    => ( is => 'rw', isa => 'Bool', default => 0 );
+has 'is_version_1' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 before qw/deserialize_data deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
@@ -23,28 +24,33 @@ sub deserialize_data {    #{{{
     # Yes, I'm passing the object itself as a parameter so I can add
     # references, class definitions and objects to the different lists as they
     # occur.
-    my $result = read_hessian_chunk( $self->input_handle(), $self );
+    my $result = read_hessian_chunk( $self->input_handle(), $self,$args );
     return $result;
 }    #}}}
 
 sub deserialize_message {    #{{{
     my ( $self, $args ) = @_;
-    return read_message_chunk($self->input_handle(), $self);
+    my $result;
+    eval {
+        $result = read_message_chunk( $self->input_handle(), $self );
+    };
+    return if Exception::Class->caught('EndOfInput::X');
+    return $result;
 }    #}}}
 
-sub next_token { #{{{
+sub next_token {    #{{{
     my $self = shift;
     return $self->deserialize_message();
-} #}}}
+}    #}}}
 
-sub process_message { #{{{
+sub process_message {    #{{{
     my $self = shift;
     my @tokens;
-    while (  my $token = $self->next_token()) {
+    while ( my $token = $self->next_token() ) {
         push @tokens, $token;
     }
     return \@tokens;
-} #}}}
+}    #}}}
 
 sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;

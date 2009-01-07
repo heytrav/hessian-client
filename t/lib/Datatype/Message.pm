@@ -36,6 +36,18 @@ sub  t002_compose_role : Test(2) { #{{{
     );
 } #}}}
 
+sub  t005_hessian_v1_parse : Test(2){ #{{{
+    my $self = shift;
+    my $hessian_data = "r\x01\x00I\x00\x00\x00\x05z";
+    my $hessian_obj = Hessian->new();
+    Hessian::Deserializer->meta()->apply($hessian_obj);
+    $hessian_obj->input_string($hessian_data);
+    my $result = $hessian_obj->process_message();
+    is($hessian_obj->is_version_1(), 1, "Processing version 1.");
+    is($result->[1], 5, "Correct integer parsed from hessian.");
+
+} #}}}
+
 
 sub t010_read_hessian_version : Test(1) {    #{{{
     my $self         = shift;

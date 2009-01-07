@@ -9,6 +9,7 @@ use base 'Hessian::Translator::Message';
 use Perl6::Export::Attrs;
 use Switch;
 use YAML;
+use Hessian::Exception;
 use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
@@ -32,8 +33,10 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
     my ( $first_bit, $input_handle ) = @_;
     my ( $datastructure, $save_reference );
     my $deserializer = __PACKAGE__->get_deserializer();
+    binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {                          # typed lists
+            print "Reading typed list\n";
             $save_reference = 1;
             $datastructure = read_typed_list( $first_bit, $input_handle );
         }
@@ -53,10 +56,10 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
 
-
             # Handle fucked up 't' processing
             my $map;
-            if ( $deserializer->is_version_1()) {
+            if ( $deserializer->is_version_1() ) {
+                print "deserializer is version 1\n";
 
             }
             else {
@@ -83,48 +86,51 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
 
 }    #}}}
 
-sub  read_version1_map { #{{{
+sub read_version1_map {    #{{{
     my $input_handle = shift;
     my $deserializer = __PACKAGE__->get_deserializer();
     my $version1_t;
     read $input_handle, $version1_t, 1;
-    my ($type, $first_key_value_pair);
-    if ( $version1_t eq 't') {
-       $type = read_hessian_chunk($input_handle); 
+    my ( $type, $first_key_value_pair );
+    if ( $version1_t eq 't' ) {
+        $type = read_hessian_chunk($input_handle);
     }
     else {
-          # no type, so read the rest of the chunk to get the actual
-          # datastructure
-          my $key;
-          switch ( $version1_t) {
-        case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
-            $key = read_integer_handle_chunk( $version1_t, $input_handle );
+
+        # no type, so read the rest of the chunk to get the actual
+        # datastructure
+        my $key;
+        switch ($version1_t) {
+            case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
+                $key = read_integer_handle_chunk( $version1_t, $input_handle );
+            }
+            case /[\x52\x53\x00-\x1f\x30-\x33\x73]/ {
+                $key = read_string_handle_chunk( $version1_t, $input_handle );
+            }
         }
-        case /[\x52\x53\x00-\x1f\x30-\x33\x73]/ {
-            $key = read_string_handle_chunk( $version1_t, $input_handle );
-        }
-          }
-          # now read the next element out to make sure the remaining has has
-          # an even number of elements
-          my $value = read_hessian_chunk($input_handle);
+
+        # now read the next element out to make sure the remaining has has
+        # an even number of elements
+        my $value = read_hessian_chunk($input_handle);
     }
 
-
-} #}}}
-
+}    #}}}
 
 sub read_typed_list {    #{{{
     my ( $first_bit, $input_handle ) = @_;
-    my $type = read_hessian_chunk($input_handle);
-    my $array_length = read_list_length( $first_bit, $input_handle );
-
+    my $type          = read_hessian_chunk($input_handle);
+    print "Type of list is $type\n";
+    my $array_length  = read_list_length( $first_bit, $input_handle );
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element = read_typed_list_element( $type, $input_handle );
-        last LISTLOOP if $first_bit =~ /\x55/ && $element eq 'Z';
+        my $element;
+        eval { $element = read_typed_list_element( $type, $input_handle ); };
+        last LISTLOOP
+          if $first_bit =~ /\x55/
+              && Exception::Class->caught('EndOfInput::X');
 
         push @{$datastructure}, $element;
         $index++;
@@ -190,8 +196,9 @@ sub read_map_handle {    #{{{
     my @key_value_pairs;
   MAPLOOP:
     {
-        my $key = read_hessian_chunk($input_handle);
-        last MAPLOOP if $key =~ /z/i;
+        my $key;
+        eval { $key = read_hessian_chunk($input_handle); };
+        last MAPLOOP if Exception::Class->caught('EndOfInput::X');
         my $value = read_hessian_chunk($input_handle);
         push @key_value_pairs, $key => $value;
         redo MAPLOOP;
@@ -232,10 +239,12 @@ sub read_untyped_list {    #{{{
     my $index         = 0;
   LISTLOOP:
     {
-        last if $index == 10;
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element = read_hessian_chunk($input_handle);
-        last LISTLOOP if $first_bit =~ /\x57/ && $element =~ /z/i;
+        my $element;
+        eval { $element = read_hessian_chunk($input_handle); };
+        last LISTLOOP
+          if $first_bit =~ /\x57/
+              && Exception::Class->caught('EndOfInput::X');
 
         push @{$datastructure}, $element;
         $index++;
@@ -250,7 +259,8 @@ sub read_typed_list_element {    #{{{
     my $deserializer = __PACKAGE__->get_deserializer();
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
-    return $first_bit if $first_bit eq 'Z';
+    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
+      if $first_bit =~ /z/i;
     my $map_type = 'map';
 
     if ( $entity_type !~ /^\d+$/ ) {
@@ -297,21 +307,29 @@ sub read_typed_list_element {    #{{{
 }    #}}}
 
 sub read_hessian_chunk : Export(:deserialize) {    #{{{
-    my ( $input_handle, $deserializer_obj ) = @_;
+    my ( $input_handle, $deserializer_obj, $args ) = @_;
     my $deserializer = $deserializer_obj;
     $deserializer =
-      $deserializer ? __PACKAGE__->set_deserializer($deserializer) :
-      __PACKAGE__->get_deserializer();
-    my ( $first_bit, $element );
+      $deserializer
+      ? __PACKAGE__->set_deserializer($deserializer)
+      : __PACKAGE__->get_deserializer();
     binmode( $input_handle, 'bytes' );
-    read $input_handle, $first_bit, 1;
-    return 0 if $first_bit =~ /z/i;
+    my ( $first_bit, $element );
+    if ( $args->{first_bit}) {
+        $first_bit = $args->{first_bit};
+    }
+    else {
+      read $input_handle, $first_bit, 1;    
+    }
+     
+    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
+      if $first_bit =~ /z/i;
 
     switch ($first_bit) {
-        case /\x4e/ {                              # 'N' for NULL
+        case /\x4e/ {    # 'N' for NULL
             $element = undef;
         }
-        case /[\x46\x54]/ {                        # 'T'rue or 'F'alse
+        case /[\x46\x54]/ {    # 'T'rue or 'F'alse
             $element = read_boolean_handle_chunk($first_bit);
         }
         case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
@@ -326,7 +344,7 @@ sub read_hessian_chunk : Export(:deserialize) {    #{{{
         case /[\x4a\x4b]/ {
             $element = read_date_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x52\x53\x00-\x1f\x30-\x33\x73]/ {
+        case /[\x52\x53\x00-\x1f\x30-\x33]/ {#   for version 1: \x73
             $element = read_string_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x41\x42\x20-\x2f\x34-\x37\x62]/ {
