@@ -1,12 +1,17 @@
 package Hessian::Translator::Composite;
 
-use strict;
-use warnings;
+#use strict;
+#use warnings;
 
+use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
-use base 'Hessian::Translator::Message';
+#use base 'Hessian::Translator::Message';
 
-use Perl6::Export::Attrs;
+with 'Hessian::Translator::Envelope';
+
+requires qw/input_handle/;
+
+#use Perl6::Export::Attrs;
 use Switch;
 use YAML;
 use Hessian::Exception;
@@ -15,7 +20,7 @@ use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 
-sub read_list : Export(:from_hessian) {    #{{{
+sub read_list {#: Export(:from_hessian) {    #{{{
     my $hessian_list = shift;
     my $array        = [];
     if ( $hessian_list =~ /^  \x57  (.*)  Z/xms ) {
@@ -25,29 +30,29 @@ sub read_list : Export(:from_hessian) {    #{{{
     return $array;
 }    #}}}
 
-sub write_list : Export(:to_hessian) {    #{{{
+sub write_list {#: Export(:to_hessian) {    #{{{
     my $list = shift;
 }    #}}}
 
-sub read_composite_datastructure : Export(:input_handle) {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+sub read_composite_datastructure {#: Export(:input_handle) {    #{{{
+    my ($self, $first_bit) = @_;
+    my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
-    my $deserializer = __PACKAGE__->get_deserializer();
     binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {                          # typed lists
             print "Reading typed list\n";
             $save_reference = 1;
-            $datastructure = read_typed_list( $first_bit, $input_handle );
+            $datastructure = $self->read_typed_list( $first_bit,);
         }
 
         case /[\x57\x58\x78-\x7f]/ {                          # untyped lists
             $save_reference = 1;
-            $datastructure = read_untyped_list( $first_bit, $input_handle );
+            $datastructure = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
             $save_reference = 1;
-            $datastructure  = read_map_handle($input_handle);
+            $datastructure  = $self->read_map_handle();
         }
         case /\x4d/ {                                         # typed map
 
@@ -58,42 +63,42 @@ sub read_composite_datastructure : Export(:input_handle) {    #{{{
 
             # Handle fucked up 't' processing
             my $map;
-            if ( $deserializer->is_version_1() ) {
+            if ( $self->is_version_1() ) {
                 print "deserializer is version 1\n";
 
             }
             else {
-                my $map_type = read_hessian_chunk($input_handle);
+                my $map_type = $self->read_hessian_chunk();
                 if ( $map_type !~ /^\d+$/ ) {
-                    push @{ $deserializer->type_list() }, $map_type;
+                    push @{ $self->type_list() }, $map_type;
                 }
                 else {
-                    $map_type = $deserializer->type_list()->[$map_type];
+                    $map_type = $self->type_list()->[$map_type];
                 }
-                $map = read_map_handle($input_handle);
+                $map = $self->read_map_handle();
                 $datastructure = bless $map, $map_type;
             }
 
         }
         case /[\x43\x4f\x60-\x6f]/ {
-            $datastructure = read_class_handle( $first_bit, $input_handle );
+            $datastructure = $self->read_class_handle( $first_bit, );
 
         }
     }
-    push @{ $deserializer->reference_list() }, $datastructure
+    push @{ $self->reference_list() }, $datastructure
       if $save_reference;
     return $datastructure;
 
 }    #}}}
 
 sub read_version1_map {    #{{{
-    my $input_handle = shift;
-    my $deserializer = __PACKAGE__->get_deserializer();
+    my $self = shift;
+    my $input_handle = $self->input_handle();
     my $version1_t;
     read $input_handle, $version1_t, 1;
     my ( $type, $first_key_value_pair );
     if ( $version1_t eq 't' ) {
-        $type = read_hessian_chunk($input_handle);
+        $type = $self->read_hessian_chunk();
     }
     else {
 
@@ -111,23 +116,24 @@ sub read_version1_map {    #{{{
 
         # now read the next element out to make sure the remaining has has
         # an even number of elements
-        my $value = read_hessian_chunk($input_handle);
+        my $value = $self->read_hessian_chunk();
     }
 
 }    #}}}
 
 sub read_typed_list {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
-    my $type          = read_hessian_chunk($input_handle);
+    my ($self, $first_bit) = @_;
+    my $input_handle = $self->input_handle();
+    my $type          = $self->read_hessian_chunk();
     print "Type of list is $type\n";
-    my $array_length  = read_list_length( $first_bit, $input_handle );
+    my $array_length  = $self->read_list_length( $first_bit );
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
-        eval { $element = read_typed_list_element( $type, $input_handle ); };
+        eval { $element = $self->read_typed_list_element( $type); };
         last LISTLOOP
           if $first_bit =~ /\x55/
               && Exception::Class->caught('EndOfInput::X');
@@ -140,12 +146,12 @@ sub read_typed_list {    #{{{
 }    #}}}
 
 sub read_class_handle {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+    my ($self, $first_bit ) = @_;
+    my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
-    my $deserializer = __PACKAGE__->get_deserializer();
     switch ($first_bit) {
         case /\x43/ {      # Read class definition
-            my $class_type = read_hessian_chunk($input_handle);
+            my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
             my $length;
@@ -156,14 +162,14 @@ sub read_class_handle {    #{{{
             foreach my $field_index ( 1 .. $number_of_fields ) {
 
                 # using the wrong function here, but who cares?
-                my $field = read_hessian_chunk($input_handle);
+                my $field = $self->read_hessian_chunk();
                 push @field_list, $field;
 
             }
 
             my $class_definition =
               { type => $class_type, fields => \@field_list };
-            push @{ $deserializer->class_definitions() }, $class_definition;
+            push @{ $self->class_definitions() }, $class_definition;
             $datastructure = $class_definition;
         }
         case /\x4f/ {    # Read hessian data and create instance of class
@@ -173,7 +179,7 @@ sub read_class_handle {    #{{{
             my $class_definition_number =
               read_integer_handle_chunk( $length, $input_handle );
             $datastructure =
-              $deserializer->instantiate_class($class_definition_number);
+              $self->instantiate_class($class_definition_number);
 
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
@@ -181,25 +187,26 @@ sub read_class_handle {    #{{{
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
             $datastructure =
-              $deserializer->instantiate_class($class_definition_number);
+              $self->instantiate_class($class_definition_number);
         }
     }
-    push @{ $deserializer->reference_list() }, $datastructure
+    push @{ $self->reference_list() }, $datastructure
       if $save_reference;
     return $datastructure;
 }    #}}}
 
 sub read_map_handle {    #{{{
-    my $input_handle = shift;
+    my $self  = shift;
+    my $input_handle = $self->input_handle();
 
     # For now only accept integers or strings as keys
     my @key_value_pairs;
   MAPLOOP:
     {
         my $key;
-        eval { $key = read_hessian_chunk($input_handle); };
+        eval { $key = $self->read_hessian_chunk($input_handle); };
         last MAPLOOP if Exception::Class->caught('EndOfInput::X');
-        my $value = read_hessian_chunk($input_handle);
+        my $value = $self->read_hessian_chunk($input_handle);
         push @key_value_pairs, $key => $value;
         redo MAPLOOP;
     }
@@ -212,7 +219,8 @@ sub read_map_handle {    #{{{
 }    #}}}
 
 sub read_list_length {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+    my ($self, $first_bit) = @_;
+    my $input_handle = $self->input_handle();
 
     my $array_length;
     if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
@@ -232,8 +240,9 @@ sub read_list_length {    #{{{
 }    #}}}
 
 sub read_untyped_list {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
-    my $array_length = read_list_length( $first_bit, $input_handle );
+    my ($self, $first_bit) = @_;
+    my $input_handle = $self->input_handle();
+    my $array_length = $self->read_list_length( $first_bit, );
 
     my $datastructure = [];
     my $index         = 0;
@@ -241,7 +250,7 @@ sub read_untyped_list {    #{{{
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
-        eval { $element = read_hessian_chunk($input_handle); };
+        eval { $element = $self->read_hessian_chunk(); };
         last LISTLOOP
           if $first_bit =~ /\x57/
               && Exception::Class->caught('EndOfInput::X');
@@ -254,9 +263,10 @@ sub read_untyped_list {    #{{{
 }    #}}}
 
 sub read_typed_list_element {    #{{{
-    my ( $entity_type, $input_handle ) = @_;
+    my ($self, $entity_type) = @_;
+    my $input_handle = $self->input_handle();
     my ( $type, $element, $first_bit );
-    my $deserializer = __PACKAGE__->get_deserializer();
+#    my $deserializer = __PACKAGE__->get_deserializer();
     binmode( $input_handle, 'bytes' );
     read $input_handle, $first_bit, 1;
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
@@ -265,11 +275,11 @@ sub read_typed_list_element {    #{{{
 
     if ( $entity_type !~ /^\d+$/ ) {
         $type = $entity_type;
-        push @{ $deserializer->type_list() }, $type;
+        push @{ $self->type_list() }, $type;
 
     }
     else {
-        $type = $deserializer->type_list()->[$entity_type];
+        $type = $self->type_list()->[$entity_type];
     }
 
     switch ($type) {
@@ -296,7 +306,7 @@ sub read_typed_list_element {    #{{{
         }
         case /list/ {
             $element =
-              read_composite_datastructure( $first_bit, $input_handle );
+              $self->read_composite_datastructure( $first_bit, );
         }
 
         #        case /$map_type/ {
@@ -306,13 +316,9 @@ sub read_typed_list_element {    #{{{
     return $element;
 }    #}}}
 
-sub read_hessian_chunk : Export(:deserialize) {    #{{{
-    my ( $input_handle, $deserializer_obj, $args ) = @_;
-    my $deserializer = $deserializer_obj;
-    $deserializer =
-      $deserializer
-      ? __PACKAGE__->set_deserializer($deserializer)
-      : __PACKAGE__->get_deserializer();
+sub read_hessian_chunk {#: Export(:deserialize) {    #{{{
+    my ( $self, $args ) = @_;
+    my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
     my ( $first_bit, $element );
     if ( $args->{first_bit}) {
@@ -356,8 +362,8 @@ sub read_hessian_chunk : Export(:deserialize) {    #{{{
               read_composite_datastructure( $first_bit, $input_handle );
         }
         case /\x51/ {
-            my $reference_id = read_hessian_chunk($input_handle);
-            $element = $deserializer->reference_list()->[$reference_id];
+            my $reference_id = $self->read_hessian_chunk();
+            $element = $self->reference_list()->[$reference_id];
 
         }
     }
@@ -367,12 +373,49 @@ sub read_hessian_chunk : Export(:deserialize) {    #{{{
 }    #}}}
 
 sub read_list_type {    #{{{
-    my $input_handle = shift;
+    my $self = shift;
+    my $input_handle = $self->input_handle();
     my $type_length;
     read $input_handle, $type_length, 1;
     my $type = read_string_handle_chunk( $type_length, $input_handle );
     binmode( $input_handle, 'bytes' );
     return $type;
+}    #}}}
+
+sub deserialize_data {    #{{{
+    my ( $self, $args ) = @_;
+
+    # Yes, I'm passing the object itself as a parameter so I can add
+    # references, class definitions and objects to the different lists as they
+    # occur.
+    my $result = $self->read_hessian_chunk($args );
+    return $result;
+}    #}}}
+
+sub instantiate_class {    #{{{
+    my ( $self, $index ) = @_;
+    my $class_definitions = $self->class_definitions;
+    my $class_definition  = $self->class_definitions()->[$index];
+
+    my $class_type = $class_definition->{type};
+    my $simple_obj = bless {}, $class_type;
+    {
+
+        # This is so we can take advantage of Class::MOP/Moose's meta object
+        # capabilities and add arbitrary fields to the new object.
+        no strict 'refs';
+        push @{ $class_type . '::ISA' }, 'Simple';
+    }
+    foreach my $field ( @{ $class_definition->{fields} } ) {
+        $simple_obj->meta()->add_attribute( $field, is => 'rw' );
+
+        # We're going to assume that fields are submitted in the same order
+        # the class fields were defined.  If a field should be empty, then a
+        # NULL should be submitted
+        my $value = $self->deserialize_data();
+        $simple_obj->$field($value);
+    }
+    return $simple_obj;
 }    #}}}
 
 "one, but we're not the same";

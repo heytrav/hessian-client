@@ -15,6 +15,7 @@ has 'input_string'      => (
     is  => 'rw',
     isa => 'Str',
 );
+
 after 'input_string' => sub {
     my $self = shift;
     # Get rid of the input file handle if user has given us a new string to
