@@ -170,17 +170,6 @@ sub read_packet {    #{{{
       : $deserializer->deserialize_message(
         { input_string => $packet_string } );
     return $deserialized;
-
-    #    switch ($first_bit) {
-    #        case /\x4f/ {
-    #        }
-    #        case /\x50/ {
-    #        }
-    #        case /[\x70-\x7f]/ {
-    #        }
-    #        case /[\x80-\x8f]/ {
-    #        }
-    #    }
 }    #}}}
 
 "one, but we're not the same";
