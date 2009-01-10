@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Datatype::Message;
+use Datatype::v2Message;
 
-Datatype::Message->runtests();
+Datatype::v2Message->runtests();
 

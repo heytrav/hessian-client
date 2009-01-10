@@ -1,17 +1,10 @@
 package Hessian::Translator::Composite;
 
-#use strict;
-#use warnings;
-
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
-#use base 'Hessian::Translator::Message';
 
 with 'Hessian::Translator::Envelope';
 
-requires qw/input_handle/;
-
-#use Perl6::Export::Attrs;
 use Switch;
 use YAML;
 use Hessian::Exception;
@@ -20,7 +13,7 @@ use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 
-sub read_list {#: Export(:from_hessian) {    #{{{
+sub read_list {  #{{{
     my $hessian_list = shift;
     my $array        = [];
     if ( $hessian_list =~ /^  \x57  (.*)  Z/xms ) {
@@ -34,14 +27,13 @@ sub write_list {#: Export(:to_hessian) {    #{{{
     my $list = shift;
 }    #}}}
 
-sub read_composite_datastructure {#: Export(:input_handle) {    #{{{
+sub read_composite_datastructure { #{{{
     my ($self, $first_bit) = @_;
     my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {                          # typed lists
-            print "Reading typed list\n";
             $save_reference = 1;
             $datastructure = $self->read_typed_list( $first_bit,);
         }
@@ -125,7 +117,6 @@ sub read_typed_list {    #{{{
     my ($self, $first_bit) = @_;
     my $input_handle = $self->input_handle();
     my $type          = $self->read_hessian_chunk();
-    print "Type of list is $type\n";
     my $array_length  = $self->read_list_length( $first_bit );
     my $datastructure = [];
     my $index         = 0;
@@ -306,7 +297,7 @@ sub read_typed_list_element {    #{{{
         }
         case /list/ {
             $element =
-              $self->read_composite_datastructure( $first_bit, );
+              $self->read_composite_datastructure( $first_bit );
         }
 
         #        case /$map_type/ {
@@ -316,12 +307,12 @@ sub read_typed_list_element {    #{{{
     return $element;
 }    #}}}
 
-sub read_hessian_chunk {#: Export(:deserialize) {    #{{{
+sub read_hessian_chunk {   #{{{
     my ( $self, $args ) = @_;
     my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
     my ( $first_bit, $element );
-    if ( $args->{first_bit}) {
+    if ( 'HASH' eq (ref $args) and $args->{first_bit}) {
         $first_bit = $args->{first_bit};
     }
     else {
@@ -359,7 +350,7 @@ sub read_hessian_chunk {#: Export(:deserialize) {    #{{{
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
         {    # recursive datastructure
             $element =
-              read_composite_datastructure( $first_bit, $input_handle );
+              $self->read_composite_datastructure( $first_bit, );
         }
         case /\x51/ {
             my $reference_id = $self->read_hessian_chunk();

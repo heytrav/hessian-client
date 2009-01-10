@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 
-use Datatype::List;
-Datatype::List->runtests();
+use Datatype::v2Composite;
+Datatype::v2Composite->runtests();
 
 

@@ -1,30 +1,21 @@
 package Hessian::Translator::Envelope;
 
-#use strict;
-#use warnings;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
-#use base 'Hessian::Translator::Message';
 
-
-#use Perl6::Export::Attrs;
-requires qw/deserialize_data input_handle/;
+requires qw/deserialize_data/;
 
 use Switch;
 use YAML;
+use Contextual::Return;
 
 use Hessian::Translator::Numeric qw/:input_handle/;
 use Hessian::Translator::String qw/:input_handle/;
-#use Hessian::Translator::Composite qw/:input_handle/;
 use Hessian::Exception;
 
-sub read_message_chunk {# : Export(:deserialize) {    #{{{
-    my $self = shift;
-#    my $deserializer = $deserializer_obj;
-#    $deserializer =
-#      $deserializer
-#      ? __PACKAGE__->set_deserializer($deserializer)
-#      : __PACKAGE__->get_deserializer();
+# Version 2 specific
+sub read_message_chunk {   #{{{
+    my $self         = shift;
     my $input_handle = $self->input_handle();
     my ( $first_bit, $element );
     binmode( $input_handle, 'bytes' );
@@ -34,16 +25,16 @@ sub read_message_chunk {# : Export(:deserialize) {    #{{{
       if $first_bit =~ /z/i;
     my $datastructure;
     switch ($first_bit) {
-        case /\x48/ {    # TOP with version
+        case /\x48/ {       # TOP with version
             my $hessian_version = $self->read_version();
             $datastructure = { hessian_version => $hessian_version };
         }
-        case /\x43/ {    # Hessian Remote Procedure Call
-             # call will need to be dispatched to object designated in some kind of
-             # service descriptor
-            $datastructure =
-              "Server side remote procedure " . "calls not implemented.";
-        }
+#        case /\x43/ {       # Hessian Remote Procedure Call
+#             # call will need to be dispatched to object designated in some kind of
+#             # service descriptor
+#            $datastructure =
+#              "Server side remote procedure " . "calls not implemented.";
+#        }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
 
@@ -55,28 +46,27 @@ sub read_message_chunk {# : Export(:deserialize) {    #{{{
             $datastructure =
               $exception_name->new( error => $exception_description );
         }
-        case /\x66/ {    # version 1 fault
-            $self->is_version_1(1);
-            my @tokens;
-            while ( my $token = $self->deserialize_data() ) {
-                push @tokens, $token;
-            }
-            my $exception_name        = $tokens[1];
-            my $exception_description = $tokens[3];
+#        case /\x66/ {    # version 1 fault
+#            $self->is_version_1(1);
+#            my @tokens;
+#            while ( my $token = $self->deserialize_data() ) {
+#                push @tokens, $token;
+#            }
+#            my $exception_name        = $tokens[1];
+#            my $exception_description = $tokens[3];
 
-        }
-        case /\x72/ {    # version 1 reply
-            $self->is_version_1(1);
-            my $hessian_version = $self->read_version();
-            $datastructure =
-              { hessian_version => $hessian_version, state => 'reply' };
-        }
+#        }
+#        case /\x72/ {    # version 1 reply
+#            $self->is_version_1(1);
+#            my $hessian_version = $self->read_version();
+#            $datastructure =
+#              { hessian_version => $hessian_version, state => 'reply' };
+#        }
         case /\x52/ {    # Reply
             my $reply_data = $self->deserialize_data();
             $datastructure = { reply_data => $reply_data };
         }
         else {
-            print "Processing datastructure...\n";
             $datastructure =
               $self->deserialize_data( { first_bit => $first_bit } );
         }
@@ -85,7 +75,7 @@ sub read_message_chunk {# : Export(:deserialize) {    #{{{
 }    #}}}
 
 sub read_version {    #{{{
-    my $self = shift;
+    my $self         = shift;
     my $input_handle = $self->input_handle();
     my $version;
     read $input_handle, $version, 2;
@@ -95,12 +85,14 @@ sub read_version {    #{{{
 
 }    #}}}
 
+# Version 2 specific
 sub read_envelope {    #{{{
     my $self = shift;
     my ( $first_bit, @chunks );
     my $input_handle = $self->input_handle();
     read $input_handle, $first_bit, 1;
-    EndOfInput::X->throw(error => 'End of datastructure.') if $first_bit eq 'Z';
+    EndOfInput::X->throw( error => 'End of datastructure.' )
+      if $first_bit =~ /z/i;
 
     # Just the word "Header" as far as I understand
     my $header_string = read_string_handle_chunk( $first_bit, $input_handle );
@@ -122,7 +114,7 @@ sub read_envelope {    #{{{
                 $first_bit =~ /[\x70-\x7f]/
               ? $length - 0x70
               : $length - 0x80;
-            my $packet = $self->read_packet( $packet_size,);
+            my $packet = $self->read_packet($packet_size);
             push @packets, $packet;
 
             last PACKETCHUNKS if $first_bit =~ /[\x80-\x8f]/;
@@ -146,6 +138,7 @@ sub read_envelope {    #{{{
 
 }    #}}}
 
+# Version 2 specific
 sub read_header_or_footer {    #{{{
     my $self = shift;
 
@@ -157,10 +150,10 @@ sub read_header_or_footer {    #{{{
     return $header;
 }    #}}}
 
+# Version 2 specific
 sub read_envelope_chunk {    #{{{
-    my ($self,$first_bit) = @_;
-   my $input_handle = $self->input_handle(); 
-#    my $deserializer = __PACKAGE__->get_deserializer();
+    my ( $self, $first_bit ) = @_;
+    my $input_handle = $self->input_handle();
     switch ($first_bit) {
         case /[\x4f\x50\x70-\x7f\x80-\x8f]/ {    # packet
 
@@ -168,25 +161,21 @@ sub read_envelope_chunk {    #{{{
     }
 }    #}}}
 
+# Version 2 specific
 sub read_packet {    #{{{
-    my ( $packet_size, $input_handle ) = @_;
+    my ( $self, $packet_size ) = @_;
+    my $input_handle = $self->input_handle();
     my $packet_string;
     read $input_handle, $packet_string, $packet_size;
-#    my $deserializer = __PACKAGE__->get_deserializer();
-    my $deserialized =
-        $packet_string =~ /^[\x00-\x3f\x44\x46\x48-\x4f\x53-\x59]/
-      ? $self->deserialize_data( { input_string => $packet_string } )
-      : $self->deserialize_message(
-        { input_string => $packet_string } );
-    return $deserialized;
+    return FIXED NONVOID {
+        $self->deserialize_message({ input_string => $packet_string });
+    };
 }    #}}}
 
 sub deserialize_message {    #{{{
     my ( $self, $args ) = @_;
     my $result;
-    eval {
-        $result = $self->read_message_chunk( $self->input_handle(), $self );
-    };
+    eval { $result = $self->read_message_chunk(); };
     return if Exception::Class->caught('EndOfInput::X');
     return $result;
 }    #}}}
