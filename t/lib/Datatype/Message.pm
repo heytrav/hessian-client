@@ -20,9 +20,9 @@ sub t001_initialize_hessian : Test(3) {    #{{{
         "Deserialize role has not been composed."
     );
 
-    ok( !$hessian_obj->does('Hessian::V1'),
+    ok( !$hessian_obj->does('Hessian::Translator::V1'),
     "Not ready for processing of Hessian version 1");
-    ok( !$hessian_obj->does('Hessian::V2'),
+    ok( !$hessian_obj->does('Hessian::Translator::V2'),
     "Not ready for processing of Hessian version 2");
     $self->{deserializer} = $hessian_obj;
 }    #}}}

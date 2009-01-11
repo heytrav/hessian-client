@@ -12,6 +12,37 @@ use YAML;
 use Hessian::Client;
 use Hessian::Translator::Numeric qw/:to_hessian/;
 
+sub  t004_initialize_hessian_obj : Test(4){ #{{{
+    my $self = shift;
+    my $hessian_obj = Hessian::Client->new(version => 2);
+    ok(!$hessian_obj->does('Hessian::Deserializer'), 
+    "Have not yet composed the Deserialization logic.");
+    my $hessian_data = "V\x04[int\x92\x90\x91";
+    $hessian_obj->input_string($hessian_data);
+
+    ok($hessian_obj->does('Hessian::Deserializer'), 
+    "Have composed the Deserialization logic.");
+    ok($hessian_obj->does('Hessian::Translator::V2'),
+    "Composed version 2 methods."
+    );
+    ok(!$hessian_obj->does('Hessian::Translator::V1'),
+    "Do not have methods for hessian version 1");
+
+    
+} #}}}
+
+sub  t008_initialize_hession_obj : Test(2) { #{{{
+    my $self = shift;
+    my $hessian_obj = Hessian::Client->new( 
+    input_string => "V\x04[int\x92\x90\x91", version => 2);
+    ok( $hessian_obj->does('Hessian::Deserializer'),
+    "Deserializer has been composed.");
+    ok($hessian_obj->does('Hessian::Translator::V2'),
+    "Hessian version 2 methods have been composed.");
+
+    $self->{deserializer}  = $hessian_obj;
+} #}}}
+
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "V\x04[int\x92\x90\x91";

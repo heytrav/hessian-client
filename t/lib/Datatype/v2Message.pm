@@ -11,11 +11,13 @@ use Test::Deep;
 use YAML;
 use Hessian::Client;
 use Hessian::Deserializer;
+use Hessian::Translator::Composite;
 
 
-sub  t002_compose_role : Test(2) { #{{{
+sub t002_compose_role : Test(2) { #{{{
     my $self = shift;
     my $hessian_obj = $self->{deserializer};
+    Hessian::Translator::Composite->meta()->apply($hessian_obj);
     Hessian::Deserializer->meta()->apply($hessian_obj);
     ok(
    $hessian_obj->does('Hessian::Deserializer'),
@@ -25,7 +27,6 @@ sub  t002_compose_role : Test(2) { #{{{
         "Deserialize role has been composed."
     );
 } #}}}
-
 
 sub t010_read_hessian_version : Test(1) {    #{{{
     my $self         = shift;

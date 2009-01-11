@@ -3,7 +3,7 @@ package Hessian::Translator::Envelope;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
-requires qw/deserialize_data/;
+#requires qw/deserialize_data/;
 
 use Switch;
 use YAML;
