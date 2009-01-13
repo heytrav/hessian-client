@@ -11,39 +11,46 @@ use Test::Deep;
 use YAML;
 use Hessian::Client;
 
-
-sub  t004_initialize_hessian_obj : Test(4){ #{{{
+sub t004_initialize_hessian_obj : Test(4) {    #{{{
     my $self = shift;
-    my $hessian_obj = Hessian::Client->new(version => 1);
-    ok(!$hessian_obj->does('Hessian::Deserializer'), 
-    "Have not yet composed the Deserialization logic.");
+    my $hessian_obj = Hessian::Client->new( version => 1 );
+    ok(
+        !$hessian_obj->does('Hessian::Deserializer'),
+        "Have not yet composed the Deserialization logic."
+    );
     my $hessian_data = "V\x04[int\x92\x90\x91";
     $hessian_obj->input_string($hessian_data);
 
-    ok($hessian_obj->does('Hessian::Deserializer'), 
-    "Have composed the Deserialization logic.");
-    ok($hessian_obj->does('Hessian::Translator::V1'),
-    "Composed version 1 methods."
+    ok(
+        $hessian_obj->does('Hessian::Deserializer'),
+        "Have composed the Deserialization logic."
     );
-    ok(!$hessian_obj->does('Hessian::Translator::V2'),
-    "Do not have methods for hessian version 2");
+    ok( $hessian_obj->does('Hessian::Translator::V1'),
+        "Composed version 1 methods." );
+    ok(
+        !$hessian_obj->does('Hessian::Translator::V2'),
+        "Do not have methods for hessian version 2"
+    );
 
-    
-} #}}}
+}    #}}}
 
+sub t008_initialize_hessian_obj : Test(2) {    #{{{
+    my $self        = shift;
+    my $hessian_obj = Hessian::Client->new(
+        input_string => "Vt\x00\x04[int\x92\x90\x91",
+        version      => 1
+    );
+    ok(
+        $hessian_obj->does('Hessian::Deserializer'),
+        "Deserializer has been composed."
+    );
+    ok(
+        $hessian_obj->does('Hessian::Translator::V1'),
+        "Hessian version 1 methods have been composed."
+    );
 
-sub  t008_initialize_hessian_obj : Test(2) { #{{{
-    my $self = shift;
-    my $hessian_obj = Hessian::Client->new( 
-    input_string => "Vt\x00\x04[int\x92\x90\x91", version => 1);
-    ok( $hessian_obj->does('Hessian::Deserializer'),
-    "Deserializer has been composed.");
-    ok($hessian_obj->does('Hessian::Translator::V1'),
-    "Hessian version 1 methods have been composed.");
-
-    $self->{deserializer}  = $hessian_obj;
-} #}}}
-
+    $self->{deserializer} = $hessian_obj;
+}    #}}}
 
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
@@ -54,31 +61,26 @@ sub t010_read_fixed_length_typed : Test(1) {    #{{{
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
 }    #}}}
 
-sub  t012_read_fixed_length_anonymous : Test(1) { #{{{
-    my $self = shift;
+sub t012_read_fixed_length_anonymous : Test(1) {    #{{{
+    my $self         = shift;
     my $hessian_data = "Vl\x00\x00\x00\x02I\x00\x00\x00\x00I\x00\x00\x00\x01z";
-    my $hessian_obj = $self->{deserializer};
+    my $hessian_obj  = $self->{deserializer};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
-    cmp_deeply($datastructure, 
-    [ 0,1],
-    "Received expected datastructure."
-    );
-} #}}}
+    cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
+}    #}}}
 
-sub  t013_read_type_reference_list_fixed_length : Test(1) { #{{{
-    my $self = shift;
+sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
+    my $self         = shift;
     my $hessian_data = "v\x00\x02\x90\x91z";
-    my $hessian_obj = $self->{deserializer};
+    my $hessian_obj  = $self->{deserializer};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
-    cmp_deeply($datastructure,
-    [0, 1],
-    "Received expected datastructure.");
-} #}}}
+    cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
+}    #}}}
 
-sub  t015_read_typed_map : Test(3) { #{{{
-    my $self = shift;
+sub t015_read_typed_map : Test(3) {    #{{{
+    my $self         = shift;
     my $hessian_data = "\x4dt\x00\x08SomeType\x05color\x0aaquamarine"
       . "\x05model\x06Beetle\x07mileageI\x00\x01\x00\x00z";
     my $hessian_obj = $self->{deserializer};
@@ -91,25 +93,37 @@ sub  t015_read_typed_map : Test(3) { #{{{
     like( $datastructure->{mileage},
         qr/\d+/, 'Mileage attribute is an integer.' );
 
-} #}}}
+}    #}}}
 
-sub  t017_sparse_array_map : Test(2) { #{{{
-    my $self = shift;
+sub t017_sparse_array_map : Test(2) {    #{{{
+    my $self         = shift;
     my $hessian_data = "MI\x00\x00\x00\x01S\x00\x03fee"
-    ."I\x00\x00\x00\x10S\x00\x03fieI\x00\x00\x01\x00S\x00\x03foez";
+      . "I\x00\x00\x00\x10S\x00\x03fieI\x00\x00\x01\x00S\x00\x03foez";
     my $hessian_obj = $self->{deserializer};
-   $hessian_obj->input_string($hessian_data);
-   my $datastructure = $hessian_obj->deserialize_data();
-   isa_ok($datastructure, 'HASH',
-   'Datastructure returned by deserializer');
+    $hessian_obj->input_string($hessian_data);
+    my $datastructure = $hessian_obj->deserialize_data();
+    isa_ok( $datastructure, 'HASH', 'Datastructure returned by deserializer' );
 
-cmp_deeply($datastructure,
-{ 1 => 'fee', 16 => 'fie', 256 => 'foe'},
-"Received expected datastructure.");
-} #}}}
+    cmp_deeply(
+        $datastructure,
+        { 1 => 'fee', 16 => 'fie', 256 => 'foe' },
+        "Received expected datastructure."
+    );
+}    #}}}
 
+sub t019_object_definition : Test(2) {    #{{{
+    my $self         = shift;
+    my $hessian_data = "O\x9bexample.Car\x92\x05color\x05model";
+    my $hessian_obj  = $self->{deserializer};
+    $hessian_obj->input_string($hessian_data);
+    $hessian_obj->deserialize_data();
 
-
+    my $object_data = "o\x90\x05green\x05civic";
+    my $object =
+      $hessian_obj->deserialize_data( { input_string => $object_data } );
+    is( $object->color(), 'green', 'Correctly accessed object color' );
+    is( $object->model(), 'civic', 'Correclty accessed object model' );
+}    #}}}
 
 "one, but we're not the same";
 

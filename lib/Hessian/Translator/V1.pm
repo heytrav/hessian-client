@@ -32,35 +32,11 @@ sub read_composite_datastructure {    #{{{
             $datastructure  = $self->read_map_handle();
         }
         case /\x4d/ {                   # typed map
-
             $save_reference = 1;
-
-            # Get the type for this map. This seems to be more like a
-            # perl style object or "blessed hash".
-
-            # Handle fucked up 't' processing
-            my $map;
-
-            #            if ( $self->is_version_1() ) {
-            #                print "deserializer is version 1\n";
-
-            #            }
-            #            else {
-#            my $map_type = $self->read_hessian_chunk();
-#            if ( $map_type !~ /^\d+$/ ) {
-#                push @{ $self->type_list() }, $map_type;
-#            }
-#            else {
-#                $map_type = $self->type_list()->[$map_type];
-#            }
-#            $map = $self->read_map_handle();
-#            $datastructure = bless $map, $map_type;
             $datastructure = $self->read_map_handle();
-
-            #            }
-
         }
-        case /[\x43\x4f\x60-\x6f]/ {
+#        case /[\x43\x4f\x60-\x6f]/ {
+        case /[\x4f\x6f]/ {
             $datastructure = $self->read_class_handle( $first_bit, );
 
         }
@@ -156,10 +132,14 @@ sub read_class_handle {    #{{{
     my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
-        case /\x43/ {      # Read class definition
-            my $class_type = $self->read_hessian_chunk();
+        case /\x4f/ {      # Read class definition
+            my $class_name_length = $self->read_hessian_chunk();
+            my $class_type;
+            read $input_handle, $class_type, $class_name_length;
+
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
+                                         print "Class type $class_type\n";
             my $length;
             read $input_handle, $length, 1;
             my $number_of_fields =
@@ -178,19 +158,12 @@ sub read_class_handle {    #{{{
             push @{ $self->class_definitions() }, $class_definition;
             $datastructure = $class_definition;
         }
-        case /\x4f/ {    # Read hessian data and create instance of class
-            my $length;
+        case /\x6f/ {    # The class definition is in the ref list
             $save_reference = 1;
-            read $input_handle, $length, 1;
-            my $class_definition_number =
-              read_integer_handle_chunk( $length, $input_handle );
-            $datastructure = $self->instantiate_class($class_definition_number);
-
-        }
-        case /[\x60-\x6f]/ {    # The class definition is in the ref list
-            $save_reference = 1;
-            my $hex_bit = unpack 'C*', $first_bit;
-            my $class_definition_number = $hex_bit - 0x60;
+            my $class_number;
+            read $input_handle, $class_number, 1;
+            my $class_definition_number 
+                = read_integer_handle_chunk($class_number,$input_handle);
             $datastructure = $self->instantiate_class($class_definition_number);
         }
     }
