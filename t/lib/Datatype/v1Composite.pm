@@ -33,7 +33,6 @@ sub  t004_initialize_hessian_obj : Test(4){ #{{{
 
 
 sub  t008_initialize_hessian_obj : Test(2) { #{{{
-    
     my $self = shift;
     my $hessian_obj = Hessian::Client->new( 
     input_string => "Vt\x00\x04[int\x92\x90\x91", version => 1);
@@ -48,13 +47,69 @@ sub  t008_initialize_hessian_obj : Test(2) { #{{{
 
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
-    my $hessian_data = "Vt\x00\x04[intl\x00\x00\x00\x02\x90\x91";
+    my $hessian_data = "Vt\x00\x04[intl\x00\x00\x00\x02\x90\x91z";
     my $hessian_obj  = $self->{deserializer};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
-    print "got datastructure:\n".Dump($datastructure)."\n";
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
 }    #}}}
+
+sub  t012_read_fixed_length_anonymous : Test(1) { #{{{
+    my $self = shift;
+    my $hessian_data = "Vl\x00\x00\x00\x02I\x00\x00\x00\x00I\x00\x00\x00\x01z";
+    my $hessian_obj = $self->{deserializer};
+    $hessian_obj->input_string($hessian_data);
+    my $datastructure = $hessian_obj->deserialize_data();
+    cmp_deeply($datastructure, 
+    [ 0,1],
+    "Received expected datastructure."
+    );
+} #}}}
+
+sub  t013_read_type_reference_list_fixed_length : Test(1) { #{{{
+    my $self = shift;
+    my $hessian_data = "v\x00\x02\x90\x91z";
+    my $hessian_obj = $self->{deserializer};
+    $hessian_obj->input_string($hessian_data);
+    my $datastructure = $hessian_obj->deserialize_data();
+    cmp_deeply($datastructure,
+    [0, 1],
+    "Received expected datastructure.");
+} #}}}
+
+sub  t015_read_typed_map : Test(3) { #{{{
+    my $self = shift;
+    my $hessian_data = "\x4dt\x00\x08SomeType\x05color\x0aaquamarine"
+      . "\x05model\x06Beetle\x07mileageI\x00\x01\x00\x00z";
+    my $hessian_obj = $self->{deserializer};
+    $hessian_obj->input_string($hessian_data);
+    my $datastructure = $hessian_obj->deserialize_data();
+    isa_ok( $datastructure, 'SomeType',
+        'Data structure returned by deserializer' );
+    is( $datastructure->{model},
+        'Beetle', 'Model attribute has correct value.' );
+    like( $datastructure->{mileage},
+        qr/\d+/, 'Mileage attribute is an integer.' );
+
+} #}}}
+
+sub  t017_sparse_array_map : Test(2) { #{{{
+    my $self = shift;
+    my $hessian_data = "MI\x00\x00\x00\x01S\x00\x03fee"
+    ."I\x00\x00\x00\x10S\x00\x03fieI\x00\x00\x01\x00S\x00\x03foez";
+    my $hessian_obj = $self->{deserializer};
+   $hessian_obj->input_string($hessian_data);
+   my $datastructure = $hessian_obj->deserialize_data();
+   isa_ok($datastructure, 'HASH',
+   'Datastructure returned by deserializer');
+
+cmp_deeply($datastructure,
+{ 1 => 'fee', 16 => 'fie', 256 => 'foe'},
+"Received expected datastructure.");
+} #}}}
+
+
+
 
 "one, but we're not the same";
 

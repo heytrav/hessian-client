@@ -46,15 +46,16 @@ sub read_composite_datastructure {    #{{{
 
             #            }
             #            else {
-            my $map_type = $self->read_hessian_chunk();
-            if ( $map_type !~ /^\d+$/ ) {
-                push @{ $self->type_list() }, $map_type;
-            }
-            else {
-                $map_type = $self->type_list()->[$map_type];
-            }
-            $map = $self->read_map_handle();
-            $datastructure = bless $map, $map_type;
+#            my $map_type = $self->read_hessian_chunk();
+#            if ( $map_type !~ /^\d+$/ ) {
+#                push @{ $self->type_list() }, $map_type;
+#            }
+#            else {
+#                $map_type = $self->type_list()->[$map_type];
+#            }
+#            $map = $self->read_map_handle();
+#            $datastructure = bless $map, $map_type;
+            $datastructure = $self->read_map_handle();
 
             #            }
 
@@ -105,26 +106,25 @@ sub read_typed_list {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my $v1_type      = $self->read_v1_type($first_bit);
-    print "v1_type results: ".Dump($v1_type)."\n";
-    my ( $type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
-    
-    unless ($type) { 
-        return $self->read_untyped_list($next_bit);  
-     }
+    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
+    return $self->read_untyped_list($next_bit) unless defined $entity_type;
+
+    my $type = $self->store_fetch_type($entity_type);
     my $array_length;
-    read $input_handle, $next_bit, 1;
-    if ($next_bit eq 'l') {
-        $array_length  = $self->read_list_length($next_bit) ;
+    read $input_handle, $next_bit, 1 unless $next_bit;
+    if ( $next_bit eq 'l' ) {
+        $array_length = $self->read_list_length($next_bit);
     }
 
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
     {
-        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
+
+    #  last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
         eval { $element = $self->read_typed_list_element($type); };
-
+        last LISTLOOP if Exception::Class->caught('EndOfInput::X');
         push @{$datastructure}, $element;
         $index++;
         redo LISTLOOP;
@@ -134,20 +134,17 @@ sub read_typed_list {    #{{{
 
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
-    print "reading v1 type\n";
     my ( $type, $first_bit, $array_length );
     my $input_handle = $self->input_handle();
-    if ( $list_bit =~ /\x76/ ) {    # v
-        read $input_handle, $type, 1;
+    if ( $list_bit and $list_bit =~ /\x76/ ) {    # v
+        read $input_handle, $type,         1;
         read $input_handle, $array_length, 1;
     }
     else {
         read $input_handle, $first_bit, 1;
-        if ( $first_bit =~/t/) {
+        if ( $first_bit =~ /t/ ) {
             $type = $self->read_hessian_chunk();
-
         }
-       
     }
     return { type => $type, next_bit => $array_length } if $type;
     return { next_bit => $first_bit };
@@ -206,23 +203,32 @@ sub read_class_handle {    #{{{
 sub read_map_handle {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
+    my $v1_type      = $self->read_v1_type();
+    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
+    my $type = $self->store_fetch_type($entity_type) if $entity_type;
+    my $key;
+    if ( $next_bit) {
+       $key = $self->read_hessian_chunk( { first_bit => $next_bit}); 
+    }
+
 
     # For now only accept integers or strings as keys
     my @key_value_pairs;
   MAPLOOP:
     {
-        my $key;
-        eval { $key = $self->read_hessian_chunk(); };
+        eval { $key = $self->read_hessian_chunk(); } unless $key;
         last MAPLOOP if Exception::Class->caught('EndOfInput::X');
         my $value = $self->read_hessian_chunk();
         push @key_value_pairs, $key => $value;
+        undef $key;
         redo MAPLOOP;
     }
 
     # should throw an exception if @key_value_pairs has an odd number of
     # elements
     my $datastructure = {@key_value_pairs};
-    return $datastructure;
+   my $map = defined $type ? bless $datastructure => $type : $datastructure; 
+    return $map;
 
 }    #}}}
 
@@ -245,7 +251,7 @@ sub read_list_length {    #{{{
         my $hex_bit = unpack 'C*', $first_bit;
         $array_length = $hex_bit - 0x78;
     }
-    elsif (  $first_bit =~ /\x6c/ ) {
+    elsif ( $first_bit =~ /\x6c/ ) {
         $array_length = read_integer_handle_chunk( 'I', $input_handle );
         print "received array length of $array_length\n";
     }
@@ -266,8 +272,9 @@ sub read_untyped_list {    #{{{
         my $element;
         eval { $element = $self->read_hessian_chunk(); };
         last LISTLOOP
-          if $first_bit =~ /\x57/
-              && Exception::Class->caught('EndOfInput::X');
+          if
+#            $first_bit =~ /\x57/ && 
+            Exception::Class->caught('EndOfInput::X');
 
         push @{$datastructure}, $element;
         $index++;
@@ -294,7 +301,7 @@ sub read_hessian_chunk {    #{{{
     switch ($first_bit) {
         case /\x00/ {
             $element = $self->read_hessian_chunk();
-            }
+        }
         case /\x4e/ {    # 'N' for NULL
             $element = undef;
         }

@@ -5,7 +5,6 @@ use version; our $VERSION = qv('0.0.1');
 
 with 'Hessian::Translator::Envelope';
 
-
 use Switch;
 use YAML;
 use Hessian::Exception;
@@ -15,7 +14,7 @@ use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
-sub read_list {  #{{{
+sub read_list {    #{{{
     my $hessian_list = shift;
     my $array        = [];
     if ( $hessian_list =~ /^  \x57  (.*)  Z/xms ) {
@@ -25,16 +24,16 @@ sub read_list {  #{{{
     return $array;
 }    #}}}
 
-sub write_list {#: Export(:to_hessian) {    #{{{
+sub write_list {    #: Export(:to_hessian) {    #{{{
     my $list = shift;
 }    #}}}
 
 sub read_typed_list_element {    #{{{
-    my ($self, $entity_type,$args) = @_;
+    my ( $self, $type, $args ) = @_;
     my $input_handle = $self->input_handle();
-    my ( $type, $element, $first_bit );
+    my ( $element, $first_bit );
     binmode( $input_handle, 'bytes' );
-    if ( $args->{first_bit}) {
+    if ( $args->{first_bit} ) {
         $first_bit = $args->{first_bit};
     }
     else {
@@ -44,13 +43,13 @@ sub read_typed_list_element {    #{{{
       if $first_bit =~ /z/i;
     my $map_type = 'map';
 
-    if ( $entity_type !~ /^\d+$/ ) {
-        $type = $entity_type;
-        push @{ $self->type_list() }, $type;
-    }
-    else {
-        $type = $self->type_list()->[$entity_type];
-    }
+    #    if ( $entity_type !~ /^\d+$/ ) {
+    #        $type = $entity_type;
+    #        push @{ $self->type_list() }, $type;
+    #    }
+    #    else {
+    #        $type = $self->type_list()->[$entity_type];
+    #    }
 
     switch ($type) {
         case /boolean/ {
@@ -75,24 +74,34 @@ sub read_typed_list_element {    #{{{
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
         case /list/ {
-            $element =
-              $self->read_composite_datastructure( $first_bit );
+            $element = $self->read_composite_datastructure($first_bit);
         }
-
-        #        case /$map_type/ {
-
-        #        }
     }
     return $element;
 }    #}}}
 
 sub read_list_type {    #{{{
-    my $self = shift;
+    my $self         = shift;
     my $input_handle = $self->input_handle();
     my $type_length;
     read $input_handle, $type_length, 1;
     my $type = read_string_handle_chunk( $type_length, $input_handle );
     binmode( $input_handle, 'bytes' );
+    return $type;
+}    #}}}
+
+sub store_fetch_type {    #{{{
+    my ( $self, $entity_type ) = @_;
+    my $type;
+    if ( $entity_type =~ /^([^\x00-\x0f].*)/ ) {
+        $type = $1;
+        push @{ $self->type_list() }, $type;
+    }
+    else {
+        my $integer = unpack 'C', $entity_type;
+        $type = $self->type_list()->[$integer];
+
+    }
     return $type;
 }    #}}}
 

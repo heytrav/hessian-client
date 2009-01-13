@@ -3,8 +3,6 @@ package Hessian::Translator::V2;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
-
-
 use Switch;
 use YAML;
 use Hessian::Exception;
@@ -14,28 +12,26 @@ use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
-
-
-sub read_composite_datastructure { #{{{
-    my ($self, $first_bit) = @_;
+sub read_composite_datastructure {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
-        case /[\x55\x56\x70-\x77]/ {                          # typed lists
+        case /[\x55\x56\x70-\x77]/ {    # typed lists
             $save_reference = 1;
-            $datastructure = $self->read_typed_list( $first_bit,);
+            $datastructure  = $self->read_typed_list( $first_bit, );
         }
 
-        case /[\x57\x58\x78-\x7f]/ {                          # untyped lists
+        case /[\x57\x58\x78-\x7f]/ {    # untyped lists
             $save_reference = 1;
-            $datastructure = $self->read_untyped_list( $first_bit, );
+            $datastructure  = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
             $save_reference = 1;
             $datastructure  = $self->read_map_handle();
         }
-        case /\x4d/ {                                         # typed map
+        case /\x4d/ {                   # typed map
 
             $save_reference = 1;
 
@@ -66,17 +62,18 @@ sub read_composite_datastructure { #{{{
 }    #}}}
 
 sub read_typed_list {    #{{{
-    my ($self, $first_bit) = @_;
-    my $input_handle = $self->input_handle();
-    my $type          = $self->read_hessian_chunk();
-    my $array_length  = $self->read_list_length( $first_bit );
+    my ( $self, $first_bit ) = @_;
+    my $input_handle  = $self->input_handle();
+    my $entity_type   = $self->read_hessian_chunk();
+    my $type          = $self->store_fetch_type($entity_type);
+    my $array_length  = $self->read_list_length($first_bit);
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
-        eval { $element = $self->read_typed_list_element( $type); };
+        eval { $element = $self->read_typed_list_element($type); };
         last LISTLOOP
           if $first_bit =~ /\x55/
               && Exception::Class->caught('EndOfInput::X');
@@ -90,7 +87,7 @@ sub read_typed_list {    #{{{
 
 # version 2 specific
 sub read_class_handle {    #{{{
-    my ($self, $first_bit ) = @_;
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
@@ -122,16 +119,14 @@ sub read_class_handle {    #{{{
             read $input_handle, $length, 1;
             my $class_definition_number =
               read_integer_handle_chunk( $length, $input_handle );
-            $datastructure =
-              $self->instantiate_class($class_definition_number);
+            $datastructure = $self->instantiate_class($class_definition_number);
 
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
             $save_reference = 1;
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
-            $datastructure =
-              $self->instantiate_class($class_definition_number);
+            $datastructure = $self->instantiate_class($class_definition_number);
         }
     }
     push @{ $self->reference_list() }, $datastructure
@@ -141,7 +136,7 @@ sub read_class_handle {    #{{{
 
 # mostly version 2 specific
 sub read_map_handle {    #{{{
-    my $self  = shift;
+    my $self         = shift;
     my $input_handle = $self->input_handle();
 
     # For now only accept integers or strings as keys
@@ -165,7 +160,7 @@ sub read_map_handle {    #{{{
 
 # version 2 specific
 sub read_list_length {    #{{{
-    my ($self, $first_bit) = @_;
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
 
     my $array_length;
@@ -187,7 +182,7 @@ sub read_list_length {    #{{{
 
 # version 2 specific
 sub read_untyped_list {    #{{{
-    my ($self, $first_bit) = @_;
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my $array_length = $self->read_list_length( $first_bit, );
 
@@ -210,18 +205,18 @@ sub read_untyped_list {    #{{{
 }    #}}}
 
 # version 2 specific
-sub read_hessian_chunk {   #{{{
+sub read_hessian_chunk {    #{{{
     my ( $self, $args ) = @_;
     my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
     my ( $first_bit, $element );
-    if ( 'HASH' eq (ref $args) and $args->{first_bit}) {
+    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
         $first_bit = $args->{first_bit};
     }
     else {
-      read $input_handle, $first_bit, 1;    
+        read $input_handle, $first_bit, 1;
     }
-     
+
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
       if $first_bit =~ /z/i;
 
@@ -244,16 +239,15 @@ sub read_hessian_chunk {   #{{{
         case /[\x4a\x4b]/ {
             $element = read_date_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x52\x53\x00-\x1f\x30-\x33]/ {#   for version 1: \x73
+        case /[\x52\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
             $element = read_string_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x41\x42\x20-\x2f\x34-\x37\x62]/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
-        {    # recursive datastructure
-            $element =
-              $self->read_composite_datastructure( $first_bit, );
+        {                                        # recursive datastructure
+            $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x51/ {
             my $reference_id = $self->read_hessian_chunk();
