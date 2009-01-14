@@ -63,7 +63,9 @@ sub read_message_chunk {   #{{{
 #              { hessian_version => $hessian_version, state => 'reply' };
 #        }
         case /\x52/ {    # Reply
+        print "Processing reply\n";
             my $reply_data = $self->deserialize_data();
+            print "Received reply $reply_data\n";
             $datastructure = { reply_data => $reply_data };
         }
         else {
@@ -168,6 +170,7 @@ sub read_packet {    #{{{
     my $packet_string;
     read $input_handle, $packet_string, $packet_size;
     return FIXED NONVOID {
+        print "Processing $packet_string\n";
         $self->deserialize_message({ input_string => $packet_string });
     };
 }    #}}}

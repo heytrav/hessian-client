@@ -98,7 +98,7 @@ sub store_fetch_type {    #{{{
         push @{ $self->type_list() }, $type;
     }
     else {
-        my $integer = unpack 'C', $entity_type;
+        my $integer = unpack 'C*', $entity_type;
         $type = $self->type_list()->[$integer];
 
     }

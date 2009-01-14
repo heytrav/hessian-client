@@ -19,34 +19,28 @@ sub read_composite_datastructure {    #{{{
     binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {    # typed lists
-            $save_reference = 1;
+            push @{ $self->reference_list() }, [];
             $datastructure  = $self->read_typed_list( $first_bit, );
         }
 
         case /[\x57\x58\x78-\x7f]/ {    # untyped lists
-            $save_reference = 1;
+            push @{ $self->reference_list() }, [];
             $datastructure  = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
-            $save_reference = 1;
+            push @{ $self->reference_list() }, {};
             $datastructure  = $self->read_map_handle();
         }
         case /\x4d/ {                   # typed map
 
-            $save_reference = 1;
 
+            push @{ $self->reference_list() }, {};
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
 
-            my $map;
-            my $map_type = $self->read_hessian_chunk();
-            if ( $map_type !~ /^\d+$/ ) {
-                push @{ $self->type_list() }, $map_type;
-            }
-            else {
-                $map_type = $self->type_list()->[$map_type];
-            }
-            $map = $self->read_map_handle();
+            my $entity_type   = $self->read_hessian_chunk();
+            my $map_type = $self->store_fetch_type($entity_type);
+            my $map      = $self->read_map_handle();
             $datastructure = bless $map, $map_type;
 
         }
@@ -55,8 +49,8 @@ sub read_composite_datastructure {    #{{{
 
         }
     }
-    push @{ $self->reference_list() }, $datastructure
-      if $save_reference;
+#    push @{ $self->reference_list() }, $datastructure
+#      if $save_reference;
     return $datastructure;
 
 }    #}}}
@@ -67,7 +61,7 @@ sub read_typed_list {    #{{{
     my $entity_type   = $self->read_hessian_chunk();
     my $type          = $self->store_fetch_type($entity_type);
     my $array_length  = $self->read_list_length($first_bit);
-    my $datastructure = [];
+    my $datastructure = $self->reference_list()->[-1];
     my $index         = 0;
   LISTLOOP:
     {
@@ -153,7 +147,11 @@ sub read_map_handle {    #{{{
 
     # should throw an exception if @key_value_pairs has an odd number of
     # elements
-    my $datastructure = {@key_value_pairs};
+    my $hash = {@key_value_pairs};
+    my $datastructure = $self->reference_list()->[-1];
+    foreach my $key (keys %{$hash}) {
+        $datastructure->{$key} = $hash->{$key};
+    }
     return $datastructure;
 
 }    #}}}

@@ -95,6 +95,18 @@ sub t015_read_typed_map : Test(3) {    #{{{
 
 }    #}}}
 
+sub t016_read_referenced_datastructure : Test(1) {    #{{{
+    my $self         = shift;
+    my $hessian_data = "Mt\x00\x0aLinkedListS\x00"
+      . "\x04headI\x00\x00\x00\x01S\x00\x04tailR\x00\x00\x00\x04z";
+    my $hessian_obj = $self->{deserializer};
+    $hessian_obj->input_string($hessian_data);
+    my $datastructure = $hessian_obj->deserialize_data();
+
+    my $reference_list = $hessian_obj->reference_list();
+    isa_ok( $datastructure, 'LinkedList', "Object parsed by deserializer" );
+}    #}}}
+
 sub t017_sparse_array_map : Test(2) {    #{{{
     my $self         = shift;
     my $hessian_data = "MI\x00\x00\x00\x01S\x00\x03fee"

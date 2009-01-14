@@ -19,30 +19,29 @@ sub read_composite_datastructure {    #{{{
     binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
         case /[\x56\x76]/ {           # typed lists
-            $save_reference = 1;
-            $datastructure  = $self->read_typed_list($first_bit);
+            push @{ $self->reference_list() }, [];
+            $datastructure = $self->read_typed_list($first_bit);
         }
 
         case /[\x57\x58\x78-\x7f]/ {    # untyped lists
-            $save_reference = 1;
-            $datastructure  = $self->read_untyped_list( $first_bit, );
+            push @{ $self->reference_list() }, [];
+            $datastructure = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
-            $save_reference = 1;
-            $datastructure  = $self->read_map_handle();
-        }
-        case /\x4d/ {                   # typed map
-            $save_reference = 1;
+            push @{ $self->reference_list() }, {};
             $datastructure = $self->read_map_handle();
         }
-#        case /[\x43\x4f\x60-\x6f]/ {
+        case /\x4d/ {                   # typed map
+            push @{ $self->reference_list() }, {};
+            $datastructure = $self->read_map_handle();
+        }
         case /[\x4f\x6f]/ {
+            push @{ $self->reference_list() }, {};
             $datastructure = $self->read_class_handle( $first_bit, );
 
         }
     }
-    push @{ $self->reference_list() }, $datastructure
-      if $save_reference;
+
     return $datastructure;
 
 }    #}}}
@@ -92,12 +91,12 @@ sub read_typed_list {    #{{{
         $array_length = $self->read_list_length($next_bit);
     }
 
-    my $datastructure = [];
+    my $datastructure = $self->reference_list()->[-1];
     my $index         = 0;
   LISTLOOP:
     {
 
-    #  last LISTLOOP if ( $array_length and ( $index == $array_length ) );
+        #  last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
         eval { $element = $self->read_typed_list_element($type); };
         last LISTLOOP if Exception::Class->caught('EndOfInput::X');
@@ -139,12 +138,13 @@ sub read_class_handle {    #{{{
 
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
-                                         print "Class type $class_type\n";
+            print "Class type $class_type\n";
             my $length;
             read $input_handle, $length, 1;
             my $number_of_fields =
               read_integer_handle_chunk( $length, $input_handle );
             my @field_list;
+
             foreach my $field_index ( 1 .. $number_of_fields ) {
 
                 # using the wrong function here, but who cares?
@@ -162,13 +162,14 @@ sub read_class_handle {    #{{{
             $save_reference = 1;
             my $class_number;
             read $input_handle, $class_number, 1;
-            my $class_definition_number 
-                = read_integer_handle_chunk($class_number,$input_handle);
+            my $class_definition_number =
+              read_integer_handle_chunk( $class_number, $input_handle );
             $datastructure = $self->instantiate_class($class_definition_number);
         }
     }
-    push @{ $self->reference_list() }, $datastructure
-      if $save_reference;
+
+    #    push @{ $self->reference_list() }, $datastructure
+    #      if $save_reference;
     return $datastructure;
 }    #}}}
 
@@ -180,10 +181,9 @@ sub read_map_handle {    #{{{
     my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
     my $type = $self->store_fetch_type($entity_type) if $entity_type;
     my $key;
-    if ( $next_bit) {
-       $key = $self->read_hessian_chunk( { first_bit => $next_bit}); 
+    if ($next_bit) {
+        $key = $self->read_hessian_chunk( { first_bit => $next_bit } );
     }
-
 
     # For now only accept integers or strings as keys
     my @key_value_pairs;
@@ -199,8 +199,13 @@ sub read_map_handle {    #{{{
 
     # should throw an exception if @key_value_pairs has an odd number of
     # elements
-    my $datastructure = {@key_value_pairs};
-   my $map = defined $type ? bless $datastructure => $type : $datastructure; 
+
+    my $datastructure = $self->reference_list()->[-1];
+    my $hash          = {@key_value_pairs};
+    foreach my $key ( keys %{$hash} ) {
+        $datastructure->{$key} = $hash->{$key};
+    }
+    my $map = defined $type ? bless $datastructure => $type : $datastructure;
     return $map;
 
 }    #}}}
@@ -237,7 +242,7 @@ sub read_untyped_list {    #{{{
     my $input_handle = $self->input_handle();
     my $array_length = $self->read_list_length( $first_bit, );
 
-    my $datastructure = [];
+    my $datastructure = $self->reference_list()->[-1];
     my $index         = 0;
   LISTLOOP:
     {
@@ -246,7 +251,8 @@ sub read_untyped_list {    #{{{
         eval { $element = $self->read_hessian_chunk(); };
         last LISTLOOP
           if
-#            $first_bit =~ /\x57/ && 
+
+            #            $first_bit =~ /\x57/ &&
             Exception::Class->caught('EndOfInput::X');
 
         push @{$datastructure}, $element;
@@ -293,7 +299,7 @@ sub read_hessian_chunk {    #{{{
         case /[\x4a\x4b]/ {
             $element = read_date_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x52\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
+        case /[\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
             $element = read_string_handle_chunk( $first_bit, $input_handle );
         }
         case /[\x41\x42\x20-\x2f\x34-\x37\x62]/ {
@@ -303,8 +309,8 @@ sub read_hessian_chunk {    #{{{
         {                                        # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
-        case /\x51/ {
-            my $reference_id = $self->read_hessian_chunk();
+        case /\x52/ {
+            my $reference_id = read_integer_handle_chunk( 'I', $input_handle );
             $element = $self->reference_list()->[$reference_id];
 
         }

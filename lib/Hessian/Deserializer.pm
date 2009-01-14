@@ -25,6 +25,7 @@ has 'input_handle' => (
 
 after 'input_string' => sub {
     my $self = shift;
+
     # Get rid of the input file handle if user has given us a new string to
     # process. input handle should then re-initialize itself the next time it
     # is called.
@@ -43,7 +44,7 @@ sub deserialize_data {    #{{{
     # Yes, I'm passing the object itself as a parameter so I can add
     # references, class definitions and objects to the different lists as they
     # occur.
-    my $result = $self->read_hessian_chunk($args );
+    my $result = $self->read_hessian_chunk($args);
     return $result;
 }    #}}}
 
@@ -51,13 +52,10 @@ sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;
     my $class_definitions = $self->class_definitions;
     my $class_definition  = $self->class_definitions()->[$index];
-
-    my $class_type = $class_definition->{type};
-    my $simple_obj = bless {}, $class_type;
+    my $datastructure     = $self->reference_list()->[-1];
+    my $class_type        = $class_definition->{type};
+    my $simple_obj        = bless $datastructure, $class_type;
     {
-
-        # This is so we can take advantage of Class::MOP/Moose's meta object
-        # capabilities and add arbitrary fields to the new object.
         no strict 'refs';
         push @{ $class_type . '::ISA' }, 'Simple';
     }

@@ -13,28 +13,53 @@ use Hessian::Client;
 use Hessian::Deserializer;
 use Hessian::Translator::Composite;
 
+sub t004_initialize_hessian : Test(3) {    #{{{
+    my $self        = shift;
+    my $hessian_obj = Hessian::Client->new(version => 2);
 
-sub t002_compose_role : Test(2) { #{{{
-    my $self = shift;
-    my $hessian_obj = $self->{deserializer};
-    Hessian::Translator::Composite->meta()->apply($hessian_obj);
-    Hessian::Deserializer->meta()->apply($hessian_obj);
     ok(
-   $hessian_obj->does('Hessian::Deserializer'),
-   "Object can deserialize.");
-    ok(
-         $hessian_obj->can('deserialize_message'),
-        "Deserialize role has been composed."
+        !$hessian_obj->can('deserialize_message'),
+        "Deserialize role has not been composed."
     );
-} #}}}
+
+    ok(
+        !$hessian_obj->does('Hessian::Translator::V1'),
+        "Not ready for processing of Hessian version 1"
+    );
+    ok(
+        !$hessian_obj->does('Hessian::Translator::V2'),
+        "Not ready for processing of Hessian version 2"
+    );
+
+    $self->{deserializer} = $hessian_obj;
+}    #}}}
+
+#sub t005_compose_role : Test(2) {    #{{{
+#    my $self        = shift;
+#    my $hessian_obj = $self->{deserializer};
+
+#    Hessian::Translator::Composite->meta()->apply($hessian_obj);
+#    Hessian::Deserializer->meta()->apply($hessian_obj);
+#    ok( $hessian_obj->does('Hessian::Deserializer'),
+#        "Object can deserialize." );
+#    ok(
+#        $hessian_obj->can('deserialize_message'),
+#        "Deserialize role has been composed."
+#    );
+#}    #}}}
 
 sub t010_read_hessian_version : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
     my $hessian_data = "H\x02\x00";
+    $deserializer->input_string($hessian_data);
     my $result =
-      $deserializer->deserialize_message( { input_string => $hessian_data } );
-    cmp_deeply( $result, {hessian_version => "2.0"}, "Parsed hessian version 2." );
+      $deserializer->deserialize_message(  );
+    cmp_deeply(
+        $result,
+        { hessian_version => "2.0" },
+        "Parsed hessian version 2."
+    );
 }    #}}}
 
 sub t015_read_envelope : Test(2) {    #{{{
@@ -42,13 +67,14 @@ sub t015_read_envelope : Test(2) {    #{{{
     my $deserializer = $self->{deserializer};
     my $hessian_data = "H\x02\x00E\x06Header\x90\x87R\x05hello\x90Z";
     $deserializer->input_string($hessian_data);
-    my $tokens =
-      $deserializer->process_message();
-    cmp_deeply( $tokens->[0],
-    {hessian_version => "2.0"},
-    "Parsed hessian version 2." );
-    my $reply_data =$tokens->[1]->[0]->{packets}->[0] ;
-    my $text ="$reply_data->{reply_data}"; 
+    my $tokens = $deserializer->process_message();
+    cmp_deeply(
+        $tokens->[0],
+        { hessian_version => "2.0" },
+        "Parsed hessian version 2."
+    );
+    my $reply_data = $tokens->[1]->[0]->{packets}->[0];
+    my $text       = "$reply_data->{reply_data}";
     cmp_deeply(
         $reply_data,
         superhashof( { reply_data => 'hello' } ),
@@ -62,12 +88,11 @@ sub t016_multi_chunk_envelope : Test(1) {    #{{{
     my $deserializer = $self->{deserializer};
     my $hessian_data = "H\x02\x00E\x06Header\x90\x88C\x05hello"
       . "\x91\x90\x90\x8d\x0chello, world\x90Z";
-      $deserializer->input_string($hessian_data);
-      my $tokens = $deserializer->process_message();
-      my $second_packet =$tokens->[1]->[1]->{packets}->[0] ;
-    my $text ="$second_packet";
-    cmp_deeply( $second_packet,
-        "hello, world", 
+    $deserializer->input_string($hessian_data);
+    my $tokens        = $deserializer->process_message();
+    my $second_packet = $tokens->[1]->[1]->{packets}->[0];
+    my $text          = "$second_packet";
+    cmp_deeply( $second_packet, "hello, world",
         "Parsed expected datastructure." );
 }    #}}}
 
