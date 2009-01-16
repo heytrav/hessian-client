@@ -18,14 +18,12 @@ sub read_composite_datastructure {    #{{{
     my ( $datastructure, $save_reference );
     binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
+        case /\x72/ {
+           $datastructure = $self->read_remote_object(); 
+            }
         case /[\x56\x76]/ {           # typed lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_typed_list($first_bit);
-        }
-
-        case /[\x57\x58\x78-\x7f]/ {    # untyped lists
-            push @{ $self->reference_list() }, [];
-            $datastructure = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
             push @{ $self->reference_list() }, {};
@@ -35,10 +33,9 @@ sub read_composite_datastructure {    #{{{
             push @{ $self->reference_list() }, {};
             $datastructure = $self->read_map_handle();
         }
-        case /[\x4f\x6f]/ {
+        case /[\x4f\x6f]/ { # object definition or reference
             push @{ $self->reference_list() }, {};
             $datastructure = $self->read_class_handle( $first_bit, );
-
         }
     }
 
@@ -46,7 +43,6 @@ sub read_composite_datastructure {    #{{{
 
 }    #}}}
 
-# version 1 specific
 sub read_version1_map {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
@@ -107,6 +103,21 @@ sub read_typed_list {    #{{{
     return $datastructure;
 }    #}}}
 
+sub  read_remote_object { #{{{
+    my $self = shift;
+    my $input_handle = $self->input_handle();
+    my $remote_type = $self->read_v1_type()->{type};
+    $remote_type =~s/\./::/g;
+    my $class_definition = { 
+        type  => $remote_type, 
+        fields => [ 'remote_url' ]
+    };
+    return $self->assemble_class({ 
+        type => $remote_type ,
+        data => {},
+        class_def => $class_definition});
+} #}}}
+
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
     my ( $type, $first_bit, $array_length );
@@ -138,38 +149,14 @@ sub read_class_handle {    #{{{
 
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
-            print "Class type $class_type\n";
-            my $length;
-            read $input_handle, $length, 1;
-            my $number_of_fields =
-              read_integer_handle_chunk( $length, $input_handle );
-            my @field_list;
-
-            foreach my $field_index ( 1 .. $number_of_fields ) {
-
-                # using the wrong function here, but who cares?
-                my $field = $self->read_hessian_chunk();
-                push @field_list, $field;
-
-            }
-
-            my $class_definition =
-              { type => $class_type, fields => \@field_list };
-            push @{ $self->class_definitions() }, $class_definition;
-            $datastructure = $class_definition;
+            $datastructure = $self->store_class_definition($class_type);
         }
         case /\x6f/ {    # The class definition is in the ref list
             $save_reference = 1;
-            my $class_number;
-            read $input_handle, $class_number, 1;
-            my $class_definition_number =
-              read_integer_handle_chunk( $class_number, $input_handle );
-            $datastructure = $self->instantiate_class($class_definition_number);
+            $datastructure = $self->fetch_class_for_data();
         }
     }
 
-    #    push @{ $self->reference_list() }, $datastructure
-    #      if $save_reference;
     return $datastructure;
 }    #}}}
 
@@ -290,29 +277,27 @@ sub read_hessian_chunk {    #{{{
         case /[\x49\x80-\xaf\xc0-\xcf\xd0-\xd7]/ {
             $element = read_integer_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
+        case /[\x4c\xd8-\xef\xf0-\xff\x38-\x3f]/ {
             $element = read_long_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x44\x5b-\x5f]/ {
+        case /\x44/ {
             $element = read_double_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x4a\x4b]/ {
+        case /\x64/ {
             $element = read_date_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
+        case /[\x53\x58\x73\x78\x00-\x0f]/ {    #   for version 1: \x73
             $element = read_string_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x41\x42\x20-\x2f\x34-\x37\x62]/ {
+        case /[\x42\x62]/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
-        {                                        # recursive datastructure
+        case /[\x4d\x4f\x56\x6f\x72\x76]/ {   # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x52/ {
             my $reference_id = read_integer_handle_chunk( 'I', $input_handle );
             $element = $self->reference_list()->[$reference_id];
-
         }
     }
     binmode( $input_handle, 'bytes' );

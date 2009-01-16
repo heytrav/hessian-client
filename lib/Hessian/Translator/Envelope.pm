@@ -54,7 +54,6 @@ sub read_message_chunk {   #{{{
 #            }
 #            my $exception_name        = $tokens[1];
 #            my $exception_description = $tokens[3];
-
 #        }
 #        case /\x72/ {    # version 1 reply
 #            $self->is_version_1(1);
@@ -63,9 +62,7 @@ sub read_message_chunk {   #{{{
 #              { hessian_version => $hessian_version, state => 'reply' };
 #        }
         case /\x52/ {    # Reply
-        print "Processing reply\n";
             my $reply_data = $self->deserialize_data();
-            print "Received reply $reply_data\n";
             $datastructure = { reply_data => $reply_data };
         }
         else {
@@ -173,14 +170,6 @@ sub read_packet {    #{{{
         print "Processing $packet_string\n";
         $self->deserialize_message({ input_string => $packet_string });
     };
-}    #}}}
-
-sub deserialize_message {    #{{{
-    my ( $self, $args ) = @_;
-    my $result;
-    eval { $result = $self->read_message_chunk(); };
-    return if Exception::Class->caught('EndOfInput::X');
-    return $result;
 }    #}}}
 
 sub next_token {    #{{{

@@ -89,32 +89,11 @@ sub read_class_handle {    #{{{
             my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
-            my $length;
-            read $input_handle, $length, 1;
-            my $number_of_fields =
-              read_integer_handle_chunk( $length, $input_handle );
-            my @field_list;
-            foreach my $field_index ( 1 .. $number_of_fields ) {
-
-                # using the wrong function here, but who cares?
-                my $field = $self->read_hessian_chunk();
-                push @field_list, $field;
-
-            }
-
-            my $class_definition =
-              { type => $class_type, fields => \@field_list };
-            push @{ $self->class_definitions() }, $class_definition;
-            $datastructure = $class_definition;
+            $datastructure = $self->store_class_definition($class_type);
         }
         case /\x4f/ {    # Read hessian data and create instance of class
-            my $length;
             $save_reference = 1;
-            read $input_handle, $length, 1;
-            my $class_definition_number =
-              read_integer_handle_chunk( $length, $input_handle );
-            $datastructure = $self->instantiate_class($class_definition_number);
-
+            $datastructure = $self->fetch_class_for_data();
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
             $save_reference = 1;

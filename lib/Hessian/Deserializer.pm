@@ -3,8 +3,7 @@ package Hessian::Deserializer;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
-#with 'Hessian::Translator::Composite';
-
+use YAML;
 has 'is_version_1' => ( is => 'rw', isa => 'Bool', default => 0 );
 has 'input_handle' => (
     is      => 'rw',
@@ -48,24 +47,14 @@ sub deserialize_data {    #{{{
     return $result;
 }    #}}}
 
-sub instantiate_class {    #{{{
-    my ( $self, $index ) = @_;
-    my $class_definitions = $self->class_definitions;
-    my $class_definition  = $self->class_definitions()->[$index];
-    my $datastructure     = $self->reference_list()->[-1];
-    my $class_type        = $class_definition->{type};
-    my $simple_obj        = bless $datastructure, $class_type;
-    {
-        no strict 'refs';
-        push @{ $class_type . '::ISA' }, 'Simple';
-    }
-    foreach my $field ( @{ $class_definition->{fields} } ) {
-        $simple_obj->meta()->add_attribute( $field, is => 'rw' );
-        my $value = $self->deserialize_data();
-        $simple_obj->$field($value);
-    }
-    return $simple_obj;
+sub deserialize_message {    #{{{
+    my ( $self, $args ) = @_;
+    my $result;
+    eval { $result = $self->read_message_chunk(); };
+    return if Exception::Class->caught('EndOfInput::X');
+    return $result;
 }    #}}}
+
 
 "one, but we're not the same";
 

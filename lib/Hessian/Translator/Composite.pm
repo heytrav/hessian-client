@@ -42,15 +42,6 @@ sub read_typed_list_element {    #{{{
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
       if $first_bit =~ /z/i;
     my $map_type = 'map';
-
-    #    if ( $entity_type !~ /^\d+$/ ) {
-    #        $type = $entity_type;
-    #        push @{ $self->type_list() }, $type;
-    #    }
-    #    else {
-    #        $type = $self->type_list()->[$entity_type];
-    #    }
-
     switch ($type) {
         case /boolean/ {
             $element = read_boolean_handle_chunk($first_bit);
@@ -103,6 +94,71 @@ sub store_fetch_type {    #{{{
 
     }
     return $type;
+}    #}}}
+
+sub store_class_definition {    #{{{
+    my ( $self, $class_type ) = @_;
+    my $input_handle = $self->input_handle();
+    my $length;
+    read $input_handle, $length, 1;
+    my $number_of_fields = read_integer_handle_chunk( $length, $input_handle );
+    my @field_list;
+
+    foreach my $field_index ( 1 .. $number_of_fields ) {
+
+        # using the wrong function here, but who cares?
+        my $field = $self->read_hessian_chunk();
+        push @field_list, $field;
+
+    }
+
+    my $class_definition = { type => $class_type, fields => \@field_list };
+    push @{ $self->class_definitions() }, $class_definition;
+    return $class_definition;
+}    #}}}
+
+sub fetch_class_for_data {    #{{{
+    my $self = shift;
+    my $input_handle = $self->input_handle();
+    my $length;
+    read $input_handle, $length, 1;
+    my $class_definition_number =
+      read_integer_handle_chunk( $length, $input_handle );
+    return $self->instantiate_class($class_definition_number);
+
+}    #}}}
+
+sub instantiate_class {    #{{{
+    my ( $self, $index ) = @_;
+    my $class_definitions = $self->class_definitions;
+    my $class_definition  = $self->class_definitions()->[$index];
+    my $datastructure     = $self->reference_list()->[-1];
+    my $class_type        = $class_definition->{type};
+    return $self->assemble_class(
+        {
+            class_def => $class_definition,
+            data      => $datastructure,
+            type      => $class_type
+        }
+    );
+}    #}}}
+
+sub assemble_class {    #{{{
+    my ( $self, $args ) = @_;
+    my ( $class_definition, $datastructure, $class_type ) =
+      @{$args}{qw/class_def data type/};
+    my $simple_obj = bless $datastructure, $class_type;
+    {
+        no strict 'refs';
+        push @{ $class_type . '::ISA' }, 'Simple';
+    }
+    foreach my $field ( @{ $class_definition->{fields} } ) {
+        $simple_obj->meta()->add_attribute( $field, is => 'rw' );
+        my $value = $self->deserialize_data();
+        $simple_obj->$field($value);
+    }
+    return $simple_obj;
+
 }    #}}}
 
 "one, but we're not the same";
