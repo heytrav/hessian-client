@@ -12,64 +12,67 @@ use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
-sub read_composite_datastructure {    #{{{
+sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
-    my ( $datastructure, $save_reference );
-    binmode( $input_handle, 'bytes' );
+    my $datastructure;
     switch ($first_bit) {
-        case /\x72/ {
-           $datastructure = $self->read_remote_object(); 
+        case /\x63/ {            # version 1 call
+            my $hessian_version = $self->read_version();
+            my $rpc_data = $self->read_rpc();
+            $datastructure = { 
+                hessian_version => $hessian_version,
+                call => $rpc_data
+                };
+
+        }
+        case /\x66/ {            # version 1 fault
+            my @tokens;
+            while ( my $token = $self->deserialize_data() ) {
+                push @tokens, $token;
             }
-        case /[\x56\x76]/ {           # typed lists
-            push @{ $self->reference_list() }, [];
-            $datastructure = $self->read_typed_list($first_bit);
+            my $exception_name        = $tokens[1];
+            my $exception_description = $tokens[3];
         }
-        case /\x48/ {
-            push @{ $self->reference_list() }, {};
-            $datastructure = $self->read_map_handle();
+        case /\x72/ {            # version 1 reply
+            my $hessian_version = $self->read_version();
+            $datastructure =
+              { hessian_version => $hessian_version, state => 'reply' };
         }
-        case /\x4d/ {                   # typed map
-            push @{ $self->reference_list() }, {};
-            $datastructure = $self->read_map_handle();
-        }
-        case /[\x4f\x6f]/ { # object definition or reference
-            push @{ $self->reference_list() }, {};
-            $datastructure = $self->read_class_handle( $first_bit, );
+        else {
+            $datastructure = $self->deserialize_data(
+                {
+                    first_bit => $first_bit
+                }
+            );
         }
     }
-
     return $datastructure;
 
 }    #}}}
 
-sub read_version1_map {    #{{{
-    my $self         = shift;
+sub read_composite_data {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
-    my $version1_t;
-    read $input_handle, $version1_t, 1;
-    my ( $type, $first_key_value_pair );
-    if ( $version1_t eq 't' ) {
-        $type = $self->read_hessian_chunk();
-    }
-    else {
-
-        # no type, so read the rest of the chunk to get the actual
-        # datastructure
-        my $key;
-        switch ($version1_t) {
-            case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
-                $key = read_integer_handle_chunk( $version1_t, $input_handle );
-            }
-            case /[\x52\x53\x00-\x1f\x30-\x33\x73]/ {
-                $key = read_string_handle_chunk( $version1_t, $input_handle );
-            }
+    my ( $datastructure, $save_reference );
+    switch ($first_bit) {
+        case /\x72/ {
+            $datastructure = $self->read_remote_object();
         }
-
-        # now read the next element out to make sure the remaining has has
-        # an even number of elements
-        my $value = $self->read_hessian_chunk();
+        case /[\x56\x76]/ {    # typed lists
+            push @{ $self->reference_list() }, [];
+            $datastructure = $self->read_typed_list($first_bit);
+        }
+        case /\x4d/ {          # typed map
+            push @{ $self->reference_list() }, {};
+            $datastructure = $self->read_map_handle();
+        }
+        case /[\x4f\x6f]/ {    # object definition or reference
+            push @{ $self->reference_list() }, {};
+            $datastructure = $self->read_class_handle( $first_bit, );
+        }
     }
+    return $datastructure;
 
 }    #}}}
 
@@ -103,20 +106,23 @@ sub read_typed_list {    #{{{
     return $datastructure;
 }    #}}}
 
-sub  read_remote_object { #{{{
-    my $self = shift;
+sub read_remote_object {    #{{{
+    my $self         = shift;
     my $input_handle = $self->input_handle();
-    my $remote_type = $self->read_v1_type()->{type};
-    $remote_type =~s/\./::/g;
-    my $class_definition = { 
-        type  => $remote_type, 
-        fields => [ 'remote_url' ]
+    my $remote_type  = $self->read_v1_type()->{type};
+    $remote_type =~ s/\./::/g;
+    my $class_definition = {
+        type   => $remote_type,
+        fields => ['remote_url']
     };
-    return $self->assemble_class({ 
-        type => $remote_type ,
-        data => {},
-        class_def => $class_definition});
-} #}}}
+    return $self->assemble_class(
+        {
+            type      => $remote_type,
+            data      => {},
+            class_def => $class_definition
+        }
+    );
+}    #}}}
 
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
@@ -129,14 +135,14 @@ sub read_v1_type {    #{{{
     else {
         read $input_handle, $first_bit, 1;
         if ( $first_bit =~ /t/ ) {
-            $type = $self->read_hessian_chunk();
+            $type = $self->read_hessian_chunk({ first_bit => 'S'});
         }
     }
+#    print "Got type $type, first_bit $first_bit\n";
     return { type => $type, next_bit => $array_length } if $type;
     return { next_bit => $first_bit };
 }    #}}}
 
-# version 2 specific
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -153,14 +159,13 @@ sub read_class_handle {    #{{{
         }
         case /\x6f/ {    # The class definition is in the ref list
             $save_reference = 1;
-            $datastructure = $self->fetch_class_for_data();
+            $datastructure  = $self->fetch_class_for_data();
         }
     }
 
     return $datastructure;
 }    #}}}
 
-# mostly version 2 specific
 sub read_map_handle {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
@@ -197,33 +202,6 @@ sub read_map_handle {    #{{{
 
 }    #}}}
 
-# version 2 specific
-sub read_list_length {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
-
-    my $array_length;
-    if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
-        my $length;
-        read $input_handle, $length, 1;
-        $array_length = read_integer_handle_chunk( $length, $input_handle );
-    }
-    elsif ( $first_bit =~ /[\x70-\x77]/ ) {
-        my $hex_bit = unpack 'C*', $first_bit;
-        $array_length = $hex_bit - 0x70;
-    }
-    elsif ( $first_bit =~ /[\x78-\x7f]/ ) {
-        my $hex_bit = unpack 'C*', $first_bit;
-        $array_length = $hex_bit - 0x78;
-    }
-    elsif ( $first_bit =~ /\x6c/ ) {
-        $array_length = read_integer_handle_chunk( 'I', $input_handle );
-        print "received array length of $array_length\n";
-    }
-    return $array_length;
-}    #}}}
-
-# version 2 specific
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -237,10 +215,7 @@ sub read_untyped_list {    #{{{
         my $element;
         eval { $element = $self->read_hessian_chunk(); };
         last LISTLOOP
-          if
-
-            #            $first_bit =~ /\x57/ &&
-            Exception::Class->caught('EndOfInput::X');
+          if Exception::Class->caught('EndOfInput::X');
 
         push @{$datastructure}, $element;
         $index++;
@@ -249,29 +224,18 @@ sub read_untyped_list {    #{{{
     return $datastructure;
 }    #}}}
 
-sub read_hessian_chunk {    #{{{
-    my ( $self, $args ) = @_;
+sub read_simple_datastructure {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
-    binmode( $input_handle, 'bytes' );
-    my ( $first_bit, $element );
-    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
-        $first_bit = $args->{first_bit};
-    }
-    else {
-        read $input_handle, $first_bit, 1;
-    }
-
-    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
-      if $first_bit =~ /z/i;
-
+    my $element;
     switch ($first_bit) {
         case /\x00/ {
             $element = $self->read_hessian_chunk();
         }
-        case /\x4e/ {    # 'N' for NULL
+        case /\x4e/ {              # 'N' for NULL
             $element = undef;
         }
-        case /[\x46\x54]/ {    # 'T'rue or 'F'alse
+        case /[\x46\x54]/ {        # 'T'rue or 'F'alse
             $element = read_boolean_handle_chunk($first_bit);
         }
         case /[\x49\x80-\xaf\xc0-\xcf\xd0-\xd7]/ {
@@ -292,12 +256,15 @@ sub read_hessian_chunk {    #{{{
         case /[\x42\x62]/ {
             $element = read_binary_handle_chunk( $first_bit, $input_handle );
         }
-        case /[\x4d\x4f\x56\x6f\x72\x76]/ {   # recursive datastructure
+        case /[\x4d\x4f\x56\x6f\x72\x76]/ {     # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x52/ {
             my $reference_id = read_integer_handle_chunk( 'I', $input_handle );
             $element = $self->reference_list()->[$reference_id];
+        }
+        case /[\x48\x6d]/ {                     # a header or method name
+            $element = read_string_handle_chunk( 'S', $input_handle );
         }
     }
     binmode( $input_handle, 'bytes' );
@@ -313,6 +280,45 @@ sub read_list_type {    #{{{
     my $type = read_string_handle_chunk( $type_length, $input_handle );
     binmode( $input_handle, 'bytes' );
     return $type;
+}    #}}}
+
+sub read_rpc {    #{{{
+    my $self         = shift;
+    my $input_handle = $self->input_handle();
+    my $call_data    = {};
+    my $call_args;
+    my $in_header;
+  RPCSTRUCTURE: {
+        my $first_bit;
+        read $input_handle, $first_bit, 1;
+        my $element;
+        eval {
+            $element = $self->read_hessian_chunk( { first_bit => $first_bit } );
+        };
+        last RPCSTRUCTURE if Exception::Class->caught('EndOfInput::X');
+        switch ($first_bit) {
+            case /\x6d/ {
+                $in_header = 0;
+                $call_data->{method} = $element;
+            }
+            case /\x48/ {
+                $in_header = 1;
+                push @{ $call_data->{headers} }, { header => $element };
+            }
+
+            else {
+                if ($in_header) {
+                    push @{ $call_data->{headers}->[-1]->{elements} }, $element;
+                }
+                else {
+                    push @{$call_args}, $element;
+                }
+            }
+        }
+        redo RPCSTRUCTURE;
+    }
+   $call_data->{arguments} = $call_args;
+   return $call_data;
 }    #}}}
 
 "one, but we're not the same";

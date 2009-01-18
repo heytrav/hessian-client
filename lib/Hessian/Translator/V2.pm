@@ -12,11 +12,49 @@ use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
-sub read_composite_datastructure {    #{{{
+
+sub  read_message_chunk_data { #{{{
+    my ($self, $first_bit) = @_;
+    my $input_handle = $self->input_handle();
+    my $datastructure;
+    switch ($first_bit) {
+        case /\x48/ {       # TOP with version
+            my $hessian_version = $self->read_version();
+            $datastructure = { hessian_version => $hessian_version };
+        }
+#        case /\x43/ {       # Hessian Remote Procedure Call
+#             # call will need to be dispatched to object designated in some kind of
+#             # service descriptor
+#            $datastructure =
+#              "Server side remote procedure " . "calls not implemented.";
+#        }
+        case /\x45/ {    # Envelope
+            $datastructure = $self->read_envelope();
+
+        }
+        case /\x46/ {    # Fault
+            my $result                = $self->deserialize_data();
+            my $exception_name        = $result->{code};
+            my $exception_description = $result->{message};
+            $datastructure =
+              $exception_name->new( error => $exception_description );
+        }
+        case /\x52/ {    # Reply
+            my $reply_data = $self->deserialize_data();
+            $datastructure = { reply_data => $reply_data };
+        }
+        else {
+            $datastructure =
+              $self->deserialize_data( { first_bit => $first_bit } );
+        }
+    }
+    return $datastructure;
+} #}}}
+
+sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
-    binmode( $input_handle, 'bytes' );
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {    # typed lists
             push @{ $self->reference_list() }, [];
@@ -136,28 +174,6 @@ sub read_map_handle {    #{{{
 }    #}}}
 
 # version 2 specific
-sub read_list_length {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
-
-    my $array_length;
-    if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
-        my $length;
-        read $input_handle, $length, 1;
-        $array_length = read_integer_handle_chunk( $length, $input_handle );
-    }
-    elsif ( $first_bit =~ /[\x70-\x77]/ ) {
-        my $hex_bit = unpack 'C*', $first_bit;
-        $array_length = $hex_bit - 0x70;
-    }
-    elsif ( $first_bit =~ /[\x78-\x7f]/ ) {
-        my $hex_bit = unpack 'C*', $first_bit;
-        $array_length = $hex_bit - 0x78;
-    }
-    return $array_length;
-}    #}}}
-
-# version 2 specific
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -181,22 +197,10 @@ sub read_untyped_list {    #{{{
     return $datastructure;
 }    #}}}
 
-# version 2 specific
-sub read_hessian_chunk {    #{{{
-    my ( $self, $args ) = @_;
+sub read_simple_datastructure { #{{{
+    my ($self, $first_bit) = @_;
     my $input_handle = $self->input_handle();
-    binmode( $input_handle, 'bytes' );
-    my ( $first_bit, $element );
-    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
-        $first_bit = $args->{first_bit};
-    }
-    else {
-        read $input_handle, $first_bit, 1;
-    }
-
-    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
-      if $first_bit =~ /z/i;
-
+    my $element;
     switch ($first_bit) {
         case /\x4e/ {    # 'N' for NULL
             $element = undef;
@@ -235,7 +239,7 @@ sub read_hessian_chunk {    #{{{
     binmode( $input_handle, 'bytes' );
     return $element;
 
-}    #}}}
+} #}}}
 
 "one, but we're not the same";
 

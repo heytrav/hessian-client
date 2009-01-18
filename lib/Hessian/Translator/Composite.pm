@@ -161,6 +161,58 @@ sub assemble_class {    #{{{
 
 }    #}}}
 
+sub read_list_length {    #{{{
+    my ( $self, $first_bit ) = @_;
+    my $input_handle = $self->input_handle();
+
+    my $array_length;
+    if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
+        my $length;
+        read $input_handle, $length, 1;
+        $array_length = read_integer_handle_chunk( $length, $input_handle );
+    }
+    elsif ( $first_bit =~ /[\x70-\x77]/ ) {
+        my $hex_bit = unpack 'C*', $first_bit;
+        $array_length = $hex_bit - 0x70;
+    }
+    elsif ( $first_bit =~ /[\x78-\x7f]/ ) {
+        my $hex_bit = unpack 'C*', $first_bit;
+        $array_length = $hex_bit - 0x78;
+    }
+    elsif ( $first_bit =~ /\x6c/ ) {
+        $array_length = read_integer_handle_chunk( 'I', $input_handle );
+        print "received array length of $array_length\n";
+    }
+    return $array_length;
+}    #}}}
+
+sub read_hessian_chunk {    #{{{
+    my ( $self, $args ) = @_;
+    my $input_handle = $self->input_handle();
+    binmode( $input_handle, 'bytes' );
+    my ( $first_bit, $element );
+    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
+        $first_bit = $args->{first_bit};
+    }
+    else {
+        read $input_handle, $first_bit, 1;
+    }
+
+    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
+      if $first_bit =~ /z/i;
+
+    return $self->read_simple_datastructure($first_bit);
+}    #}}}
+
+sub  read_composite_datastructure { #{{{
+    my ( $self, $first_bit ) = @_;
+    my $input_handle = $self->input_handle();
+    binmode( $input_handle, 'bytes' );
+   return $self->read_composite_data($first_bit); 
+
+} #}}}
+
+
 "one, but we're not the same";
 
 __END__

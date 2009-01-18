@@ -3,7 +3,6 @@ package Hessian::Translator::Envelope;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
-#requires qw/deserialize_data/;
 
 use Switch;
 use YAML;
@@ -23,53 +22,7 @@ sub read_message_chunk {   #{{{
       or EndOfInput->throw( error => "Reached end of input" );
     EndOfInput->throw( error => "Encountered end of datastructure." )
       if $first_bit =~ /z/i;
-    my $datastructure;
-    switch ($first_bit) {
-        case /\x48/ {       # TOP with version
-            my $hessian_version = $self->read_version();
-            $datastructure = { hessian_version => $hessian_version };
-        }
-#        case /\x43/ {       # Hessian Remote Procedure Call
-#             # call will need to be dispatched to object designated in some kind of
-#             # service descriptor
-#            $datastructure =
-#              "Server side remote procedure " . "calls not implemented.";
-#        }
-        case /\x45/ {    # Envelope
-            $datastructure = $self->read_envelope();
-
-        }
-        case /\x46/ {    # Fault
-            my $result                = $self->deserialize_data();
-            my $exception_name        = $result->{code};
-            my $exception_description = $result->{message};
-            $datastructure =
-              $exception_name->new( error => $exception_description );
-        }
-#        case /\x66/ {    # version 1 fault
-#            $self->is_version_1(1);
-#            my @tokens;
-#            while ( my $token = $self->deserialize_data() ) {
-#                push @tokens, $token;
-#            }
-#            my $exception_name        = $tokens[1];
-#            my $exception_description = $tokens[3];
-#        }
-#        case /\x72/ {    # version 1 reply
-#            $self->is_version_1(1);
-#            my $hessian_version = $self->read_version();
-#            $datastructure =
-#              { hessian_version => $hessian_version, state => 'reply' };
-#        }
-        case /\x52/ {    # Reply
-            my $reply_data = $self->deserialize_data();
-            $datastructure = { reply_data => $reply_data };
-        }
-        else {
-            $datastructure =
-              $self->deserialize_data( { first_bit => $first_bit } );
-        }
-    }
+    my $datastructure = $self->read_message_chunk_data($first_bit);
     return $datastructure;
 }    #}}}
 
