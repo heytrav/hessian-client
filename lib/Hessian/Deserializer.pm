@@ -5,6 +5,7 @@ use version; our $VERSION = qv('0.0.1');
 
 use YAML;
 has 'is_version_1' => ( is => 'rw', isa => 'Bool', default => 0 );
+
 has 'input_handle' => (#{{{
     is      => 'rw',
     isa     => 'GlobRef',

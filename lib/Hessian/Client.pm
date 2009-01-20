@@ -14,19 +14,34 @@ has 'type_list'         => ( is => 'rw', default => sub { [] } );
 has 'reference_list'    => ( is => 'rw', default => sub { [] } );
 has 'input_string'      => ( is => 'rw', isa     => 'Str' );
 has 'version'           => ( is => 'ro', isa     => 'Int' );
-
-before qw/input_string / => sub {    #{{{
-    my $self = shift;
-    if ( !$self->does('Hessian::Translator::Composite') ) {
-        load 'Hessian::Translator::Composite';
-        Hessian::Translator::Composite->meta()->apply($self);
+has 'service'           => (
+    is      => 'rw',
+    isa     => 'URI',
+    lazy    => 1,
+    default => sub {
+        URI->new($_);
     }
+);
+
+before 'input_string' => sub {    #{{{
+    my $self = shift;
     if ( !$self->does('Hessian::Deserializer') ) {
         load 'Hessian::Deserializer';
         Hessian::Deserializer->meta()->apply($self);
     }
     $self->version();
 };    #}}}
+
+before 'service' => sub   { #{{{
+    my $self = shift;
+    if ( !$self->does('Hessian::Serializer') ) {
+        load 'Hessian::Serializer';
+        Hessian::Serializer->meta()->apply($self);
+    }
+    $self->version();
+}; #}}}
+
+
 
 after 'version' => sub {    #{{{
     my ($self) = @_;
@@ -38,7 +53,9 @@ after 'version' => sub {    #{{{
         last PROCESSVERSION
           if $self->does('Hessian::Translator::V1')
               or $self->does('Hessian::Translator::V2');
-        last PROCESSVERSION if ! $self->does('Hessian::Deserializer');
+        last PROCESSVERSION
+          if not(    $self->does('Hessian::Serializer')
+                  or $self->does('Hessian::Deserializer') );
         my $version_role = 'Hessian::Translator::V' . $version;
         load $version_role;
         $version_role->meta()->apply($self);
@@ -47,18 +64,20 @@ after 'version' => sub {    #{{{
 
 sub BUILD {    #{{{
     my ( $self, $params ) = @_;
+    load 'Hessian::Translator::Composite';
+    Hessian::Translator::Composite->meta()->apply($self);
     if ( any { defined $params->{$_} } qw/input_string input_handle/ ) {
         load 'Hessian::Deserializer';
-        load 'Hessian::Translator::Composite';
-        Hessian::Translator::Composite->meta()->apply($self);
         Hessian::Deserializer->meta()->apply($self);
 
-        $self->version();
     }
 
-    #    if ( any { defined $params->{$_} } qw/output_string output_handle/ ) {
-    #        print "composing serialier\n";
-    #    }
+    if ( any { defined $params->{$_} } qw/service/ ) {
+        load 'Hessian::Serializer';
+        Hessian::Serializer->meta()->apply($self);
+    }
+    $self->version();
+
 }    #}}}
 
 "one, but we're not the same";

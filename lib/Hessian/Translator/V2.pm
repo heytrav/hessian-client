@@ -124,7 +124,6 @@ sub read_typed_list {    #{{{
     return $datastructure;
 }    #}}}
 
-# version 2 specific
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -152,7 +151,6 @@ sub read_class_handle {    #{{{
     return $datastructure;
 }    #}}}
 
-# mostly version 2 specific
 sub read_map_handle {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
@@ -180,7 +178,6 @@ sub read_map_handle {    #{{{
 
 }    #}}}
 
-# version 2 specific
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
