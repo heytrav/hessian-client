@@ -12,22 +12,23 @@ use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
-
-sub  read_message_chunk_data { #{{{
-    my ($self, $first_bit) = @_;
+sub read_message_chunk_data {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my $datastructure;
     switch ($first_bit) {
-        case /\x48/ {       # TOP with version
+        case /\x48/ {            # TOP with version
             my $hessian_version = $self->read_version();
             $datastructure = { hessian_version => $hessian_version };
         }
-#        case /\x43/ {       # Hessian Remote Procedure Call
-#             # call will need to be dispatched to object designated in some kind of
-#             # service descriptor
-#            $datastructure =
-#              "Server side remote procedure " . "calls not implemented.";
-#        }
+        case /\x43/ {            # Hessian Remote Procedure Call
+             # call will need to be dispatched to object designated in some kind of
+             # service descriptor
+            my $rpc_data = $self->read_rpc();
+            $datastructure = {
+                call            => $rpc_data
+            };
+        }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
 
@@ -44,12 +45,15 @@ sub  read_message_chunk_data { #{{{
             $datastructure = { reply_data => $reply_data };
         }
         else {
-            $datastructure =
-              $self->deserialize_data( { first_bit => $first_bit } );
+            $datastructure = $self->deserialize_data(
+                {
+                    first_bit => $first_bit
+                }
+            );
         }
     }
     return $datastructure;
-} #}}}
+}    #}}}
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -58,27 +62,29 @@ sub read_composite_data {    #{{{
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {    # typed lists
             push @{ $self->reference_list() }, [];
-            $datastructure  = $self->read_typed_list( $first_bit, );
+            $datastructure = $self->read_typed_list( $first_bit, );
         }
 
         case /[\x57\x58\x78-\x7f]/ {    # untyped lists
             push @{ $self->reference_list() }, [];
-            $datastructure  = $self->read_untyped_list( $first_bit, );
+            $datastructure = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
-            push @{ $self->reference_list() }, {};
-            $datastructure  = $self->read_map_handle();
+            push @{ $self->reference_list() }, {
+            };
+            $datastructure = $self->read_map_handle();
         }
         case /\x4d/ {                   # typed map
 
+            push @{ $self->reference_list() }, {
+            };
 
-            push @{ $self->reference_list() }, {};
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
 
-            my $entity_type   = $self->read_hessian_chunk();
-            my $map_type = $self->store_fetch_type($entity_type);
-            my $map      = $self->read_map_handle();
+            my $entity_type = $self->read_hessian_chunk();
+            my $map_type    = $self->store_fetch_type($entity_type);
+            my $map         = $self->read_map_handle();
             $datastructure = bless $map, $map_type;
 
         }
@@ -87,8 +93,9 @@ sub read_composite_data {    #{{{
 
         }
     }
-#    push @{ $self->reference_list() }, $datastructure
-#      if $save_reference;
+
+    #    push @{ $self->reference_list() }, $datastructure
+    #      if $save_reference;
     return $datastructure;
 
 }    #}}}
@@ -131,7 +138,7 @@ sub read_class_handle {    #{{{
         }
         case /\x4f/ {    # Read hessian data and create instance of class
             $save_reference = 1;
-            $datastructure = $self->fetch_class_for_data();
+            $datastructure  = $self->fetch_class_for_data();
         }
         case /[\x60-\x6f]/ {    # The class definition is in the ref list
             $save_reference = 1;
@@ -164,9 +171,9 @@ sub read_map_handle {    #{{{
 
     # should throw an exception if @key_value_pairs has an odd number of
     # elements
-    my $hash = {@key_value_pairs};
+    my $hash          = {@key_value_pairs};
     my $datastructure = $self->reference_list()->[-1];
-    foreach my $key (keys %{$hash}) {
+    foreach my $key ( keys %{$hash} ) {
         $datastructure->{$key} = $hash->{$key};
     }
     return $datastructure;
@@ -197,15 +204,15 @@ sub read_untyped_list {    #{{{
     return $datastructure;
 }    #}}}
 
-sub read_simple_datastructure { #{{{
-    my ($self, $first_bit) = @_;
+sub read_simple_datastructure {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my $element;
     switch ($first_bit) {
-        case /\x4e/ {    # 'N' for NULL
+        case /\x4e/ {              # 'N' for NULL
             $element = undef;
         }
-        case /[\x46\x54]/ {    # 'T'rue or 'F'alse
+        case /[\x46\x54]/ {        # 'T'rue or 'F'alse
             $element = read_boolean_handle_chunk($first_bit);
         }
         case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
@@ -239,7 +246,24 @@ sub read_simple_datastructure { #{{{
     binmode( $input_handle, 'bytes' );
     return $element;
 
-} #}}}
+}    #}}}
+
+sub read_rpc {    #{{{
+    my $self         = shift;
+    my $input_handle = $self->input_handle();
+    my $call_data    = {};
+    my $call_args;
+    my $method_name = $self->read_hessian_chunk();
+    $call_data->{method} = $method_name;
+    my $number_of_args = $self->read_hessian_chunk();
+    foreach ( 1 .. $number_of_args ) {
+        my $argument = $self->read_hessian_chunk();
+        push @{$call_args}, $argument;
+    }
+    $call_data->{arguments} = $call_args;
+    return $call_data;
+
+}    #}}}
 
 "one, but we're not the same";
 

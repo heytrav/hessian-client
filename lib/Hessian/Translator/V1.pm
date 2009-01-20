@@ -171,7 +171,8 @@ sub read_map_handle {    #{{{
     my $input_handle = $self->input_handle();
     my $v1_type      = $self->read_v1_type();
     my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
-    my $type = $self->store_fetch_type($entity_type) if $entity_type;
+    my $type;
+    $type = $self->store_fetch_type($entity_type) if $entity_type;
     my $key;
     if ($next_bit) {
         $key = $self->read_hessian_chunk( { first_bit => $next_bit } );

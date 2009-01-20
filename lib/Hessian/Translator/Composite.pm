@@ -149,8 +149,10 @@ sub assemble_class {    #{{{
       @{$args}{qw/class_def data type/};
     my $simple_obj = bless $datastructure, $class_type;
     {
+        ## no critic
         no strict 'refs';
         push @{ $class_type . '::ISA' }, 'Simple';
+        ## use critic
     }
     foreach my $field ( @{ $class_definition->{fields} } ) {
         $simple_obj->meta()->add_attribute( $field, is => 'rw' );
@@ -204,12 +206,11 @@ sub read_hessian_chunk {    #{{{
     return $self->read_simple_datastructure($first_bit);
 }    #}}}
 
-sub  read_composite_datastructure { #{{{
+sub read_composite_datastructure { #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
    return $self->read_composite_data($first_bit); 
-
 } #}}}
 
 

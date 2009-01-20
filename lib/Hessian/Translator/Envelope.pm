@@ -120,7 +120,6 @@ sub read_packet {    #{{{
     my $packet_string;
     read $input_handle, $packet_string, $packet_size;
     return FIXED NONVOID {
-        print "Processing $packet_string\n";
         $self->deserialize_message({ input_string => $packet_string });
     };
 }    #}}}

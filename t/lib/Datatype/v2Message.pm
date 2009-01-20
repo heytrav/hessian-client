@@ -14,8 +14,8 @@ use Hessian::Deserializer;
 use Hessian::Translator::Composite;
 
 sub t004_initialize_hessian : Test(3) {    #{{{
-    my $self        = shift;
-    my $hessian_obj = Hessian::Client->new(version => 2);
+    my $self = shift;
+    my $hessian_obj = Hessian::Client->new( version => 2 );
 
     ok(
         !$hessian_obj->can('deserialize_message'),
@@ -53,8 +53,7 @@ sub t010_read_hessian_version : Test(1) {    #{{{
     my $deserializer = $self->{deserializer};
     my $hessian_data = "H\x02\x00";
     $deserializer->input_string($hessian_data);
-    my $result =
-      $deserializer->deserialize_message(  );
+    my $result = $deserializer->deserialize_message();
     cmp_deeply(
         $result,
         { hessian_version => "2.0" },
@@ -104,6 +103,27 @@ sub t017_hessian_fault : Test(1) {    #{{{
     my $result =
       $deserializer->deserialize_message( { input_string => $hessian_data } );
     isa_ok( $result, 'ServiceException', "Object received from deserializer" );
+}    #}}}
+
+sub t019_hessian_call : Test(3) {    #{{{
+    my $self         = shift;
+    my $hessian_data = "H\x02\x00C\x02eq\x92M\x07qa.Bean\x03foo\x9dZQ\x90";
+    my $hessian_obj  = Hessian::Client->new( version => 2 );
+    $hessian_obj->input_string($hessian_data);
+
+    my $datastructure = $hessian_obj->process_message();
+    cmp_deeply(
+        $datastructure->[1]->{call},
+        {
+            arguments => ignore(),
+            method    => 'eq'
+        }
+    );
+    my @arguments = @{ $datastructure->[1]->{call}->{arguments} };
+
+    foreach my $argument (@arguments) {
+        isa_ok( $argument, 'qa.Bean', "Type parsed from call" );
+    }
 }    #}}}
 
 "one, but we're not the same";
