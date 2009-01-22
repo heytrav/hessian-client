@@ -1,4 +1,4 @@
-package  Communication;
+package Communication;
 
 use strict;
 use warnings;
@@ -28,6 +28,12 @@ sub  t007_compose_serializer : Test(1) { #{{{
     );
 } #}}}
 
+sub  t020_serialize_hash_map { #{{{
+    my $self = shift;
+    my $client = Hessian::Client->new( version => 1);
+    $client->service(URI->new('http://localhost:8080'));
+    my $datastructure =  { 1 => 'fee', 16 => 'fie', 256 => 'foe' };
+} #}}}
 
 "one, but we're not the same";
 

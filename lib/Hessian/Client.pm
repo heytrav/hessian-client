@@ -19,7 +19,7 @@ has 'service'           => (
     isa     => 'URI',
     lazy    => 1,
     default => sub {
-        URI->new($_);
+        URI->new('http://localhost:8080');
     }
 );
 
@@ -40,8 +40,6 @@ before 'service' => sub   { #{{{
     }
     $self->version();
 }; #}}}
-
-
 
 after 'version' => sub {    #{{{
     my ($self) = @_;
