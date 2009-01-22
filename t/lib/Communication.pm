@@ -33,6 +33,7 @@ sub  t020_serialize_hash_map { #{{{
     my $client = Hessian::Client->new( version => 1);
     $client->service(URI->new('http://localhost:8080'));
     my $datastructure =  { 1 => 'fee', 16 => 'fie', 256 => 'foe' };
+
 } #}}}
 
 "one, but we're not the same";

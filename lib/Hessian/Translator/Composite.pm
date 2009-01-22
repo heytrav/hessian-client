@@ -8,25 +8,46 @@ with 'Hessian::Translator::Envelope';
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:input_handle/;
-use Hessian::Translator::String qw/:input_handle/;
+use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
+use Hessian::Translator::String qw/:to_hessian :input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
-sub read_list {    #{{{
-    my $hessian_list = shift;
-    my $array        = [];
-    if ( $hessian_list =~ /^  \x57  (.*)  Z/xms ) {
-        $array = read_variable_untyped_list($1);
-    }
+#sub read_list {    #{{{
+#    my $hessian_list = shift;
+#    my $array        = [];
+#    if ( $hessian_list =~ /^  \x57  (.*)  Z/xms ) {
+#        $array = read_variable_untyped_list($1);
+#    }
 
-    return $array;
-}    #}}}
+#    return $array;
+#}    #}}}
 
 sub write_list {    #: Export(:to_hessian) {    #{{{
     my $list = shift;
 }    #}}}
+
+sub  write_map { #{{{
+    my ($self, $data) = @_;
+
+} #}}}
+
+sub  write_element { #{{{
+    my ($self, $element) = @_;
+
+    my $ref_type = ref $element ? ref $element : ref \$element   ;
+    my $hessian_element;
+    if ( 'SCALAR' eq $ref_type) {
+        switch ( $element) { # Integer or String
+            case /^[A-Za-z][A-Za-z0-9]+$/ { # a string
+              $hessian_element =   
+                }
+
+            else {<+++>}
+        }
+    }
+} #}}}
 
 sub read_typed_list_element {    #{{{
     my ( $self, $type, $args ) = @_;
