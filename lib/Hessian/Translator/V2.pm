@@ -6,9 +6,9 @@ use version; our $VERSION = qv('0.0.1');
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:input_handle/;
-use Hessian::Translator::String qw/:input_handle/;
-use Hessian::Translator::Date qw/:input_handle/;
+use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
+use Hessian::Translator::String qw/:to_hessian :input_handle/;
+use Hessian::Translator::Date qw/:to_hessian :input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
@@ -70,14 +70,12 @@ sub read_composite_data {    #{{{
             $datastructure = $self->read_untyped_list( $first_bit, );
         }
         case /\x48/ {
-            push @{ $self->reference_list() }, {
-            };
+            push @{ $self->reference_list() }, {};
             $datastructure = $self->read_map_handle();
         }
         case /\x4d/ {                   # typed map
 
-            push @{ $self->reference_list() }, {
-            };
+            push @{ $self->reference_list() }, {};
 
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
@@ -261,6 +259,43 @@ sub read_rpc {    #{{{
     return $call_data;
 
 }    #}}}
+
+sub  write_hessian_hash { #{{{
+    my ($self, $datastructure) = @_;
+    my $anonymous_map_string = "H";  # start an anonymous hash
+    foreach my $key (keys %{$datastructure }) {
+        my $hessian_key = $self->write_scalar_element($key);
+        my $value = $datastructure->{$key};
+        my $hessian_value = $self->write_hessian_chunk($value);
+        $anonymous_map_string .= $hessian_key.$hessian_value;
+    }
+    $anonymous_map_string .= "Z";
+    return $anonymous_map_string;
+} #}}}
+
+sub  write_hessian_array { #{{{
+    my ($self, $datastructure) = @_;
+    my $anonymous_array_string = "\x57";
+    foreach my $element (@{$datastructure}) {
+        my $hessian_element = $self->write_hessian_chunk($element);
+        $anonymous_array_string .= $hessian_element;
+    }
+    $anonymous_array_string .= "Z";
+    return $anonymous_array_string;
+} #}}}
+
+sub  write_hessian_string { #{{{
+    my ($self, $chunks) = @_;
+    return write_string(
+            { prefix  => 'R', last_prefix => 'S', chunks  => $chunks } );
+
+} #}}}
+
+sub  write_hessian_date { #{{{
+    my ($self, $datetime) = @_;
+    my $epoch = $datetime->epoch();
+    return write_date($epoch);
+} #}}}
 
 "one, but we're not the same";
 

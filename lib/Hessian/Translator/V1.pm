@@ -331,31 +331,6 @@ sub read_rpc {    #{{{
     return $call_data;
 }    #}}}
 
-sub write_scalar_element {    #{{{
-    my ( $self, $element ) = @_;
-
-    my $hessian_element;
-    switch ($element) {       # Integer or String
-        case /^-?[0-9]+$/ {
-            $hessian_element = write_integer($element);
-        }
-        case /^-?[0-9]*\.[0-9]+/ {
-            $hessian_element = write_double($element);
-        }
-        case /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
-            my @chunks = $element =~ /(.{1,66})/g;
-            $hessian_element = write_string(
-                {
-                    prefix      => 's',
-                    last_prefix => 'S',
-                    chunks      => \@chunks
-                }
-            );
-        }
-    }
-    return $hessian_element;
-}    #}}}
-
 sub  write_hessian_hash { #{{{
     my ($self, $datastructure) = @_;
     my $anonymous_map_string = "M";  # start an anonymous hash
@@ -372,13 +347,19 @@ sub  write_hessian_hash { #{{{
 sub  write_hessian_array { #{{{
     my ($self, $datastructure) = @_;
     my $anonymous_array_string = "V";
-    binmode(STDOUT, 'utf8');
     foreach my $element (@{$datastructure}) {
         my $hessian_element = $self->write_hessian_chunk($element);
         $anonymous_array_string .= $hessian_element;
     }
     $anonymous_array_string .= "z";
     return $anonymous_array_string;
+} #}}}
+
+sub  write_hessian_string { #{{{
+    my ($self, $chunks) = @_;
+    return write_string(
+            { prefix  => 's', last_prefix => 'S', chunks  => $chunks } );
+
 } #}}}
 
 sub  write_hessian_date { #{{{

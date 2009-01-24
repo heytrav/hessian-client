@@ -62,7 +62,6 @@ sub read_date_handle_chunk : Export(:input_handle) {    #{{{
             $data = read_integer_handle_chunk( 'I', $input_handle );
 
         }
-
     }
     return $data;
 

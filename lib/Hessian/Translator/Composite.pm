@@ -8,9 +8,9 @@ with 'Hessian::Translator::Envelope';
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:input_handle/;
-use Hessian::Translator::String qw/:input_handle/;
-use Hessian::Translator::Date qw/:input_handle/;
+use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
+use Hessian::Translator::String qw/:to_hessian :input_handle/;
+use Hessian::Translator::Date qw/:to_hessian :input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
@@ -252,6 +252,25 @@ sub write_composite_element {    #{{{
 
     }
     return $hessian_string;
+}    #}}}
+
+sub write_scalar_element {    #{{{
+    my ( $self, $element ) = @_;
+
+    my $hessian_element;
+    switch ($element) {       # Integer or String
+        case /^-?[0-9]+$/ {
+            $hessian_element = write_integer($element);
+        }
+        case /^-?[0-9]*\.[0-9]+/ {
+            $hessian_element = write_double($element);
+        }
+        case /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
+            my @chunks = $element =~ /(.{1,66})/g;
+            $hessian_element = $self->write_hessian_string(\@chunks);
+        }
+    }
+    return $hessian_element;
 }    #}}}
 
 sub read_composite_datastructure {    #{{{
