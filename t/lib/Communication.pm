@@ -65,6 +65,23 @@ sub t015_serialize_float : Test(1) {    #{{{
     );
 }    #}}}
 
+sub  t017_serialize_array : Test(2){ #{{{
+    my $self = shift;
+    my $client = Hessian::Client->new( version => 1 );
+    $client->service( URI->new('http://localhost:8080') );
+    my $datastructure = [ 0, 'foobar' ];
+    my $hessian_data = $client->serialize_chunk($datastructure);
+    like( $hessian_data, 
+    qr/V\x90S\x00\x06foobarz/, 
+    "Interpreted a perl array." );
+    $client->input_string($hessian_data);
+    my $processed_datastructure = $client->deserialize_message();
+    cmp_deeply( $datastructure, $processed_datastructure,
+        "Mapped a simple array back to itself." );
+    
+} #}}}
+
+
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Client->new( version => 1 );

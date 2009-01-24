@@ -207,10 +207,18 @@ sub read_map_handle {    #{{{
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
-    my $array_length = $self->read_list_length( $first_bit, );
-
+    my $array_length;
     my $datastructure = $self->reference_list()->[-1];
     my $index         = 0;
+    if ( $first_bit eq 'l') {
+     $array_length = $self->read_list_length( $first_bit, );
+    }
+    else {
+        my $param = {first_bit => $first_bit};
+        my $first_element = $self->read_hessian_chunk($param);      
+        push @{$datastructure}, $first_element;
+        $index++;
+    }
   LISTLOOP:
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
@@ -360,6 +368,19 @@ sub  write_hessian_hash { #{{{
     $anonymous_map_string .= "z";
     return $anonymous_map_string;
 } #}}}
+
+sub  write_hessian_array { #{{{
+    my ($self, $datastructure) = @_;
+    my $anonymous_array_string = "V";
+    binmode(STDOUT, 'utf8');
+    foreach my $element (@{$datastructure}) {
+        my $hessian_element = $self->write_hessian_chunk($element);
+        $anonymous_array_string .= $hessian_element;
+    }
+    $anonymous_array_string .= "z";
+    return $anonymous_array_string;
+} #}}}
+
 
 
 

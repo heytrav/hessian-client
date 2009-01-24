@@ -236,6 +236,7 @@ sub  write_composite_element { #{{{
            $hessian_string = $self->write_hessian_hash($datastructure); 
             }
         case /ARRAY/ { 
+            $hessian_string = $self->write_hessian_array($datastructure);
             
             }
 
