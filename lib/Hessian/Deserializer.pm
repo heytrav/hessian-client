@@ -70,3 +70,9 @@ Hessian::Deserializer - Add deserialization capabilities to processor.
 =head1 INTERFACE
 
 
+=head2    deserialize_data
+
+
+=head2    deserialize_message
+
+

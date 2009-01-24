@@ -297,6 +297,49 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 
 =head1 INTERFACE
 
+=head2    assemble_class
+
+
+=head2    fetch_class_for_data
+
+
+=head2    instantiate_class
+
+
+=head2    read_composite_datastructure
+
+
+=head2    read_hessian_chunk
+
+
+=head2    read_list_length
+
+
+=head2    read_list_type
+
+
+=head2    read_typed_list_element
+
+
+=head2    store_class_definition
+
+
+=head2    store_fetch_type
+
+
+=head2    write_composite_element
+
+
+=head2    write_hessian_chunk
+
+
+=head2    write_list
+
+
+=head2    write_map
+
+=head2    write_scalar_element
+
 
 
 

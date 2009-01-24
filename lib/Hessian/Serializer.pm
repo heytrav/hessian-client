@@ -26,4 +26,5 @@ Hessian::Serializer - Serialize data into Hessian messages
 
 =head1 INTERFACE
 
+=head2   serialize_chunk
 

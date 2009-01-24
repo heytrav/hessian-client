@@ -37,7 +37,6 @@ sub read_version {    #{{{
 
 }    #}}}
 
-# Version 2 specific
 sub read_envelope {    #{{{
     my $self = shift;
     my ( $first_bit, @chunks );
@@ -90,7 +89,6 @@ sub read_envelope {    #{{{
 
 }    #}}}
 
-# Version 2 specific
 sub read_header_or_footer {    #{{{
     my $self = shift;
 
@@ -102,7 +100,6 @@ sub read_header_or_footer {    #{{{
     return $header;
 }    #}}}
 
-# Version 2 specific
 sub read_envelope_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -113,7 +110,6 @@ sub read_envelope_chunk {    #{{{
     }
 }    #}}}
 
-# Version 2 specific
 sub read_packet {    #{{{
     my ( $self, $packet_size ) = @_;
     my $input_handle = $self->input_handle();
@@ -155,4 +151,25 @@ Hessian::Translator::Envelope - Translate envelope level Hessian syntax
 
 =head1 INTERFACE
 
+=head2    next_token
 
+
+=head2    process_message
+
+
+=head2    read_envelope
+
+
+=head2    read_envelope_chunk
+
+
+=head2    read_header_or_footer
+
+
+=head2    read_message_chunk
+
+
+=head2    read_packet
+
+
+=head2    read_version
