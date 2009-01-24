@@ -65,22 +65,20 @@ sub t015_serialize_float : Test(1) {    #{{{
     );
 }    #}}}
 
-sub  t017_serialize_array : Test(2){ #{{{
+sub t017_serialize_array : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Client->new( version => 1 );
     $client->service( URI->new('http://localhost:8080') );
     my $datastructure = [ 0, 'foobar' ];
     my $hessian_data = $client->serialize_chunk($datastructure);
-    like( $hessian_data, 
-    qr/V\x90S\x00\x06foobarz/, 
-    "Interpreted a perl array." );
+    like( $hessian_data, qr/V\x90S\x00\x06foobarz/,
+        "Interpreted a perl array." );
     $client->input_string($hessian_data);
     my $processed_datastructure = $client->deserialize_message();
     cmp_deeply( $datastructure, $processed_datastructure,
         "Mapped a simple array back to itself." );
-    
-} #}}}
 
+}    #}}}
 
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
@@ -94,8 +92,23 @@ sub t020_serialize_hash_map : Test(2) {    #{{{
     my $processed_datastructure = $client->deserialize_message();
     cmp_deeply( $datastructure, $processed_datastructure,
         "Mapped a simple hash back to itself." );
-
 }    #}}}
+
+sub  t021_serialize_mixed : Test(1){ #{{{
+    my $self = shift;
+    my $client = Hessian::Client->new( version => 1 );
+    $client->service( URI->new('http://localhost:8080') );
+    my $datastructure = [ qw/hello goodbye/, { 1 => 'fee', 2 => 'fie'}];
+    my $hessianized = $client->serialize_chunk($datastructure);
+    $client->input_string($hessianized);
+    my $processed = $client->deserialize_message();
+    cmp_deeply(
+     $processed,
+     $datastructure,
+     "Matched a complex datastructure to itself."
+    );
+} #}}}
+
 
 "one, but we're not the same";
 
