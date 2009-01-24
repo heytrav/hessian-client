@@ -8,8 +8,8 @@ with 'Hessian::Translator::Envelope';
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
-use Hessian::Translator::String qw/:to_hessian :input_handle/;
+use Hessian::Translator::Numeric qw/:input_handle/;
+use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
@@ -28,26 +28,10 @@ sub write_list {    #: Export(:to_hessian) {    #{{{
     my $list = shift;
 }    #}}}
 
-sub  write_map { #{{{
-    my ($self, $data) = @_;
+sub write_map {    #{{{
+    my ( $self, $data ) = @_;
 
-} #}}}
-
-sub  write_element { #{{{
-    my ($self, $element) = @_;
-
-    my $ref_type = ref $element ? ref $element : ref \$element   ;
-    my $hessian_element;
-    if ( 'SCALAR' eq $ref_type) {
-        switch ( $element) { # Integer or String
-            case /^[A-Za-z][A-Za-z0-9]+$/ { # a string
-              $hessian_element =   
-                }
-
-            else {<+++>}
-        }
-    }
-} #}}}
+}    #}}}
 
 sub read_typed_list_element {    #{{{
     my ( $self, $type, $args ) = @_;
@@ -139,7 +123,7 @@ sub store_class_definition {    #{{{
 }    #}}}
 
 sub fetch_class_for_data {    #{{{
-    my $self = shift;
+    my $self         = shift;
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
@@ -227,13 +211,44 @@ sub read_hessian_chunk {    #{{{
     return $self->read_simple_datastructure($first_bit);
 }    #}}}
 
-sub read_composite_datastructure { #{{{
+sub write_hessian_chunk {    #{{{
+    my ( $self, $element ) = @_;
+    my $element_type = ref $element ? ref $element : \$element;
+    my $hessian_element;
+    switch ("$element_type") {
+        case /SCALAR/ {
+            $hessian_element = $self->write_scalar_element($element);
+        }
+        case /ARRAY|HASH/ {
+           $hessian_element = $self->write_composite_element($element); 
+            }
+    }
+    return $hessian_element;
+}    #}}}
+
+sub  write_composite_element { #{{{
+    my ($self, $datastructure) = @_;
+    my $element_type 
+        = ref $datastructure ? ref $datastructure : \$datastructure;
+    my $hessian_string;
+    switch ( $element_type) {
+        case /HASH/ {
+           $hessian_string = $self->write_hessian_hash($datastructure); 
+            }
+        case /ARRAY/ { 
+            
+            }
+
+    }
+    return $hessian_string;
+} #}}}
+
+sub read_composite_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
-   return $self->read_composite_data($first_bit); 
-} #}}}
-
+    return $self->read_composite_data($first_bit);
+}    #}}}
 
 "one, but we're not the same";
 

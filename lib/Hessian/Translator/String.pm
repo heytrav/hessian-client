@@ -8,6 +8,7 @@ use version; our $VERSION = qv('0.0.1');
 use Perl6::Export::Attrs;
 use List::MoreUtils qw/apply/;
 use Switch;
+use YAML;
 
 sub write_chunk {    #{{{
     my $string = shift;
@@ -16,8 +17,12 @@ sub write_chunk {    #{{{
 }    #}}}
 
 sub write_string : Export(:to_hessian) {    #{{{
-    my @string_chunks = @_;
-    my $message = hessianify_chunks( 'R', @string_chunks );
+    my $params   = shift;
+    my $prefixes = {};
+    @{$prefixes}{qw/prefix last_prefix/} 
+        = @{$params}{qw/prefix last_prefix/};
+    my @string_chunks = @{ $params->{chunks} };
+    my $message = hessianify_chunks( $prefixes, @string_chunks );
     return $message;
 }    #}}}
 
@@ -41,7 +46,8 @@ sub read_chunk {    #{{{
 
 sub write_xml : Export(:to_hessian) {    #{{{
     my @xml_chunks = @_;
-    my $message = hessianify_chunks( 'x', @xml_chunks );
+    my $message =
+      hessianify_chunks( { prefix => 'x', last_prefix => 'X' }, @xml_chunks );
     return $message;
 }    #}}}
 
@@ -63,14 +69,16 @@ sub de_hessianify_chunks {    #{{{
 }    #}}}
 
 sub hessianify_chunks {    #{{{
-    my ( $prefix, @chunks ) = @_;
+    my ( $prefixes, @chunks ) = @_;
     my $last_chunk = pop @chunks;
-    my @message    = apply {
-        ( lc $prefix ) . write_chunk($_);
+    my $prefix = $prefixes->{prefix};
+    my @message    = map {
+        ( $prefixes->{prefix} ) . write_chunk($_);
     }
-    @chunks[ 0 .. ( $#chunks - 1 ) ];
-    my $last_prefix = 'S';    # uc $prefix;
+    @chunks[ 0 .. ( $#chunks ) ];
+    my $last_prefix = $prefixes->{last_prefix};
     push @message, $last_prefix . write_chunk($last_chunk);
+    
     my $result = join "" => @message;
     return $result;
 }    #}}}
@@ -80,11 +88,11 @@ sub read_string_handle_chunk : Export(:input_handle) {    #{{{
     my ( $string, $data, $length );
     switch ($first_bit) {
         case /[\x00-\x1f]/ {
-            $length = unpack "n", "\x00".$first_bit;
+            $length = unpack "n", "\x00" . $first_bit;
         }
         case /[\x30-\x33]/ {
             read $input_handle, $data, 1;
-            $length = unpack "n", $first_bit. $data;
+            $length = unpack "n", $first_bit . $data;
         }
         case /[\x52-\x53\x73]/ {
             read $input_handle, $data, 2;

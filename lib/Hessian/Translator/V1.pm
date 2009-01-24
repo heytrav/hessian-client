@@ -6,8 +6,8 @@ use version; our $VERSION = qv('0.0.1');
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:input_handle/;
-use Hessian::Translator::String qw/:input_handle/;
+use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
+use Hessian::Translator::String qw/:to_hessian :input_handle/;
 use Hessian::Translator::Date qw/:input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
@@ -19,11 +19,11 @@ sub read_message_chunk_data {    #{{{
     switch ($first_bit) {
         case /\x63/ {            # version 1 call
             my $hessian_version = $self->read_version();
-            my $rpc_data = $self->read_rpc();
-            $datastructure = { 
+            my $rpc_data        = $self->read_rpc();
+            $datastructure = {
                 hessian_version => $hessian_version,
-                call => $rpc_data
-                };
+                call            => $rpc_data
+            };
 
         }
         case /\x66/ {            # version 1 fault
@@ -40,11 +40,8 @@ sub read_message_chunk_data {    #{{{
               { hessian_version => $hessian_version, state => 'reply' };
         }
         else {
-            $datastructure = $self->deserialize_data(
-                {
-                    first_bit => $first_bit
-                }
-            );
+            my $param = { first_bit => $first_bit };
+            $datastructure = $self->deserialize_data($param);
         }
     }
     return $datastructure;
@@ -64,11 +61,13 @@ sub read_composite_data {    #{{{
             $datastructure = $self->read_typed_list($first_bit);
         }
         case /\x4d/ {          # typed map
-            push @{ $self->reference_list() }, {};
+            push @{ $self->reference_list() }, {
+            };
             $datastructure = $self->read_map_handle();
         }
         case /[\x4f\x6f]/ {    # object definition or reference
-            push @{ $self->reference_list() }, {};
+            push @{ $self->reference_list() }, {
+            };
             $datastructure = $self->read_class_handle( $first_bit, );
         }
     }
@@ -135,15 +134,17 @@ sub read_v1_type {    #{{{
     else {
         read $input_handle, $first_bit, 1;
         if ( $first_bit =~ /t/ ) {
-            $type = $self->read_hessian_chunk({ first_bit => 'S'});
+            $type = $self->read_hessian_chunk( { first_bit => 'S' } );
         }
     }
-#    print "Got type $type, first_bit $first_bit\n";
+
+    #    print "Got type $type, first_bit $first_bit\n";
     return { type => $type, next_bit => $array_length } if $type;
     return { next_bit => $first_bit };
 }    #}}}
 
 sub read_class_handle {    #{{{
+
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
@@ -318,9 +319,49 @@ sub read_rpc {    #{{{
         }
         redo RPCSTRUCTURE;
     }
-   $call_data->{arguments} = $call_args;
-   return $call_data;
+    $call_data->{arguments} = $call_args;
+    return $call_data;
 }    #}}}
+
+sub write_scalar_element {    #{{{
+    my ( $self, $element ) = @_;
+
+    my $hessian_element;
+    switch ($element) {       # Integer or String
+        case /^-?[0-9]+$/ {
+            $hessian_element = write_integer($element);
+        }
+        case /^-?[0-9]*\.[0-9]+/ {
+            $hessian_element = write_double($element);
+        }
+        case /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
+            my @chunks = $element =~ /(.{1,66})/g;
+            $hessian_element = write_string(
+                {
+                    prefix      => 's',
+                    last_prefix => 'S',
+                    chunks      => \@chunks
+                }
+            );
+        }
+    }
+    return $hessian_element;
+}    #}}}
+
+sub  write_hessian_hash { #{{{
+    my ($self, $datastructure) = @_;
+    my $anonymous_map_string = "M";  # start an anonymous hash
+    foreach my $key (keys %{$datastructure }) {
+        my $hessian_key = $self->write_scalar_element($key);
+        my $value = $datastructure->{$key};
+        my $hessian_value = $self->write_hessian_chunk($value);
+        $anonymous_map_string .= $hessian_key.$hessian_value;
+    }
+    $anonymous_map_string .= "z";
+    return $anonymous_map_string;
+} #}}}
+
+
 
 "one, but we're not the same";
 

@@ -3,7 +3,6 @@ package Hessian::Deserializer;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
-use YAML;
 has 'is_version_1' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has 'input_handle' => (#{{{
@@ -40,10 +39,6 @@ before qw/deserialize_data deserialize_message/ => sub {    #{{{
 
 sub deserialize_data {    #{{{
     my ( $self, $args ) = @_;
-
-    # Yes, I'm passing the object itself as a parameter so I can add
-    # references, class definitions and objects to the different lists as they
-    # occur.
     my $result = $self->read_hessian_chunk($args);
     return $result;
 }    #}}}
