@@ -12,7 +12,12 @@ use Hessian::Translator::String qw/:to_hessian :from_hessian :input_handle/;
 
 sub t010_read_hessian_string : Test(1) {    #{{{
     my $self           = shift;
-    my $hessian_string = write_string("hello");
+    my $params = { 
+        prefix => 's',
+        last_prefix => 'S',
+        chunks => [ qw/hello/]
+        };
+    my $hessian_string = write_string($params);
     like(
         $hessian_string,
         qr/ S \x{00}\x{05} hello /xms,

@@ -14,6 +14,7 @@ has 'type_list'         => ( is => 'rw', default => sub { [] } );
 has 'reference_list'    => ( is => 'rw', default => sub { [] } );
 has 'input_string'      => ( is => 'rw', isa     => 'Str' );
 has 'version'           => ( is => 'ro', isa     => 'Int' );
+has 'binary_mode'       => ( is => 'ro', isa => 'Bool', default => 0);
 has 'service'           => (
     is      => 'rw',
     isa     => 'URI',

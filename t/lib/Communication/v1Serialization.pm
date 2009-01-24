@@ -10,6 +10,8 @@ use Test::More;
 use Test::Deep;
 use URI;
 use YAML;
+use DateTime;
+use DateTime::Format::Epoch;
 use Hessian::Client;
 
 sub t007_compose_serializer : Test(2) {    #{{{
@@ -104,6 +106,26 @@ sub t021_serialize_mixed : Test(1) {    #{{{
         "Matched a complex datastructure to itself." );
 }    #}}}
 
+sub t023_serialize_date : Test(2) {    #{{{
+    my $self = shift;
+    my $client = Hessian::Client->new( version => 1 );
+    $client->service( URI->new('http://localhost:8080') );
+    my $date = DateTime->new(
+        year      => 1998,
+        month     => 5,
+        day       => 8,
+        hour      => 9,
+        minute    => 51,
+        time_zone => 'UTC'
+    );
+    my $hessian_date = $client->serialize_chunk($date);
+    like( $hessian_date, qr/d\x{35}\x{52}\x{d5}\x{84}/,
+        "Processed a hessian date." );
+    $client->input_string($hessian_date);
+    my $processed_time = $client->deserialize_message();
+    $self->compare_date( $date, $processed_time );
+
+}    #}}}
 
 "one, but we're not the same";
 

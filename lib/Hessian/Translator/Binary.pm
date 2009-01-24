@@ -8,6 +8,10 @@ use version; our $VERSION = qv('0.0.1');
 use Perl6::Export::Attrs;
 use Switch;
 
+sub  write_binary :Export(:to_hessian) { #{{{
+    
+} #}}}
+
 sub read_binary_handle_chunk : Export(:input_handle) {    #{{{
     my ( $first_bit, $input_handle ) = @_;
     my ( $binary, $data, $length );

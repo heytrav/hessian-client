@@ -16,25 +16,30 @@ use Hessian::Translator::Numeric qw/
   /;
 
 sub write_date : Export(:to_hessian ) {    #{{{
-    my $epoch_time = shift;
+    my ( $epoch_time, $prefix ) = @_;
     my $time =
       $epoch_time <= 4_294_967_295
       ? write_integer($epoch_time)
       : write_long($epoch_time);
+    if ($prefix) {
+        $time =~ s/^(?:I|L )/$prefix/;
+    }
+    else {
+        $time =~ s/^L/\x{4a}/;
+        $time =~ s/^I/\x{4b}/;
 
-    $time =~ s/^L/\x{4a}/;
-    $time =~ s/^I/\x{4b}/;
+    }
     return $time;
 }    #}}}
 
 sub read_date : Export(:from_hessian) {    #{{{
-    my $hessian_date = shift;
+    my ( $hessian_date, $prefix ) = @_;
     my ($date_string) = $hessian_date =~ / (?:^d)?  (.*) /x;
     my $int;
-    if ( $date_string =~ /^\x{4a} (.*)/x ) {
+    if ( $date_string =~ /^\x4a (.*)/x ) {
         $int = read_long($1);
     }
-    elsif ( $date_string =~ /^\x{4b} (.*)/x ) {
+    elsif ( $date_string =~ /^(?: \x4b | \x64) (.*)/x ) {
         $int = read_integer($1);
         my $left_over = $1;
         my @chars = unpack 'C*', $left_over;
@@ -50,11 +55,16 @@ sub read_date_handle_chunk : Export(:input_handle) {    #{{{
     my ( $first_bit, $input_handle ) = @_;
     my ( $date, $data );
     switch ($first_bit) {
-        case /\x4a/ { read $input_handle, $data, 8; }
-        case /\x4b/ { read $input_handle, $data, 4; }
+        case /\x4a/ {
+            $data = read_long_handle_chunk( 'L', $input_handle );
+        }
+        case /[\x4b\x64]/ {
+            $data = read_integer_handle_chunk( 'I', $input_handle );
+
+        }
 
     }
-    $date = read_date( $first_bit . $data );
+    return $data;
 
 }    #}}}
 

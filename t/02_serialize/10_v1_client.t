@@ -3,5 +3,5 @@
 use strict;
 use warnings;
 
-use Communication;
-Communication->runtests();
+use Communication::v1Serialization;
+Communication::v1Serialization->runtests();

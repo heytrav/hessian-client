@@ -8,7 +8,7 @@ use YAML;
 use Hessian::Exception;
 use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
 use Hessian::Translator::String qw/:to_hessian :input_handle/;
-use Hessian::Translator::Date qw/:input_handle/;
+use Hessian::Translator::Date qw/:to_hessian :input_handle/;
 use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
 
@@ -381,6 +381,11 @@ sub  write_hessian_array { #{{{
     return $anonymous_array_string;
 } #}}}
 
+sub  write_hessian_date { #{{{
+    my ($self, $datetime) = @_;
+    my $epoch = $datetime->epoch();
+    return write_date($epoch,'d');
+} #}}}
 
 
 

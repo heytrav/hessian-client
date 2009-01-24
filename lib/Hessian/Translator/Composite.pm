@@ -213,36 +213,46 @@ sub read_hessian_chunk {    #{{{
 
 sub write_hessian_chunk {    #{{{
     my ( $self, $element ) = @_;
-    my $element_type = ref $element ? ref $element : \$element;
     my $hessian_element;
-    switch ("$element_type") {
-        case /SCALAR/ {
-            $hessian_element = $self->write_scalar_element($element);
-        }
-        case /ARRAY|HASH/ {
-           $hessian_element = $self->write_composite_element($element); 
+    if ( $self->binary_mode() ) { 
+        # In binary mode we'll only send binary data
+
+    }
+    else {
+
+        my $element_type = ref $element ? ref $element : \$element;
+        switch ("$element_type") {
+            case /SCALAR/ {
+                $hessian_element = $self->write_scalar_element($element);
             }
+            case /DateTime/ { 
+                    $hessian_element = $self->write_hessian_date($element);
+                }
+            case /ARRAY|HASH/ {
+                $hessian_element = $self->write_composite_element($element);
+            }
+        }
     }
     return $hessian_element;
 }    #}}}
 
-sub  write_composite_element { #{{{
-    my ($self, $datastructure) = @_;
-    my $element_type 
-        = ref $datastructure ? ref $datastructure : \$datastructure;
+sub write_composite_element {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $element_type =
+      ref $datastructure ? ref $datastructure : \$datastructure;
     my $hessian_string;
-    switch ( $element_type) {
+    switch ($element_type) {
         case /HASH/ {
-           $hessian_string = $self->write_hessian_hash($datastructure); 
-            }
-        case /ARRAY/ { 
+            $hessian_string = $self->write_hessian_hash($datastructure);
+        }
+        case /ARRAY/ {
             $hessian_string = $self->write_hessian_array($datastructure);
-            
-            }
+
+        }
 
     }
     return $hessian_string;
-} #}}}
+}    #}}}
 
 sub read_composite_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
