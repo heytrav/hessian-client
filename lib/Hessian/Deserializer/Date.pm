@@ -3,20 +3,19 @@ package  Hessian::Deserializer::Date;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
-sub read_date_handle_chunk : Export(:input_handle) {    #{{{
-    my ( $first_bit, $input_handle ) = @_;
+sub read_date_handle_chunk  {    #{{{
+    my ( $self, $first_bit,) = @_;
+    my $input_handle = $self->input_handle();
     my ( $date, $data );
     switch ($first_bit) {
         case /\x4a/ {
-            $data = read_long_handle_chunk( 'L', $input_handle );
+            $data = $self->read_long_handle_chunk( 'L');
         }
         case /[\x4b\x64]/ {
-            $data = read_integer_handle_chunk( 'I', $input_handle );
-
+            $data = $self->read_integer_handle_chunk( 'I');
         }
     }
     return $data;
-
 }    #}}}
 
 "one, but we're not the same";

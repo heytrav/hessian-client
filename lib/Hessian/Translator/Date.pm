@@ -1,4 +1,4 @@
-package  Hessian::Translator::Date;
+package Hessian::Translator::Date;
 
 use strict;
 use warnings;
