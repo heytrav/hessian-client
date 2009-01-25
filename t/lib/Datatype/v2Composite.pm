@@ -10,7 +10,6 @@ use Test::More;
 use Test::Deep;
 use YAML;
 use Hessian::Client;
-use Hessian::Translator::Numeric qw/:to_hessian/;
 
 sub  t004_initialize_hessian_obj : Test(4){ #{{{
     my $self = shift;
