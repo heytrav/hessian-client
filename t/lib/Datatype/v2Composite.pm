@@ -10,6 +10,7 @@ use Test::More;
 use Test::Deep;
 use YAML;
 use Hessian::Client;
+use Hessian::Serializer;
 
 sub  t004_initialize_hessian_obj : Test(4){ #{{{
     my $self = shift;
@@ -168,7 +169,8 @@ sub t032_object_long_form : Test(2) {    #{{{
 sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     my $self       = shift;
     my $last_index = scalar @{ $self->{deserializer}->reference_list() } - 1;
-    my $hessian_integer = write_integer($last_index);
+    Hessian::Serializer->meta()->apply($self->{deserializer});
+    my $hessian_integer = $self->{deserializer}->serialize_chunk($last_index);
 
     my $hessian_data = "\x51" . $hessian_integer;
     my $example_car =
