@@ -8,30 +8,7 @@ with 'Hessian::Translator::Envelope';
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
-use Hessian::Translator::String qw/:to_hessian :input_handle/;
-use Hessian::Translator::Date qw/:to_hessian :input_handle/;
-use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
-
-#sub read_list {    #{{{
-#    my $hessian_list = shift;
-#    my $array        = [];
-#    if ( $hessian_list =~ /^  \x57  (.*)  Z/xms ) {
-#        $array = read_variable_untyped_list($1);
-#    }
-
-#    return $array;
-#}    #}}}
-
-sub write_list {    #: Export(:to_hessian) {    #{{{
-    my $list = shift;
-}    #}}}
-
-sub write_map {    #{{{
-    my ( $self, $data ) = @_;
-
-}    #}}}
 
 sub read_typed_list_element {    #{{{
     my ( $self, $type, $args ) = @_;
@@ -49,25 +26,25 @@ sub read_typed_list_element {    #{{{
     my $map_type = 'map';
     switch ($type) {
         case /boolean/ {
-            $element = read_boolean_handle_chunk($first_bit);
+            $element = $self->read_boolean_handle_chunk($first_bit);
         }
         case /int/ {
-            $element = read_integer_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_integer_handle_chunk( $first_bit );
         }
         case /long/ {
-            $element = read_long_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_long_handle_chunk( $first_bit );
         }
         case /double/ {
-            $element = read_double_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_double_handle_chunk( $first_bit );
         }
         case /date/ {
-            $element = read_date_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_date_handle_chunk( $first_bit );
         }
         case /string/ {
-            $element = read_string_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_string_handle_chunk( $first_bit );
         }
         case /binary/ {
-            $element = read_binary_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_binary_handle_chunk( $first_bit );
         }
         case /list/ {
             $element = $self->read_composite_datastructure($first_bit);
@@ -81,7 +58,7 @@ sub read_list_type {    #{{{
     my $input_handle = $self->input_handle();
     my $type_length;
     read $input_handle, $type_length, 1;
-    my $type = read_string_handle_chunk( $type_length, $input_handle );
+    my $type = $self->read_string_handle_chunk( $type_length);
     binmode( $input_handle, 'bytes' );
     return $type;
 }    #}}}
@@ -106,7 +83,7 @@ sub store_class_definition {    #{{{
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
-    my $number_of_fields = read_integer_handle_chunk( $length, $input_handle );
+    my $number_of_fields = $self->read_integer_handle_chunk( $length);
     my @field_list;
 
     foreach my $field_index ( 1 .. $number_of_fields ) {
@@ -128,7 +105,7 @@ sub fetch_class_for_data {    #{{{
     my $length;
     read $input_handle, $length, 1;
     my $class_definition_number =
-      read_integer_handle_chunk( $length, $input_handle );
+      $self->read_integer_handle_chunk( $length);
     return $self->instantiate_class($class_definition_number);
 
 }    #}}}
@@ -176,7 +153,7 @@ sub read_list_length {    #{{{
     if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
         my $length;
         read $input_handle, $length, 1;
-        $array_length = read_integer_handle_chunk( $length, $input_handle );
+        $array_length = $self->read_integer_handle_chunk( $length);
     }
     elsif ( $first_bit =~ /[\x70-\x77]/ ) {
         my $hex_bit = unpack 'C*', $first_bit;
@@ -187,8 +164,7 @@ sub read_list_length {    #{{{
         $array_length = $hex_bit - 0x78;
     }
     elsif ( $first_bit =~ /\x6c/ ) {
-        $array_length = read_integer_handle_chunk( 'I', $input_handle );
-        print "received array length of $array_length\n";
+        $array_length = $self->read_integer_handle_chunk( 'I');
     }
     return $array_length;
 }    #}}}
@@ -260,10 +236,10 @@ sub write_scalar_element {    #{{{
     my $hessian_element;
     switch ($element) {       # Integer or String
         case /^-?[0-9]+$/ {
-            $hessian_element = write_integer($element);
+            $hessian_element = $self->write_integer($element);
         }
         case /^-?[0-9]*\.[0-9]+/ {
-            $hessian_element = write_double($element);
+            $hessian_element = $self->write_double($element);
         }
         case /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
             my @chunks = $element =~ /(.{1,66})/g;

@@ -3,6 +3,8 @@ package  Hessian::Deserializer::Date;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
+use Switch;
+
 sub read_date_handle_chunk  {    #{{{
     my ( $self, $first_bit,) = @_;
     my $input_handle = $self->input_handle();

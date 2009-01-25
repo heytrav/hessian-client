@@ -45,7 +45,7 @@ sub read_long {  #{{{
 }    #}}}
 
 sub _read_single_octet {    #{{{
-    my ( $self, $octet, $octet_shift ) = @_;
+    my (  $octet, $octet_shift ) = @_;
     my $integer = $octet - $octet_shift;
     return $integer;
 }    #}}}
