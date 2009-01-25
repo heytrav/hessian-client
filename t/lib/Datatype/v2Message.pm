@@ -74,6 +74,7 @@ sub t015_read_envelope : Test(2) {    #{{{
     );
     my $reply_data = $tokens->[1]->[0]->{packets}->[0];
     my $text       = "$reply_data->{reply_data}";
+    print "Text is $text\n";
     cmp_deeply(
         $reply_data,
         superhashof( { reply_data => 'hello' } ),

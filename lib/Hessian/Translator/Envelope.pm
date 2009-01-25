@@ -8,11 +8,8 @@ use Switch;
 use YAML;
 use Contextual::Return;
 
-use Hessian::Translator::Numeric qw/:input_handle/;
-use Hessian::Translator::String qw/:input_handle/;
 use Hessian::Exception;
 
-# Version 2 specific
 sub read_message_chunk {   #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
@@ -46,14 +43,14 @@ sub read_envelope {    #{{{
       if $first_bit =~ /z/i;
 
     # Just the word "Header" as far as I understand
-    my $header_string = read_string_handle_chunk( $first_bit, $input_handle );
+    my $header_string = $self->read_string_handle_chunk( $first_bit );
     binmode( $input_handle, 'bytes' );
   ENVELOPECHUNKS: {
         my ( $header_count, $footer_count, $packet_size );
         my ( @headers,      @footers,      @packets );
         read $input_handle, $first_bit, 1;
         last ENVELOPECHUNKS if $first_bit =~ /z/i;
-        $header_count = read_integer_handle_chunk( $first_bit, $input_handle );
+        $header_count = $self->read_integer_handle_chunk( $first_bit, );
         foreach ( 1 .. $header_count ) {
             push @headers, $self->read_header_or_footer();
         }
@@ -73,7 +70,7 @@ sub read_envelope {    #{{{
         }
 
         read $input_handle, $first_bit, 1;
-        $footer_count = read_integer_handle_chunk( $first_bit, $input_handle );
+        $footer_count = $self->read_integer_handle_chunk( $first_bit, );
         foreach ( 1 .. $footer_count ) {
             push @footers, $self->read_header_or_footer();
         }
@@ -95,7 +92,7 @@ sub read_header_or_footer {    #{{{
     my $input_handle = $self->input_handle();
     my $first_bit;
     read $input_handle, $first_bit, 1;
-    my $header = read_string_handle_chunk( $first_bit, $input_handle );
+    my $header = $self->read_string_handle_chunk( $first_bit );
     binmode( $input_handle, 'bytes' );
     return $header;
 }    #}}}

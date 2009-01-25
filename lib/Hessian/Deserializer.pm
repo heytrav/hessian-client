@@ -10,7 +10,6 @@ with qw/
   Hessian::Deserializer::Binary
   /;
 
-has 'is_version_1' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has 'input_handle' => (    #{{{
     is      => 'rw',

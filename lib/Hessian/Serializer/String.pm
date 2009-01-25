@@ -14,7 +14,7 @@ sub write_string  {    #{{{
     my ($self, $params) = @_;
     my $prefixes = {};
     @{$prefixes}{qw/prefix last_prefix/} 
-        = ($self->{string_chunk_prefix}, $self->{string_final_chunk_prefix});
+        = ($self->string_chunk_prefix(), $self->string_final_chunk_prefix());
     my @string_chunks = @{ $params->{chunks} };
     my $message = $self->hessianify_chunks( $prefixes, @string_chunks );
     return $message;

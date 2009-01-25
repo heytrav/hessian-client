@@ -6,11 +6,10 @@ use version; our $VERSION = qv('0.0.1');
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Hessian::Translator::Numeric qw/:to_hessian :input_handle/;
-use Hessian::Translator::String qw/:to_hessian :input_handle/;
-use Hessian::Translator::Date qw/:to_hessian :input_handle/;
-use Hessian::Translator::Binary qw/:input_handle/;
 use Simple;
+
+has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 's' );
+has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 
 sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -210,12 +209,12 @@ sub read_untyped_list {    #{{{
     my $array_length;
     my $datastructure = $self->reference_list()->[-1];
     my $index         = 0;
-    if ( $first_bit eq 'l') {
-     $array_length = $self->read_list_length( $first_bit, );
+    if ( $first_bit eq 'l' ) {
+        $array_length = $self->read_list_length( $first_bit, );
     }
     else {
-        my $param = {first_bit => $first_bit};
-        my $first_element = $self->read_hessian_chunk($param);      
+        my $param = { first_bit => $first_bit };
+        my $first_element = $self->read_hessian_chunk($param);
         push @{$datastructure}, $first_element;
         $index++;
     }
@@ -246,35 +245,35 @@ sub read_simple_datastructure {    #{{{
             $element = undef;
         }
         case /[\x46\x54]/ {        # 'T'rue or 'F'alse
-            $element = read_boolean_handle_chunk($first_bit);
+            $element = $self->read_boolean_handle_chunk($first_bit);
         }
         case /[\x49\x80-\xaf\xc0-\xcf\xd0-\xd7]/ {
-            $element = read_integer_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_integer_handle_chunk($first_bit);
         }
         case /[\x4c\xd8-\xef\xf0-\xff\x38-\x3f]/ {
-            $element = read_long_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_long_handle_chunk($first_bit);
         }
         case /\x44/ {
-            $element = read_double_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_double_handle_chunk($first_bit);
         }
         case /\x64/ {
-            $element = read_date_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_date_handle_chunk($first_bit);
         }
         case /[\x53\x58\x73\x78\x00-\x0f]/ {    #   for version 1: \x73
-            $element = read_string_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_string_handle_chunk($first_bit);
         }
         case /[\x42\x62]/ {
-            $element = read_binary_handle_chunk( $first_bit, $input_handle );
+            $element = $self->read_binary_handle_chunk($first_bit);
         }
         case /[\x4d\x4f\x56\x6f\x72\x76]/ {     # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x52/ {
-            my $reference_id = read_integer_handle_chunk( 'I', $input_handle );
+            my $reference_id = $self->read_integer_handle_chunk('I');
             $element = $self->reference_list()->[$reference_id];
         }
         case /[\x48\x6d]/ {                     # a header or method name
-            $element = read_string_handle_chunk( 'S', $input_handle );
+            $element = $self->read_string_handle_chunk('S');
         }
     }
     binmode( $input_handle, 'bytes' );
@@ -287,7 +286,7 @@ sub read_list_type {    #{{{
     my $input_handle = $self->input_handle();
     my $type_length;
     read $input_handle, $type_length, 1;
-    my $type = read_string_handle_chunk( $type_length, $input_handle );
+    my $type = $self->read_string_handle_chunk( $type_length, $input_handle );
     binmode( $input_handle, 'bytes' );
     return $type;
 }    #}}}
@@ -331,44 +330,41 @@ sub read_rpc {    #{{{
     return $call_data;
 }    #}}}
 
-sub  write_hessian_hash { #{{{
-    my ($self, $datastructure) = @_;
-    my $anonymous_map_string = "M";  # start an anonymous hash
-    foreach my $key (keys %{$datastructure }) {
-        my $hessian_key = $self->write_scalar_element($key);
-        my $value = $datastructure->{$key};
+sub write_hessian_hash {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $anonymous_map_string = "M";    # start an anonymous hash
+    foreach my $key ( keys %{$datastructure} ) {
+        my $hessian_key   = $self->write_scalar_element($key);
+        my $value         = $datastructure->{$key};
         my $hessian_value = $self->write_hessian_chunk($value);
-        $anonymous_map_string .= $hessian_key.$hessian_value;
+        $anonymous_map_string .= $hessian_key . $hessian_value;
     }
     $anonymous_map_string .= "z";
     return $anonymous_map_string;
-} #}}}
+}    #}}}
 
-sub  write_hessian_array { #{{{
-    my ($self, $datastructure) = @_;
+sub write_hessian_array {    #{{{
+    my ( $self, $datastructure ) = @_;
     my $anonymous_array_string = "V";
-    foreach my $element (@{$datastructure}) {
+    foreach my $element ( @{$datastructure} ) {
         my $hessian_element = $self->write_hessian_chunk($element);
         $anonymous_array_string .= $hessian_element;
     }
     $anonymous_array_string .= "z";
     return $anonymous_array_string;
-} #}}}
+}    #}}}
 
-sub  write_hessian_string { #{{{
-    my ($self, $chunks) = @_;
-    return write_string(
-            { prefix  => 's', last_prefix => 'S', chunks  => $chunks } );
+sub write_hessian_string {    #{{{
+    my ( $self, $chunks ) = @_;
+    return $self->write_string( { chunks => $chunks } );
 
-} #}}}
+}    #}}}
 
-sub  write_hessian_date { #{{{
-    my ($self, $datetime) = @_;
+sub write_hessian_date {    #{{{
+    my ( $self, $datetime ) = @_;
     my $epoch = $datetime->epoch();
-    return write_date($epoch,'d');
-} #}}}
-
-
+    return $self->write_date( $epoch, 'd' );
+}    #}}}
 
 "one, but we're not the same";
 
