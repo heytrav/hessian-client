@@ -3,9 +3,16 @@ package Hessian::Deserializer;
 use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 
+with qw/
+  Hessian::Deserializer::Numeric
+  Hessian::Deserializer::String
+  Hessian::Deserializer::Date
+  Hessian::Deserializer::Binary
+  /;
+
 has 'is_version_1' => ( is => 'rw', isa => 'Bool', default => 0 );
 
-has 'input_handle' => (#{{{
+has 'input_handle' => (    #{{{
     is      => 'rw',
     isa     => 'GlobRef',
     lazy    => 1,
@@ -20,16 +27,16 @@ has 'input_handle' => (#{{{
             return $input_handle;
         }
     }
-);#}}}
+);    #}}}
 
-after 'input_string' => sub {#{{{
+after 'input_string' => sub {    #{{{
     my $self = shift;
 
     # Get rid of the input file handle if user has given us a new string to
     # process. input handle should then re-initialize itself the next time it
     # is called.
     delete $self->{input_handle} if $self->{input_handle};
-};#}}}
+};    #}}}
 
 before qw/deserialize_data deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
@@ -50,7 +57,6 @@ sub deserialize_message {    #{{{
     return if Exception::Class->caught('EndOfInput::X');
     return $result;
 }    #}}}
-
 
 "one, but we're not the same";
 
