@@ -44,6 +44,15 @@ sub read_long {  #{{{
     return $result;
 }    #}}}
 
+sub read_double {    #{{{
+    my ($self, $octet) = @_;
+    my $double_value =
+        $octet =~ /\x{5b}/                    ? 0.0
+      : $octet =~ /\x{5c}/                    ? 1.0
+      : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
+      :                                         _read_full_double($octet);
+}    #}}}
+
 sub _read_single_octet {    #{{{
     my (  $octet, $octet_shift ) = @_;
     my $integer = $octet - $octet_shift;
@@ -87,6 +96,23 @@ sub _read_full_long{    #{{{
         $shift_val += 8;
     }
     return $big_int;
+}    #}}}
+
+sub _read_compact_double {    #{{{
+    my $compact_octet = shift;
+    my @chars = unpack 'c*', $compact_octet;
+    shift @chars;
+    my $chars_size = scalar @chars;
+    my $float      = _read_quadruple_octet( \@chars );
+    return $float;
+}    #}}}
+
+sub _read_full_double {    #{{{
+    my $double = shift;
+    ( my $octets = $double ) =~ s/D (.*) /$1/x;
+    my @chars = unpack 'C*', $octets;
+    my $double_value = unpack 'F', pack 'C*', reverse @chars;
+    return $double_value;
 }    #}}}
 
 sub read_integer_handle_chunk {    #{{{
