@@ -7,13 +7,13 @@ use version; our $VERSION = qv('0.0.1');
 use base 'Test::Class';
 
 use Test::More;
-use Hessian::Client;
+use Hessian::Translator;
 
 __PACKAGE__->SKIP_CLASS(1);
 
 sub t001_initialize_hessian : Test(3) {    #{{{
     my $self        = shift;
-    my $hessian_obj = Hessian::Client->new();
+    my $hessian_obj = Hessian::Translator->new();
 
     ok(
         !$hessian_obj->can('deserialize_message'),

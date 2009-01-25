@@ -7,14 +7,14 @@ use version; our $VERSION = qv('0.0.1');
 use base 'Datatype';
 
 use Test::More;
-use Hessian::Client;
+use Hessian::Translator;
 
 __PACKAGE__->SKIP_CLASS(1);
 
 sub t001_initialize_hessian : Test(4) {    #{{{
     my $self         = shift;
     my $hessian_data = "V\x04[int\x92\x90\x91";
-    my $hessian_obj  = Hessian::Client->new( input_string => $hessian_data);
+    my $hessian_obj  = Hessian::Translator->new( input_string => $hessian_data);
 
     ok(
         $hessian_obj->does('Hessian::Deserializer'),
@@ -34,7 +34,7 @@ sub t001_initialize_hessian : Test(4) {    #{{{
 
 sub t002_initialize_hessian : Test(4) {    #{{{
     my $self        = shift;
-    my $hessian_obj = Hessian::Client->new();
+    my $hessian_obj = Hessian::Translator->new();
     ok(
         !$hessian_obj->does('Hessian::Deserializer'),
         "We can not yet handle deserialization requests."

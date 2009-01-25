@@ -9,12 +9,12 @@ use base 'Datatype::Composite';
 use Test::More;
 use Test::Deep;
 use YAML;
-use Hessian::Client;
+use Hessian::Translator;
 use Hessian::Serializer;
 
 sub  t004_initialize_hessian_obj : Test(4){ #{{{
     my $self = shift;
-    my $hessian_obj = Hessian::Client->new(version => 2);
+    my $hessian_obj = Hessian::Translator->new(version => 2);
     ok(!$hessian_obj->does('Hessian::Deserializer'), 
     "Have not yet composed the Deserialization logic.");
     my $hessian_data = "V\x04[int\x92\x90\x91";
@@ -33,7 +33,7 @@ sub  t004_initialize_hessian_obj : Test(4){ #{{{
 
 sub  t008_initialize_hession_obj : Test(2) { #{{{
     my $self = shift;
-    my $hessian_obj = Hessian::Client->new( 
+    my $hessian_obj = Hessian::Translator->new( 
     input_string => "V\x04[int\x92\x90\x91", version => 2);
     ok( $hessian_obj->does('Hessian::Deserializer'),
     "Deserializer has been composed.");

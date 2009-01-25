@@ -9,13 +9,13 @@ use base 'Datatype::Message';
 use Test::More;
 use Test::Deep;
 use YAML;
-use Hessian::Client;
+use Hessian::Translator;
 use Hessian::Deserializer;
 use Hessian::Translator::Composite;
 
 sub t004_initialize_hessian : Test(3) {    #{{{
     my $self = shift;
-    my $hessian_obj = Hessian::Client->new( version => 2 );
+    my $hessian_obj = Hessian::Translator->new( version => 2 );
 
     ok(
         !$hessian_obj->can('deserialize_message'),
@@ -109,7 +109,7 @@ sub t017_hessian_fault : Test(1) {    #{{{
 sub t019_hessian_call : Test(3) {    #{{{
     my $self         = shift;
     my $hessian_data = "H\x02\x00C\x02eq\x92M\x07qa.Bean\x03foo\x9dZQ\x90";
-    my $hessian_obj  = Hessian::Client->new( version => 2 );
+    my $hessian_obj  = Hessian::Translator->new( version => 2 );
     $hessian_obj->input_string($hessian_data);
 
     my $datastructure = $hessian_obj->process_message();

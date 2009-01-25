@@ -10,12 +10,12 @@ use Test::More;
 use Test::Deep;
 use DateTime;
 use URI;
-use Hessian::Client;
+use Hessian::Translator;
 use YAML;
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     ok(
         $client->does('Hessian::Serializer'),
@@ -27,7 +27,7 @@ sub t007_compose_serializer : Test(2) {    #{{{
 
 sub t009_serialize_string : Test(1) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk("hello");
     like( $hessian_string, qr/S\x{00}\x{05}hello/, "Created Hessian string." );
@@ -35,7 +35,7 @@ sub t009_serialize_string : Test(1) {    #{{{
 
 sub t011_serialize_integer : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk(-256);
     like( $hessian_string, qr/  \x{c7} \x{00} /x, "Processed integer." );
@@ -47,7 +47,7 @@ sub t011_serialize_integer : Test(2) {    #{{{
 
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk(12.25);
     like(
@@ -59,7 +59,7 @@ sub t015_serialize_float : Test(1) {    #{{{
 
 sub t017_serialize_array : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $datastructure = [ 0, 'foobar' ];
     my $hessian_data = $client->serialize_chunk($datastructure);
@@ -74,7 +74,7 @@ sub t017_serialize_array : Test(2) {    #{{{
 
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $datastructure = { 1 => 'fee', 16 => 'fie', 256 => 'foe' };
 
@@ -88,7 +88,7 @@ sub t020_serialize_hash_map : Test(2) {    #{{{
 
 sub t021_serialize_mixed : Test(1) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $datastructure = [
         qw/hello goodbye/,
@@ -107,7 +107,7 @@ sub t021_serialize_mixed : Test(1) {    #{{{
 
 sub t023_serialize_date : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 2 );
+    my $client = Hessian::Translator->new( version => 2 );
     $client->service( URI->new('http://localhost:8080') );
     my $date = DateTime->new(
         year      => 1998,

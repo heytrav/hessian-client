@@ -10,11 +10,11 @@ use Carp;
 use Hessian::Serializer;
 use Hessian::Deserializer;
 use Hessian::Translator::V2;
-use Hessian::Client;
+use Hessian::Translator;
 
 sub prep001_compose_hessian : Test(setup) {    #{{{
     my $self   = shift;
-    my $simple = Hessian::Client->new(version => 2);
+    my $simple = Hessian::Translator->new(version => 2);
     Hessian::Translator::V2->meta()->apply($simple);
     Hessian::Serializer->meta()->apply($simple);
     Hessian::Deserializer->meta()->apply($simple);

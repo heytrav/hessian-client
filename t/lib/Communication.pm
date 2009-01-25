@@ -9,13 +9,13 @@ use base 'Test::Class';
 use Test::More;
 use DateTime;
 use DateTime::Format::Strptime;
-use Hessian::Client;
+use Hessian::Translator;
 
 __PACKAGE__->SKIP_CLASS(1);
 
 sub t005_initialize_client : Test(1) {    #{{{
     my $self = shift;
-    my $client = Hessian::Client->new( version => 1 );
+    my $client = Hessian::Translator->new( version => 1 );
     ok(
         !$client->does('Hessian::Serializer'),
         "Serializer role has not been composed."
