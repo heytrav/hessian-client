@@ -96,4 +96,7 @@ Hessian::Client - Base class for Hessian serialization/deserialization.
 
 =head1 INTERFACE
 
+=head2 BUILD
+
+Not to be called directly.  
 

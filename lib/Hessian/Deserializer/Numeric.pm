@@ -184,4 +184,22 @@ floating point numbers.
 
 =head1 INTERFACE
 
+=head2   read_boolean
 
+
+=head2   read_boolean_handle_chunk
+
+
+=head2   read_double_handle_chunk
+
+
+=head2   read_integer
+
+
+=head2   read_integer_handle_chunk
+
+
+=head2   read_long
+
+
+=head2   read_long_handle_chunk

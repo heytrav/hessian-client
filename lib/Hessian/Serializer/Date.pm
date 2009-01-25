@@ -40,4 +40,4 @@ Hessian::Serializer::Date - Role for serializing dates into Hessian.
 
 =head1 INTERFACE
 
-
+=head2 write_date

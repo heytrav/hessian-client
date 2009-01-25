@@ -143,4 +143,14 @@ point numbers, dates and boolean expressions into Hessian.
 
 =head1 INTERFACE
 
+=head2   write_boolean
+
+
+=head2   write_double
+
+
+=head2   write_integer
+
+
+=head2   write_long
 

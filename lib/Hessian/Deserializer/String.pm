@@ -44,4 +44,4 @@ Hessian::Deserializer::String - Methods for serialization of strings
 
 =head1 INTERFACE
 
-
+=head2 read_string_handle_chunk

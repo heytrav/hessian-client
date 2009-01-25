@@ -31,7 +31,7 @@ __END__
 
 =head1 NAME
 
-<+++> - <+++>
+Hessian::Deserializer::Binary - Deserialization of Hessian into binary
 
 =head1 VERSION
 
@@ -40,5 +40,9 @@ __END__
 =head1 DESCRIPTION
 
 =head1 INTERFACE
+
+=head2 read_binary_handle_chunk
+
+Reads binary data from the input handle.
 
 

@@ -37,4 +37,8 @@ Hessian::Deserializer::Date - Methods for deserializing hessian dates.
 
 =head1 INTERFACE
 
+=head2 read_date_handle_chunk
+
+Reads a date from the input handle;
+
 
