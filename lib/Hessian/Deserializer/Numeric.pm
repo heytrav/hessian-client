@@ -227,5 +227,7 @@ floating point numbers.
 
 =head2   read_long
 
+=head2 read_double
+
 
 =head2   read_long_handle_chunk
