@@ -68,7 +68,8 @@ sub t015_serialize_float : Test(1) {    #{{{
 sub t017_serialize_array : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
-    $client->service( URI->new('http://localhost:8080') );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
     my $datastructure = [ 0, 'foobar' ];
     my $hessian_data = $client->serialize_chunk($datastructure);
     like( $hessian_data, qr/V\x90S\x00\x06foobarz/,
@@ -83,7 +84,8 @@ sub t017_serialize_array : Test(2) {    #{{{
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
-    $client->service( URI->new('http://localhost:8080') );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
     my $datastructure = { 1 => 'fee', 16 => 'fie', 256 => 'foe' };
 
     my $hessian_data = $client->serialize_chunk($datastructure);
@@ -97,7 +99,8 @@ sub t020_serialize_hash_map : Test(2) {    #{{{
 sub t021_serialize_mixed : Test(1) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
-    $client->service( URI->new('http://localhost:8080') );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
     my $datastructure = [
         qw/hello goodbye/,
         {
@@ -116,7 +119,8 @@ sub t021_serialize_mixed : Test(1) {    #{{{
 sub t023_serialize_date : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
-    $client->service( URI->new('http://localhost:8080') );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
     my $date = DateTime->new(
         year      => 1998,
         month     => 5,

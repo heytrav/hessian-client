@@ -15,13 +15,13 @@ has 'reference_list'    => ( is => 'rw', default => sub { [] } );
 has 'input_string'      => ( is => 'rw', isa     => 'Str' );
 has 'version'           => ( is => 'ro', isa     => 'Int' );
 has 'binary_mode'       => ( is => 'ro', isa => 'Bool', default => 0);
-has 'service'           => (
+has 'serializer'           => (
     is      => 'rw',
-    isa     => 'URI',
-    lazy    => 1,
-    default => sub {
-        URI->new('http://localhost:8080');
-    }
+    isa     => 'Bool',
+#    lazy    => 1,
+#    default => sub {
+#        URI->new('http://localhost:8080');
+#    }
 );
 
 before 'input_string' => sub {    #{{{
@@ -33,7 +33,7 @@ before 'input_string' => sub {    #{{{
     $self->version();
 };    #}}}
 
-before 'service' => sub   { #{{{
+before 'serializer' => sub   { #{{{
     my $self = shift;
     if ( !$self->does('Hessian::Serializer') ) {
         load 'Hessian::Serializer';
