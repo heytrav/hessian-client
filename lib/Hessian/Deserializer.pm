@@ -57,6 +57,20 @@ sub deserialize_message {    #{{{
     return $result;
 }    #}}}
 
+sub next_token {    #{{{
+    my $self = shift;
+    return $self->deserialize_message();
+}    #}}}
+
+sub process_message {    #{{{
+    my $self = shift;
+    my @tokens;
+    while ( my $token = $self->next_token() ) {
+        push @tokens, $token;
+    }
+    return \@tokens;
+}    #}}}
+
 "one, but we're not the same";
 
 __END__

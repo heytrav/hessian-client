@@ -42,7 +42,7 @@ sub read_message_chunk_data {    #{{{
             $datastructure = { reply_data => $reply_data };
         }
         else {
-            my $params = { first_bit => $first_bit};
+            my $params = { first_bit => $first_bit };
             $datastructure = $self->deserialize_data($params);
         }
     }
@@ -290,6 +290,24 @@ sub write_hessian_date {    #{{{
     my ( $self, $datetime ) = @_;
     my $epoch = $datetime->epoch();
     return $self->write_date($epoch);
+}    #}}}
+
+sub write_hessian_call {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $hessian_call   = "H\x02\x00C";
+    my $method         = $datastructure->{method};
+    my $hessian_method = $self->write_scalar_element($method);
+    $hessian_call .= $hessian_method;
+    my $arguments   = $datastructure->{arguments};
+    my $num_of_args = scalar @{$arguments};
+    my $hessian_num = $self->write_scalar_element($num_of_args);
+    $hessian_call .= $hessian_num;
+
+    foreach my $argument ( @{$arguments} ) {
+        my $hessian_arg = $self->write_hessian_chunk($argument);
+        $hessian_call .= $hessian_arg;
+    }
+    return $hessian_call;
 }    #}}}
 
 "one, but we're not the same";

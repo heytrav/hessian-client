@@ -117,20 +117,6 @@ sub read_packet {    #{{{
     };
 }    #}}}
 
-sub next_token {    #{{{
-    my $self = shift;
-    return $self->deserialize_message();
-}    #}}}
-
-sub process_message {    #{{{
-    my $self = shift;
-    my @tokens;
-    while ( my $token = $self->next_token() ) {
-        push @tokens, $token;
-    }
-    return \@tokens;
-}    #}}}
-
 sub write_hessian_message { #{{{
     my ($self, $hessian_data) = @_;
 

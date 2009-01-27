@@ -121,8 +121,11 @@ sub t023_serialize_date : Test(2) {    #{{{
         time_zone => 'UTC'
     );
     my $hessian_date = $client->serialize_chunk($date);
-    like( $hessian_date, qr/\x4b\x{35}\x{52}\x{d5}\x{84}/,
-        "Processed a hessian date." );
+    like(
+        $hessian_date,
+        qr/\x4b\x{35}\x{52}\x{d5}\x{84}/,
+        "Processed a hessian date."
+    );
     $client->input_string($hessian_date);
     my $processed_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_time );
@@ -132,7 +135,7 @@ sub t023_serialize_date : Test(2) {    #{{{
 sub t025_serialize_call : Test(3) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 2 );
-    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Translator::V2->meta()->apply($client);
     Hessian::Serializer->meta()->apply($client);
     can_ok( $client, 'serialize_message' );
     my $datastructure = {
@@ -144,15 +147,16 @@ sub t025_serialize_call : Test(3) {    #{{{
     my $hessian_data = $client->serialize_message($datastructure);
     like(
         $hessian_data,
-        qr/c\x01\x00m\x00\x04add2\x92\x93z/,
+        qr/H\x02\x00CS\x00\x04add2\x92\x92\x93/,
         "Received expected string for hessian call."
     );
     $client->input_string($hessian_data);
-    my $processed_data = $client->deserialize_message();
+    my $processed_data = $client->process_message();
+    print "Processed " . Dump($processed_data) . "\n";
     cmp_deeply(
-   $processed_data->{call},
-   $datastructure->{call},
-   "Received same structure as call."
+        $processed_data->[1]->{call},
+        $datastructure->{call},
+        "Received same structure as call."
     );
 }    #}}}
 
