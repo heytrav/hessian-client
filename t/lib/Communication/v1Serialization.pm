@@ -15,6 +15,7 @@ use DateTime::Format::Epoch;
 use Hessian::Translator;
 use Hessian::Serializer;
 use Hessian::Translator::V1;
+use Hessian::Client;
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
@@ -168,6 +169,19 @@ sub t025_serialize_call : Test(3) {    #{{{
    "Received same structure as call."
     );
 }    #}}}
+
+sub  t030_client_request : Test(1){ #{{{
+    my $self = shift;
+    my $hessian_client = Hessian::Client->new({
+        version => 1, 
+    service => 'http://localhost:8080/HessianRIADemo/words'});
+    my $result = $hessian_client->getRecent();
+    print "Result was ".Dump($result)."\n";
+    pass("Just to see if this works.");
+
+} #}}}
+
+
 
 "one, but we're not the same";
 

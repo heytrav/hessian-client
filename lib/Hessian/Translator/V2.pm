@@ -294,7 +294,7 @@ sub write_hessian_date {    #{{{
 
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;
-    my $hessian_call   = "H\x02\x00C";
+    my $hessian_call   = "C";
     my $method         = $datastructure->{method};
     my $hessian_method = $self->write_scalar_element($method);
     $hessian_call .= $hessian_method;
@@ -309,6 +309,12 @@ sub write_hessian_call {    #{{{
     }
     return $hessian_call;
 }    #}}}
+
+sub  serialize_message { #{{{
+    my ( $self, $datastructure) = @_;
+    my $result = $self->write_hessian_message($datastructure);
+    return "H\x02\x00".$result;
+} #}}}
 
 "one, but we're not the same";
 

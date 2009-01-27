@@ -382,6 +382,12 @@ sub write_hessian_call {    #{{{
     return $hessian_call;
 }    #}}}
 
+sub  serialize_message { #{{{
+    my ( $self, $datastructure) = @_;
+    my $result = $self->write_hessian_message($datastructure);
+    return $result;
+} #}}}
+
 "one, but we're not the same";
 
 __END__
