@@ -131,6 +131,27 @@ sub process_message {    #{{{
     return \@tokens;
 }    #}}}
 
+sub  write_hessian_message { #{{{
+    my ($self, $hessian_data) = @_;
+
+    my @keys = keys %{$hessian_data};
+    my $datastructure = $hessian_data->{$keys[0]};
+    my $hessian_message;
+    switch ( $keys[0]) {
+        case /call/ {
+           $hessian_message = $self->write_hessian_call( $datastructure );
+            }
+        case /envelope/ {
+           $hessian_message = $self->write_hessian_envelope($datastructure); 
+            }
+        case /packet/ {
+           $hessian_message = $self->write_hessian_packet($datastructure); 
+            }
+    }
+   return $hessian_message; 
+} #}}}
+
+
 "one, but we're not the same";
 
 __END__

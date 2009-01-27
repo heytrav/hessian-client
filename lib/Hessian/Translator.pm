@@ -18,10 +18,6 @@ has 'binary_mode'       => ( is => 'ro', isa => 'Bool', default => 0);
 has 'serializer'           => (
     is      => 'rw',
     isa     => 'Bool',
-#    lazy    => 1,
-#    default => sub {
-#        URI->new('http://localhost:8080');
-#    }
 );
 
 before 'input_string' => sub {    #{{{

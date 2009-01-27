@@ -1,12 +1,26 @@
-package  Hessian::Client;
+package Hessian::Client;
 
 use strict;
 use warnings;
 
 use version; our $VERSION = qv('0.0.1');
+
+use LWP::UserAgent;
+use Hessian::Exceptions;
+use Hessian::Translator;
 use Class::Std;
 {
     my %service : ATTR(:name<service>);
+    my %version : ATTR(:get<version> :init_arg<version>);
+    my %hessian_client : ATTR(:get<client> :set<client>);
+
+    sub  BUILD { #{{{
+        my ($self, $id, $args) = @_;
+        my $version = $self->get_version();
+        my $hessian= Hessian::Translator->new( version => $version);  
+       $hessian_client{$id} = $hessian; 
+    } #}}}
+
 
 }
 

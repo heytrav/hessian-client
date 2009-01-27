@@ -15,12 +15,14 @@ use DateTime::Format::Epoch;
 use Hessian::Translator;
 use Hessian::Serializer;
 use Hessian::Translator::V1;
+use Hessian::Client;
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
     Hessian::Serializer->meta()->apply($client);
-#    $client->service( URI->new('http://localhost:8080') );
+
+    #    $client->service( URI->new('http://localhost:8080') );
     ok(
         $client->does('Hessian::Serializer'),
         "Serializer role has been composed."
@@ -34,7 +36,8 @@ sub t009_serialize_string : Test(1) {    #{{{
     my $client = Hessian::Translator->new( version => 1 );
     Hessian::Translator::V1->meta()->apply($client);
     Hessian::Serializer->meta()->apply($client);
-#    $client->service( URI->new('http://localhost:8080') );
+
+    #    $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk("hello");
     like( $hessian_string, qr/S\x{00}\x{05}hello/, "Created Hessian string." );
 }    #}}}
@@ -43,7 +46,8 @@ sub t011_serialize_integer : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
     Hessian::Serializer->meta()->apply($client);
-#    $client->service( URI->new('http://localhost:8080') );
+
+    #    $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk(-256);
     like( $hessian_string, qr/  \x{c7} \x{00} /x, "Processed integer." );
 
@@ -55,7 +59,8 @@ sub t011_serialize_integer : Test(2) {    #{{{
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
-#    $client->service( URI->new('http://localhost:8080') );
+
+    #    $client->service( URI->new('http://localhost:8080') );
     Hessian::Serializer->meta()->apply($client);
     my $hessian_string = $client->serialize_chunk(12.25);
     like(
@@ -138,10 +143,22 @@ sub t023_serialize_date : Test(2) {    #{{{
 
 }    #}}}
 
-sub  t025_serialize_call { #{{{
+sub t025_serialize_call {    #{{{
     my $self = shift;
-} #}}}
+    my $client = Hessian::Translator->new( version => 1 );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
+    can_ok( $client, 'serialize_message' );
+    my $datastructure = {
+        call => {
+            method    => 'add2',
+            arguments => [ 2, 3 ]
+        },
+    };
 
+    my $hessian_data =
+      "c\x01\x00m\x00\x04add2I" . "\x00\x00\x00\x02I\x00\x00\x00\x03z";
+}    #}}}
 
 "one, but we're not the same";
 
