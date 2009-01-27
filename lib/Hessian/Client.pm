@@ -6,7 +6,7 @@ use warnings;
 use version; our $VERSION = qv('0.0.1');
 
 use LWP::UserAgent;
-use Hessian::Exceptions;
+use Hessian::Exception;
 use Hessian::Translator;
 use Class::Std;
 {

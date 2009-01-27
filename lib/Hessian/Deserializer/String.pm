@@ -22,6 +22,7 @@ sub read_string_handle_chunk  {    #{{{
             $length = unpack "n", $data;
         }
     }
+ 
     binmode( $input_handle, 'utf8' );
     read $input_handle, $string, $length;
     return $string;

@@ -366,6 +366,22 @@ sub write_hessian_date {    #{{{
     return $self->write_date( $epoch, 'd' );
 }    #}}}
 
+sub write_hessian_call {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $hessian_call   = "c\x01\x00";
+    my $method         = $datastructure->{method};
+    my $hessian_method = $self->write_scalar_element($method);
+    $hessian_method =~ s/^S/m/;
+    $hessian_call .= $hessian_method;
+    my $arguments = $datastructure->{arguments};
+    foreach my $argument ( @{$arguments} ) {
+        my $hessian_arg = $self->write_hessian_chunk($argument);
+        $hessian_call .= $hessian_arg;
+    }
+    $hessian_call .= "z";
+    return $hessian_call;
+}    #}}}
+
 "one, but we're not the same";
 
 __END__
@@ -427,6 +443,8 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 
 
 =head2    write_hessian_string
+
+=head2 write_hessian_call
 
 
 

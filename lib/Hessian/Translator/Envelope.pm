@@ -131,7 +131,7 @@ sub process_message {    #{{{
     return \@tokens;
 }    #}}}
 
-sub  write_hessian_message { #{{{
+sub write_hessian_message { #{{{
     my ($self, $hessian_data) = @_;
 
     my @keys = keys %{$hessian_data};
@@ -150,7 +150,6 @@ sub  write_hessian_message { #{{{
     }
    return $hessian_message; 
 } #}}}
-
 
 "one, but we're not the same";
 

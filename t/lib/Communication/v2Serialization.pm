@@ -129,6 +129,33 @@ sub t023_serialize_date : Test(2) {    #{{{
 
 }    #}}}
 
+sub t025_serialize_call : Test(3) {    #{{{
+    my $self = shift;
+    my $client = Hessian::Translator->new( version => 2 );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
+    can_ok( $client, 'serialize_message' );
+    my $datastructure = {
+        call => {
+            method    => 'add2',
+            arguments => [ 2, 3 ]
+        },
+    };
+    my $hessian_data = $client->serialize_message($datastructure);
+    like(
+        $hessian_data,
+        qr/c\x01\x00m\x00\x04add2\x92\x93z/,
+        "Received expected string for hessian call."
+    );
+    $client->input_string($hessian_data);
+    my $processed_data = $client->deserialize_message();
+    cmp_deeply(
+   $processed_data->{call},
+   $datastructure->{call},
+   "Received same structure as call."
+    );
+}    #}}}
+
 "one, but we're not the same";
 
 __END__
