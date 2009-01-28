@@ -452,6 +452,7 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 
 =head2 write_hessian_call
 
+=head2  serialize_message
 
-
+Performs Hessian 1 specific processing of datastructures into hessian.
 

@@ -91,7 +91,22 @@ Hessian::Deserializer - Add deserialization capabilities to processor.
 
 =head2    deserialize_data
 
+Deserialize a single chunk from the file handle. Note that this only processes
+the composite and basic datastructures and cannot handle I<call>, I<packet> or
+I<envelope> level chunks.
 
 =head2    deserialize_message
 
+Similar to C<deserialize_data> except that it also processes I<envelope> level
+chunks of the message.
+
+=head2 next_token
+
+Iterate to the next chunk in the input handle.
+
+
+=head2 process_message
+
+For a more complex message, repeatedly calls L</"next_token"> until reaching
+the end of the message.
 

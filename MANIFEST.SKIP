@@ -45,6 +45,7 @@
 \.db
 
 # Avoid mysterious .flc files that are created by my editor
+\.swp
 \.flc
 
 # Avoid eclipse files that will be auto generated

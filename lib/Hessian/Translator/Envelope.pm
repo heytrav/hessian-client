@@ -180,5 +180,12 @@ I<reply> elements.
 
 =head2    read_packet
 
+=head2 read_version
 
-/bin/bash: format: command not found
+Reads the version of the message.
+
+=head2 write_hessian_message
+
+Writes a datastructure as a hessian message.
+
+

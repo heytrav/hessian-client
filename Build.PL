@@ -8,7 +8,7 @@ my $builder = Module::Build->new(
     license           => 'perl',
     dist_author       => 'William Travis Holton <wtholton@googlemail.com>',
     dist_version_from => 'lib/Hessian/Client.pm',
-
+recursive_test_files => 1,
     requires => {
         'Test::More'                    => 0,
         'Test::Class'                   => 0,

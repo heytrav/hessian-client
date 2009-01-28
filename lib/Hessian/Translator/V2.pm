@@ -369,4 +369,11 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 
 =head2   write_hessian_string
 
+=head2 serialize_message
 
+Serialize a datastructure into a Hessian 2.0 message.
+
+
+=head2 write_hessian_call
+
+Writes out a Hessian 2 specific remote procedure call
