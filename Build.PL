@@ -2,36 +2,37 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $class = Module::Build->subclass(
-    class => 'Module::Build::Custom',
-    code  => q{
-sub  run_tap_harness { #{{{
-  my ($self, $tests) = @_;
-  require TAP::Harness::JUnit;
 
-  # TODO allow the test @INC to be set via our API?
-  TAP::Harness::JUnit->new({
-    lib => [@INC],
-    verbosity => $self->{properties}{verbose},
-    switches  => [ $self->harness_switches ],
-    %{ $self->tap_harness_args },
-  })->runtests(@$tests);
-
-  } #}}}
-}
-);
-
-my $builder = $class->new(
+my $builder = Module::Build->new(
     module_name       => 'Hessian',
     license           => 'perl',
-    dist_author       => 'William Travis Holton <holton@ideegeo.com>',
-    dist_version_from => 'lib/Hessian.pm',
-    tap_harness_args  => { xmlfile => 'output.xml' },
-    requires          => {
-        'Test::More'         => 0,
-        'version'            => 0,
-        'Contextual::Return' => 0,
-'Moose' => 0,
+    dist_author       => 'William Travis Holton <wtholton@googlemail.com>',
+    dist_version_from => 'lib/Hessian/Client.pm',
+
+    requires => {
+        'Test::More'                    => 0,
+        'Test::Class'                   => 0,
+        'Test::Deep'                    => 0,
+        'Perl::Critic'                  => 0,
+        'Test::Perl::Critic'            => 0,
+        'version'                       => 0,
+        'Contextual::Return'            => 0,
+        'Moose'                         => 0,
+        'Class::Std'                    => 0,
+        'Exception::Class'              => 0,
+        'Math::Int64'                   => 0,
+        'Math::BigInt'                  => 0,
+        'Switch'                        => 0,
+        'YAML'                          => 0,
+        'Module::Load'                  => 0,
+        'List::MoreUtils'               => 0,
+        'LWP::UserAgent'                => 0,
+        'HTTP::Request'                 => 0,
+        'DateTime'                      => 0,
+        'DateTime::Format::Strptime'    => 0,
+        'DateTime::Format::Epoch'       => 0,
+        'DateTime::Format::Epoch::Unix' => 0,
+
     },
     add_to_cleanup => ['Hessian-*'],
 );

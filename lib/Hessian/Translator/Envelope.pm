@@ -1,7 +1,6 @@
 package Hessian::Translator::Envelope;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 
 use Switch;
@@ -146,11 +145,18 @@ __END__
 
 Hessian::Translator::Envelope - Translate envelope level Hessian syntax
 
-=head1 VERSION
 
 =head1 SYNOPSIS
 
+These methods are meant for internal use only.
+
 =head1 DESCRIPTION
+
+This module implements methods necessary for processing the packaging of
+Hessian messages. This includes components of Hessian messages like envelopes
+and packets (mainly relevant for Hessian 2.0) as well as I<call> and
+I<reply> elements.
+
 
 =head1 INTERFACE
 
@@ -175,4 +181,4 @@ Hessian::Translator::Envelope - Translate envelope level Hessian syntax
 =head2    read_packet
 
 
-=head2    read_version
+/bin/bash: format: command not found

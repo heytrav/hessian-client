@@ -1,7 +1,6 @@
 package Hessian::Translator::Composite;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 with 'Hessian::Translator::Envelope';
 
@@ -263,13 +262,17 @@ __END__
 
 =head1 NAME
 
-Hessian::Translator::List - Translate list datastructures to and from hessian.
-
-=head1 VERSION
+Hessian::Translator::Composite - Translate composite datastructures to and from hessian.
 
 =head1 SYNOPSIS
 
+These methods are meant for internal use only.
+
 =head1 DESCRIPTION
+
+
+This module implements the basic methods needed for processing complex
+datatypes like arrays, hash maps and classes.
 
 =head1 INTERFACE
 

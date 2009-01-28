@@ -10,8 +10,6 @@ use HTTP::Request;
 use Hessian::Exception;
 use Hessian::Translator;
 use Class::Std;
-use Encode;
-use YAML;
 {
     my %service : ATTR(:name<service>);
     my %version : ATTR(:get<version> :init_arg<version>);
@@ -119,7 +117,16 @@ Not part of the public interface. See L<Class::Std|Class::Std/"AUTOMETHOD"> docu
 =over 2
 
 =item *
-Testing with Hessian 2.0 service
+Testing with a Hessian 2.0 service. If anyone out there would be interested in
+helping with this I would be very grateful.
+
+
+=item *
+Work on messaging. RPC is only part of the Hessian protocol.
+
+=item *
+Make a POE filter for this perhaps.
+
 
 
 =back
