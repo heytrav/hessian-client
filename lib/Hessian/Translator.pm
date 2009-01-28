@@ -84,11 +84,32 @@ __END__
 
 Hessian::Translator - Base class for Hessian serialization/deserialization.
 
-=head1 VERSION
-
 =head1 SYNOPSIS
 
+    my $translator = Hessian::Translator->new( version => 1 );
+
+    my $hessian_string = "S\x00\x05hello";
+    $translator->input_string($hessian_string);
+    my $output = $translator->deserialize_message();
+
+
+    # Apply serialization methods to the object.
+    Hessian::Serializer->meta()->apply($translator);
+
 =head1 DESCRIPTION
+
+B<Hessian::Translator> is made to act as the base class (or whatever this is
+called in Moose terminology) for serialization/deserialization methods.  
+
+On its own the class really only provides some of the more basic functions
+needed for Hessian processing such as the I<type list> for datatypes, the
+I<reference list> for maps, objects and arrays; and the I<object class
+definition list>.  Integration of the respective serialization and
+deserialization behaviours only takes place I<when needed>. Depending on how
+the translator is initialized and which methods are called on the object, it
+is possibly to specialize the object for either Hessian 1.0 or Hessian 2.0
+processing and to selectively include methods for serialization and or
+deserialization.  
 
 =head1 INTERFACE
 
@@ -96,3 +117,59 @@ Hessian::Translator - Base class for Hessian serialization/deserialization.
 
 Not to be called directly.  
 
+
+=head2 new
+
+
+=over 2
+
+=item
+version
+
+Allowed values are B<1> or B<2> and correspond to the respective Hessian
+protocol version.
+
+
+=back
+
+
+=head2 input_string
+
+=over 2
+
+=item
+string
+
+The Hessian encoded string to be decoded.  This may represent an entire
+message or a simple scalar or datastructure. Note that the first application
+of this method causes the L<Hessian::Deserializer> role to be applied to this
+class.
+
+
+=back
+
+
+=head2 version
+
+Retrieves the current version for which this client was initialized. See
+L</"new">.
+
+
+=head2 class_definitions
+
+Provides access to the internal class definition list.
+
+
+=head2 type_list
+
+Provides access to the internal type list.
+
+=head2 reference_list
+
+Provides access to the internal list of references.
+
+
+=head2 serializer
+
+Causes the L<Hessian::Serializer|Hessian::Serializer> methods to be applied to
+the current object.

@@ -1,7 +1,6 @@
 package  Hessian::Serializer::Date;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 requires qw/write_integer write_long/;
 
@@ -32,12 +31,17 @@ __END__
 
 Hessian::Serializer::Date - Role for serializing dates into Hessian.
 
-=head1 VERSION
-
 =head1 SYNOPSIS
 
+These methods are only made to be used within the Hessian framework.
+
 =head1 DESCRIPTION
+
+This module provides a single function for serializing dates into Hessian.
 
 =head1 INTERFACE
 
 =head2 write_date
+
+Serialize an integer representing a particular date in epoch time into
+Hessian.

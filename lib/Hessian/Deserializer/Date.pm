@@ -1,7 +1,6 @@
 package  Hessian::Deserializer::Date;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 use Switch;
 
@@ -33,7 +32,11 @@ Hessian::Deserializer::Date - Methods for deserializing hessian dates.
 
 =head1 SYNOPSIS
 
+These methods are only made to be used within the Hessian framework.
+
 =head1 DESCRIPTION
+
+This module reads the input file handle to deserialize Hessian dates.
 
 =head1 INTERFACE
 

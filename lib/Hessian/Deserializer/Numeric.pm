@@ -1,7 +1,6 @@
 package  Hessian::Deserializer::Numeric;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 use integer;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
@@ -206,28 +205,48 @@ floating point numbers.
 
 =head1 SYNOPSIS
 
+These methods are meant for internal use.
+
 =head1 DESCRIPTION
+
+This module provides methods for reading numerical values from the input file
+handle.
 
 =head1 INTERFACE
 
 =head2   read_boolean
 
+Read a boolean value.
 
 =head2   read_boolean_handle_chunk
+
+Reads a boolean value from the file handle.
 
 
 =head2   read_double_handle_chunk
 
+Read a floating point number from the file handle.
+
 
 =head2   read_integer
+
+Reads an integer.
 
 
 =head2   read_integer_handle_chunk
 
+Reads an integer.
 
 =head2   read_long
 
+Reads a long numerical value
+
 =head2 read_double
+
+Reads a floating point number.
 
 
 =head2   read_long_handle_chunk
+
+
+Reads a long numerical value from the file handle.

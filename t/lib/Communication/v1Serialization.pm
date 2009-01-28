@@ -8,8 +8,6 @@ use base 'Communication';
 
 use Test::More;
 use Test::Deep;
-use URI;
-use YAML;
 use DateTime;
 use DateTime::Format::Epoch;
 use Hessian::Translator;
@@ -164,24 +162,27 @@ sub t025_serialize_call : Test(3) {    #{{{
     $client->input_string($hessian_data);
     my $processed_data = $client->deserialize_message();
     cmp_deeply(
-   $processed_data->{call},
-   $datastructure->{call},
-   "Received same structure as call."
+        $processed_data->{call},
+        $datastructure->{call},
+        "Received same structure as call."
     );
 }    #}}}
 
-sub  t030_client_request : Test(1){ #{{{
-    my $self = shift;
-    my $hessian_client = Hessian::Client->new({
-        version => 1, 
-    service => 'http://localhost:8080/HessianRIADemo/words'});
+sub t030_client_request : Test(1) {    #{{{
+    my $self           = shift;
+    local $TODO = "A running resin server and the HessianRIADemo is"
+    ." required for this to work. Please install this demo, start the "
+    ."servlet and alter the URL here for this test to pass.";
+    my $hessian_client = Hessian::Client->new(
+        {
+            version => 1,
+            service => 'http://localhost:8080/HessianRIADemo/words'
+        }
+    );
     my $result = $hessian_client->getRecent();
-    print "Result was ".Dump($result)."\n";
     pass("Just to see if this works.");
 
-} #}}}
-
-
+}    #}}}
 
 "one, but we're not the same";
 

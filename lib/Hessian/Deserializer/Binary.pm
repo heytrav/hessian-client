@@ -1,7 +1,6 @@
 package  Hessian::Deserializer::Binary;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 use Switch;
 
@@ -33,11 +32,14 @@ __END__
 
 Hessian::Deserializer::Binary - Deserialization of Hessian into binary
 
-=head1 VERSION
-
 =head1 SYNOPSIS
 
+These methods are only made to be used within the Hessian framework.
+
 =head1 DESCRIPTION
+
+This module reads the current input file handle to translate Hessian into
+binary.
 
 =head1 INTERFACE
 

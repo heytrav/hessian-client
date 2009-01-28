@@ -1,7 +1,6 @@
 package  Hessian::Serializer::Numeric;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 use integer;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
@@ -135,11 +134,15 @@ __END__
 Hessian::Serializer::Numeric - Roles for serialization of integers, floating
 point numbers, dates and boolean expressions into Hessian.
 
-=head1 VERSION
 
 =head1 SYNOPSIS
 
+These methods are only made to be used within the Hessian framework.
+
 =head1 DESCRIPTION
+
+This module provides methods for serializing numbers and boolean values into
+Hessian.
 
 =head1 INTERFACE
 

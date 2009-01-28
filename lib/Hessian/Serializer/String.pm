@@ -23,7 +23,7 @@ sub write_string  {    #{{{
 sub write_xml {    #{{{
     my ($self, $params) = @_;
 
-    my @xml_chunks = @_;
+    my @xml_chunks = @{ $params->{chunks}  };
     my $message =
       $self->hessianify_chunks( 
         { prefix => 'x', last_prefix => 'X' }, 
