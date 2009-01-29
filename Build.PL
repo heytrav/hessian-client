@@ -2,14 +2,14 @@ use strict;
 use warnings;
 use Module::Build;
 
-
 my $builder = Module::Build->new(
-    module_name       => 'Hessian',
-    license           => 'perl',
-    dist_author       => 'William Travis Holton <wtholton@googlemail.com>',
-    dist_version_from => 'lib/Hessian/Client.pm',
-recursive_test_files => 1,
-    requires => {
+    module_name          => 'Hessian::Client',
+    license              => 'perl',
+    dist_author          => 'William Travis Holton <wtholton@googlemail.com>',
+    dist_version_from    => 'lib/Hessian/Client.pm',
+    recursive_test_files => 1,
+    'create_makefile_pl' => 'passthrough',
+    requires             => {
         'Test::More'                    => 0,
         'Test::Class'                   => 0,
         'Test::Deep'                    => 0,

@@ -6,7 +6,7 @@ use version; our $VERSION = qv('0.0.1');
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Simple;
+use Hessian::Simple;
 
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 'R' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );

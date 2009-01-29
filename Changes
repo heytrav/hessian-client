@@ -1,5 +1,14 @@
-Revision history for Hessian
+Revision history for Hessian::Client
 
-0.0.1  Sun Oct 12 08:11:38 2008
-       Initial release.
+
+0.1.0 Wed Jan 28 2009
+        First CPAN release
+
+0.1.1 Thu Jan 29 2009
+        Bugfix for installation script.
+
+
+0.1.2 Thu Jan 29 2009
+        Bugfix for installation script.
+
 

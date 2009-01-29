@@ -1,7 +1,6 @@
-package Simple;
+package Hessian::Simple;
 
 use Moose;
-use version; our $VERSION = qv('0.0.1');
 
 
 "one, but we're not the same";
@@ -11,7 +10,7 @@ __END__
 
 =head1 NAME
 
-Simple - Experimenting with dynamic fields
+Hessian::Simple - Experimenting with dynamic fields
 
 =head1 VERSION
 

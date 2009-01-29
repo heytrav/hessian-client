@@ -7,7 +7,7 @@ with 'Hessian::Translator::Envelope';
 use Switch;
 use YAML;
 use Hessian::Exception;
-use Simple;
+use Hessian::Simple;
 
 sub read_typed_list_element {    #{{{
     my ( $self, $type, $args ) = @_;
@@ -132,7 +132,7 @@ sub assemble_class {    #{{{
     {
         ## no critic
         no strict 'refs';
-        push @{ $class_type . '::ISA' }, 'Simple';
+        push @{ $class_type . '::ISA' }, 'Hessian::Simple';
         ## use critic
     }
     foreach my $field ( @{ $class_definition->{fields} } ) {
