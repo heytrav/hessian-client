@@ -1,7 +1,7 @@
 use Test::More tests => 1;
 
 BEGIN {
-    use_ok('Hessian::Translator');
+    use_ok('Hessian::Client');
 }
 
-diag("Testing Hessian $Hessian::Translator::VERSION");
+diag("Testing Hessian $Hessian::Client::VERSION");
