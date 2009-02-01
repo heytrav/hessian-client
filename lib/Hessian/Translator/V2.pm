@@ -34,8 +34,7 @@ sub read_message_chunk_data {    #{{{
             my $result                = $self->deserialize_data();
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
-            $datastructure =
-              $exception_name->new( error => $exception_description );
+              $exception_name->throw( error => $exception_description );
         }
         case /\x52/ {    # Reply
             my $reply_data = $self->deserialize_data();

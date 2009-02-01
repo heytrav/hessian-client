@@ -2,14 +2,13 @@ package Hessian::Translator::Envelope;
 
 use Moose::Role;
 
-
 use Switch;
 use YAML;
 use Contextual::Return;
 
 use Hessian::Exception;
 
-sub read_message_chunk {   #{{{
+sub read_message_chunk {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
     my ( $first_bit, $element );
@@ -42,7 +41,7 @@ sub read_envelope {    #{{{
       if $first_bit =~ /z/i;
 
     # Just the word "Header" as far as I understand
-    my $header_string = $self->read_string_handle_chunk( $first_bit );
+    my $header_string = $self->read_string_handle_chunk($first_bit);
     binmode( $input_handle, 'bytes' );
   ENVELOPECHUNKS: {
         my ( $header_count, $footer_count, $packet_size );
@@ -91,7 +90,7 @@ sub read_header_or_footer {    #{{{
     my $input_handle = $self->input_handle();
     my $first_bit;
     read $input_handle, $first_bit, 1;
-    my $header = $self->read_string_handle_chunk( $first_bit );
+    my $header = $self->read_string_handle_chunk($first_bit);
     binmode( $input_handle, 'bytes' );
     return $header;
 }    #}}}
@@ -112,29 +111,29 @@ sub read_packet {    #{{{
     my $packet_string;
     read $input_handle, $packet_string, $packet_size;
     return FIXED NONVOID {
-        $self->deserialize_message({ input_string => $packet_string });
+        $self->deserialize_message( { input_string => $packet_string } );
     };
 }    #}}}
 
-sub write_hessian_message { #{{{
-    my ($self, $hessian_data) = @_;
+sub write_hessian_message {    #{{{
+    my ( $self, $hessian_data ) = @_;
 
-    my @keys = keys %{$hessian_data};
-    my $datastructure = $hessian_data->{$keys[0]};
+    my @keys          = keys %{$hessian_data};
+    my $datastructure = $hessian_data->{ $keys[0] };
     my $hessian_message;
-    switch ( $keys[0]) {
+    switch ( $keys[0] ) {
         case /call/ {
-           $hessian_message = $self->write_hessian_call( $datastructure );
-            }
+            $hessian_message = $self->write_hessian_call($datastructure);
+        }
         case /envelope/ {
-           $hessian_message = $self->write_hessian_envelope($datastructure); 
-            }
+            $hessian_message = $self->write_hessian_envelope($datastructure);
+        }
         case /packet/ {
-           $hessian_message = $self->write_hessian_packet($datastructure); 
-            }
+            $hessian_message = $self->write_hessian_packet($datastructure);
+        }
     }
-   return $hessian_message; 
-} #}}}
+    return $hessian_message;
+}    #}}}
 
 "one, but we're not the same";
 

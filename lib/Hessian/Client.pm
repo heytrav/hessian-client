@@ -41,6 +41,8 @@ use Class::Std;
     sub _call_remote {    #{{{
         my ( $self, $datastructure ) = @_;
         my $service = $self->get_service();
+        ServiceException->throw(error => "No service defined.") unless
+        $service;
         my $request = HTTP::Request->new( 'POST', $service );
         my $hessian = $self->get_translator();
         $hessian->serializer();
@@ -54,10 +56,7 @@ use Class::Std;
             my $processed = $hessian->process_message();
             return $processed;
         }
-        else {
-
-            print "NO response!\n";
-        }
+            ServiceException->throw(error => "No reponse from ".$service);
 
     }    #}}}
 
@@ -82,6 +81,12 @@ Hessian::Client - RPC via Hessian with a remote server.
     service => 'http://some.hessian.service/.....'
  );
 
+ # Alternatively
+ my $client = Hessian::Client->new(
+    version => 2,
+    service => 'http://some.hessian.service/.....'
+ );
+
  
  # RPC 
  my $response = $hessian->remoteCall($arg1, $arg2, $arg3, ...);
@@ -91,15 +96,42 @@ Hessian::Client - RPC via Hessian with a remote server.
 The goal of Hessian::Client and all associated classes in this namespace is to
 provide support for communication via the Hessian protocol in Perl.  For a
 more detailed introduction into the Hessian protocol, see the main project
-documentation for L<Hessian 1.0|http://hessian.caucho.com/doc/hessian-ws.html>
-and L<Hessian
-2.0|http://www.caucho.com/resin-3.0/protocols/hessian-2.0-spec.xtp>.  
+documentation for http://hessian.caucho.com/doc/hessian-ws.html
+and http://www.caucho.com/resin-3.0/protocols/hessian-2.0-spec.xtp.  
 
 Hessian::Client implements basic RPC for Hessian. Although currently only
-tested with version 1, communication with version 2.0 servers should also work.
+tested with version 1, communication with version 2.0 servers should also
+work. I am currently looking for publicly available or otherwise accesible
+Hessian services for testing.
 
 
 =head1 INTERFACE
+
+=head2 new
+
+=over 2
+
+=item 
+Arguments
+
+=over 3
+
+
+=item
+version
+
+B<C<1>> or B<C<2>> representing the respective version of Hessian the client
+should speak.  
+
+
+=item
+service
+
+A url representing the location of a Hessian server.
+
+=back
+
+=back
 
 =head2 BUILD
 
@@ -107,8 +139,12 @@ Not part of the public interface. See L<Class::Std|Class::Std/"BUILD"> documenta
 
 =head2 AUTOMETHOD
 
+Not part of the public interface. See L<Class::Std|Class::Std/"AUTOMETHOD">
+documentation.
 
-Not part of the public interface. See L<Class::Std|Class::Std/"AUTOMETHOD"> documentation.
+I<Note:> Any method called on the client that is not defined in the public
+interface (so anything other than L</"new">) will be processed into a Hessian
+call and posted to the service.
 
 
 

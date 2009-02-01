@@ -101,11 +101,11 @@ Hessian::Translator - Base class for Hessian serialization/deserialization.
 B<Hessian::Translator> is made to act as the base class (or whatever this is
 called in Moose terminology) for serialization/deserialization methods.  
 
-On its own the class really only provides some of the more basic functions
-needed for Hessian processing such as the I<type list> for datatypes, the
+On its own, this class really only provides some of the more basic functions
+required for Hessian processing such as the I<type list> for datatypes, the
 I<reference list> for maps, objects and arrays; and the I<object class
 definition list>.  Integration of the respective serialization and
-deserialization behaviours only takes place I<when needed>. Depending on how
+deserialization behaviours only takes place when needed. Depending on how
 the translator is initialized and which methods are called on the object, it
 is possibly to specialize the object for either Hessian 1.0 or Hessian 2.0
 processing and to selectively include methods for serialization and or
@@ -173,3 +173,18 @@ Provides access to the internal list of references.
 
 Causes the L<Hessian::Serializer|Hessian::Serializer> methods to be applied to
 the current object.
+
+
+=head1 DEPENDENCIES
+
+
+
+=over 2
+
+
+=item
+L<Moose|Moose>
+
+
+
+=back

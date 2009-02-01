@@ -6,6 +6,7 @@ use warnings;
 use version; our $VERSION = qv('0.0.1');
 use base 'Communication';
 
+use YAML;
 use Test::More;
 use Test::Deep;
 use DateTime;
@@ -168,21 +169,52 @@ sub t025_serialize_call : Test(3) {    #{{{
     );
 }    #}}}
 
-sub t030_client_request : Test(1) {    #{{{
+sub t030_client_request : Test(2) {    #{{{
     my $self           = shift;
-    local $TODO = "A running resin server and the HessianRIADemo is"
-    ." required for this to work. Please install this demo, start the "
-    ."servlet and alter the URL here for this test to pass.";
+    my $service = 'http://localhost:8080/HessianRIADemo/words' ;
+    local $TODO = "This test requires a running the HessianRIADemo"
+    ." servlet.";
     my $hessian_client = Hessian::Client->new(
         {
             version => 1,
-            service => 'http://localhost:8080/HessianRIADemo/words'
+            service => $service
         }
     );
     my $result = $hessian_client->getRecent();
-    pass("Just to see if this works.");
+    my $reply_header = $result->[0];
+    my $reply_body = $result->[1];
+    cmp_deeply(
+        $reply_header,
+        { hessian_version => '1.0', state => 'reply'},
+        "Received expected header from service."
+    );
+    isa_ok($reply_body, 'ARRAY', 
+    'Datastructure returned in response body');
 
 }    #}}}
+
+sub  t032_fail_client_request : Test(1) { #{{{
+    my $self = shift;
+    local $TODO = "This test requires a running the HessianRIADemo"
+    ." servlet.";
+    my $service = 'http://localhost:8080/HessianRIADemo/words' ; 
+    my $hessian_client = Hessian::Client->new(
+        {
+            version => 1,
+            service => $service
+        }
+    );
+    my $result;
+    eval {
+         $result = $hessian_client->bogusMethod();
+    };
+    if (my $e = $@) {
+        isa_ok($e,'NoSuchMethodException',
+        "Received expected exception from servlet."
+        );
+    }
+
+} #}}}
 
 "one, but we're not the same";
 

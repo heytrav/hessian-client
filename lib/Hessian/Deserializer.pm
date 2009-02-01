@@ -10,7 +10,6 @@ with qw/
   Hessian::Deserializer::Binary
   /;
 
-
 has 'input_handle' => (    #{{{
     is      => 'rw',
     isa     => 'GlobRef',
@@ -53,7 +52,10 @@ sub deserialize_message {    #{{{
     my ( $self, $args ) = @_;
     my $result;
     eval { $result = $self->read_message_chunk(); };
-    return if Exception::Class->caught('EndOfInput::X');
+    if ( my $e = $@ ) {
+        return if Exception::Class->caught('EndOfInput::X');
+        $e->rethrow() if $e->isa('Hessian::Exception');
+    }
     return $result;
 }    #}}}
 

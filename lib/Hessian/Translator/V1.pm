@@ -27,13 +27,19 @@ sub read_message_chunk_data {    #{{{
         }
         case /\x66/ {            # version 1 fault
             my @tokens;
-            while ( my $token = $self->deserialize_data() ) {
-                push @tokens, $token;
+            eval {
+                while ( my $token = $self->deserialize_data() )
+                {
+                    push @tokens, $token;
+                }
+            };
+            if ( Exception::Class->caught('EndOfInput::X') ) {
+                my $exception_name        = $tokens[1];
+                my $exception_description = $tokens[3];
+                $exception_name->throw( error => $exception_description );
             }
-            my $exception_name        = $tokens[1];
-            my $exception_description = $tokens[3];
         }
-        case /\x72/ {            # version 1 reply
+        case /\x72/ {    # version 1 reply
             my $hessian_version = $self->read_version();
             $datastructure =
               { hessian_version => $hessian_version, state => 'reply' };
@@ -382,11 +388,11 @@ sub write_hessian_call {    #{{{
     return $hessian_call;
 }    #}}}
 
-sub  serialize_message { #{{{
-    my ( $self, $datastructure) = @_;
+sub serialize_message {    #{{{
+    my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);
     return $result;
-} #}}}
+}    #}}}
 
 "one, but we're not the same";
 
