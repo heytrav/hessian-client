@@ -34,20 +34,6 @@ sub t004_initialize_hessian : Test(3) {    #{{{
     $self->{deserializer} = $hessian_obj;
 }    #}}}
 
-#sub t005_compose_role : Test(2) {    #{{{
-#    my $self        = shift;
-#    my $hessian_obj = $self->{deserializer};
-
-#    Hessian::Translator::Composite->meta()->apply($hessian_obj);
-#    Hessian::Deserializer->meta()->apply($hessian_obj);
-#    ok( $hessian_obj->does('Hessian::Deserializer'),
-#        "Object can deserialize." );
-#    ok(
-#        $hessian_obj->can('deserialize_message'),
-#        "Deserialize role has been composed."
-#    );
-#}    #}}}
-
 sub t010_read_hessian_version : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
@@ -74,7 +60,6 @@ sub t015_read_envelope : Test(2) {    #{{{
     );
     my $reply_data = $tokens->[1]->[0]->{packets}->[0];
     my $text       = "$reply_data->{reply_data}";
-    print "Text is $text\n";
     cmp_deeply(
         $reply_data,
         superhashof( { reply_data => 'hello' } ),
@@ -101,9 +86,17 @@ sub t017_hessian_fault : Test(1) {    #{{{
     my $deserializer = $self->{deserializer};
     my $hessian_data = "FH\x04code\x10ServiceException\x07message"
       . "\x0eFile Not Found\x06detailM\x1djava.io.FileNotFoundExceptionZZ";
-    my $result =
-      $deserializer->deserialize_message( { input_string => $hessian_data } );
-    isa_ok( $result, 'ServiceException', "Object received from deserializer" );
+
+    eval {
+
+        my $result = $deserializer->deserialize_message(
+            { input_string => $hessian_data } );
+    };
+    if ( my $e = $@ ) {
+
+        isa_ok( $e, 'ServiceException', "Object received from deserializer" );
+    }
+
 }    #}}}
 
 sub t019_hessian_call : Test(3) {    #{{{
