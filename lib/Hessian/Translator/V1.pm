@@ -401,9 +401,7 @@ __END__
 
 =head1 NAME
 
-Hessian::Translator::List - Translate list datastructures to and from hessian.
-
-=head1 VERSION
+Hessian::Translator::V1 - Translate datastructures to and from Hessian 1.0.
 
 =head1 SYNOPSIS
 
@@ -411,54 +409,93 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 
 =head1 INTERFACE
 
-=head2    read_class_handle
+=head2 read_class_handle
+
+Read a class definition from the Hessian stream and possibly create an object
+from the definition and given parameters.
+
+=head2 read_composite_data
+
+Read Hessian 1.0 specific datastructures from the stream.
+
+=head2 read_list_type
+
+Read the I<type> attribute of a Hessian 2.0 typed list
+
+=head2 read_map_handle
+
+Read a map (perl HASH) from the stream. If a type attribute is present, the
+hash will be I<blessed> into an object.
+
+=head2 read_message_chunk_data
+
+Read Hessian 1.0 envelope.  For version 1.0 of the protocol this mainly
+applies to I<reply>, I<call> and I<fault> objects.
+
+=head2 read_remote_object
 
 
-=head2    read_composite_data
+=head2 read_rpc
+
+Read a remote procedure call from the input stream.
+
+=head2 read_simple_datastructure
+
+=over 2
+
+=item
+string
+
+=item
+integer
+
+=item
+long
+
+=item
+double
+
+=item
+boolean
+
+=item
+null
 
 
-=head2    read_list_type
+=back
+
+=head2 read_typed_list
 
 
-
-=head2    read_map_handle
-
-
-=head2    read_message_chunk_data
+=head2 read_untyped_list
 
 
-=head2    read_remote_object
+=head2 read_v1_type
+
+Read the type attribute (if present) from a Hessian 1.0 list or map.
+
+=head2 write_hessian_array
+
+Writes an array datastructure into the outgoing Hessian message. 
+
+Note: This object only writes B<untyped variable length> arrays.
+
+=head2 write_hessian_date
+
+Writes a L<DateTime|DateTime> object into the outgoing Hessian message. 
+
+=head2 write_hessian_hash
+
+Writes a HASH reference into the outgoing Hessian message.
+
+=head2 write_hessian_string
 
 
-=head2    read_rpc
-
-
-=head2    read_simple_datastructure
-
-
-=head2    read_typed_list
-
-
-=head2    read_untyped_list
-
-
-=head2    read_v1_type
-
-
-=head2    write_hessian_array
-
-
-=head2    write_hessian_date
-
-
-=head2    write_hessian_hash
-
-
-=head2    write_hessian_string
+Writes a string scalar into the outgoing Hessian message.
 
 =head2 write_hessian_call
 
-=head2  serialize_message
+=head2 serialize_message
 
 Performs Hessian 1 specific processing of datastructures into hessian.
 

@@ -41,22 +41,23 @@ use Class::Std;
     sub _call_remote {    #{{{
         my ( $self, $datastructure ) = @_;
         my $service = $self->get_service();
-        ServiceException->throw(error => "No service defined.") unless
-        $service;
+        ServiceException->throw( error => "No service defined." )
+          unless $service;
         my $request = HTTP::Request->new( 'POST', $service );
         my $hessian = $self->get_translator();
         $hessian->serializer();
         my $hessian_string = $hessian->serialize_message($datastructure);
         $request->content($hessian_string);
         my $agent    = LWP::UserAgent->new();
-        my $response = $agent->request($request ); 
+        my $response = $agent->request($request);
+
         if ( $response->is_success() ) {
-            my $content   = $response->content();
+            my $content = $response->content();
             $hessian->input_string($content);
             my $processed = $hessian->process_message();
             return $processed;
         }
-            ServiceException->throw(error => "No reponse from ".$service);
+        ServiceException->throw( error => "No reponse from " . $service );
 
     }    #}}}
 

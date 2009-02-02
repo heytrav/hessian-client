@@ -322,7 +322,7 @@ __END__
 
 =head1 NAME
 
-Hessian::Translator::List - Translate list datastructures to and from hessian.
+Hessian::Translator::V2 - Translate datastructures to and from Hessian 2.0.
 
 =head1 VERSION
 
@@ -333,40 +333,85 @@ Hessian::Translator::List - Translate list datastructures to and from hessian.
 =head1 INTERFACE
 
 
-=head2   read_class_handle
+=head2 read_class_handle
+
+Read a class definition from the Hessian stream and possibly create an object
+from the definition and given parameters.
+
+=head2 read_composite_data
+
+Read Hessian 2.0 specific datastructures from the stream.
+
+=head2 read_map_handle
+
+Read a map (perl HASH) from the stream.
+
+=head2 read_message_chunk_data
+
+Read Hessian 2.0 envelope.  For version 2.0 of the protocol this applies to
+I<envelope>, I<packet>, I<reply>, I<call> and I<fault> objects.
 
 
-=head2   read_composite_data
+=head2 read_rpc
+
+Read a remote procedure call from the input stream.
+
+=head2 read_simple_datastructure
+
+Read a scalar of one of the basic Hessian datatypes from the stream.  This can
+be one of: 
+
+=over 2
+
+=item
+string
+
+=item
+integer
+
+=item
+long
+
+=item
+double
+
+=item
+boolean
+
+=item
+null
 
 
-=head2   read_map_handle
+=back
 
 
-=head2   read_message_chunk_data
+=head2 read_typed_list
 
+Read a Hessian 2.0 typed list.  Note that this is mainly for compatability
+with other servers that are implemented in languages like Java where I<type>
+is actually relevant.  
 
-=head2   read_rpc
+=head2 read_untyped_list
 
+Read a list of arbitrarily typed entities.
 
-=head2   read_simple_datastructure
+=head2 write_hessian_array
 
+Writes an array datastructure into the outgoing Hessian message. 
 
-=head2   read_typed_list
+Note: This object only writes B<untyped variable length> arrays.
 
+=head2 write_hessian_date
 
-=head2   read_untyped_list
+Writes a L<DateTime|DateTime> object into the outgoing Hessian message. 
 
+=head2 write_hessian_hash
 
-=head2   write_hessian_array
+Writes a HASH reference into the outgoing Hessian message.
 
+=head2 write_hessian_string
 
-=head2   write_hessian_date
-
-
-=head2   write_hessian_hash
-
-
-=head2   write_hessian_string
+Writes a string scalar into the outgoing Hessian message.
 
 =head2 serialize_message
 
