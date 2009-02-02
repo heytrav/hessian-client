@@ -152,7 +152,6 @@ sub t025_serialize_call : Test(3) {    #{{{
     );
     $client->input_string($hessian_data);
     my $processed_data = $client->process_message();
-    print "Processed " . Dump($processed_data) . "\n";
     cmp_deeply(
         $processed_data->[1]->{call},
         $datastructure->{call},

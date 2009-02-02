@@ -8,6 +8,7 @@ use YAML;
 use List::MoreUtils qw/any/;
 
 use Hessian::Exception;
+with 'MooseX::Clone';
 
 has 'class_definitions' => ( is => 'rw', default => sub { [] } );
 has 'type_list'         => ( is => 'rw', default => sub { [] } );

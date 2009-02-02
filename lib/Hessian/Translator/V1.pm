@@ -420,7 +420,7 @@ Read Hessian 1.0 specific datastructures from the stream.
 
 =head2 read_list_type
 
-Read the I<type> attribute of a Hessian 2.0 typed list
+Read the I<type> attribute of a Hessian 1.0 typed list
 
 =head2 read_map_handle
 

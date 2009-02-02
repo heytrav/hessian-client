@@ -9,6 +9,7 @@ use base 'Communication';
 use YAML;
 use Test::More;
 use Test::Deep;
+use Test::Exception;
 use DateTime;
 use DateTime::Format::Epoch;
 use Hessian::Translator;
@@ -169,20 +170,23 @@ sub t025_serialize_call : Test(3) {    #{{{
     );
 }    #}}}
 
-sub t030_client_request : Test(2) {    #{{{
+sub t030_client_request : Test(3) {    #{{{
     my $self           = shift;
     my $service = 'http://localhost:8080/HessianRIADemo/words' ;
     local $TODO = "This test requires a running the HessianRIADemo"
     ." servlet.";
-    my $hessian_client = Hessian::Client->new(
-        {
-            version => 1,
-            service => $service
-        }
-    );
-    my $result = $hessian_client->getRecent();
-    my $reply_header = $result->[0];
-    my $reply_body = $result->[1];
+    my ($reply_header, $reply_body);
+    lives_ok {
+        my $hessian_client = Hessian::Client->new(
+            {
+                version => 1,
+                service => $service
+            }
+        );
+        my $result = $hessian_client->getRecent();
+         $reply_header = $result->[0];
+         $reply_body = $result->[1];
+    } "No exception thrown by rpc.";
     cmp_deeply(
         $reply_header,
         { hessian_version => '1.0', state => 'reply'},
