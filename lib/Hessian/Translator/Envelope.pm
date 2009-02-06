@@ -5,6 +5,7 @@ use Moose::Role;
 use Switch;
 use YAML;
 use Contextual::Return;
+use List::MoreUtils qw/any/;
 
 use Hessian::Exception;
 
@@ -118,19 +119,28 @@ sub read_packet {    #{{{
 sub write_hessian_message {    #{{{
     my ( $self, $hessian_data ) = @_;
 
-    my @keys          = keys %{$hessian_data};
-    my $datastructure = $hessian_data->{ $keys[0] };
     my $hessian_message;
-    switch ( $keys[0] ) {
-        case /call/ {
-            $hessian_message = $self->write_hessian_call($datastructure);
+    if ( ( ref $hessian_data ) eq 'HASH'
+        and any { exists $hessian_data->{$_} } qw/call envelope packet/ )
+    {
+
+        my @keys          = keys %{$hessian_data};
+        my $datastructure = $hessian_data->{ $keys[0] };
+        switch ( $keys[0] ) {
+            case /call/ {
+                $hessian_message = $self->write_hessian_call($datastructure);
+            }
+            case /envelope/ {
+                $hessian_message =
+                  $self->write_hessian_envelope($datastructure);
+            }
+            case /packet/ {
+                $hessian_message = $self->write_hessian_packet($datastructure);
+            }
         }
-        case /envelope/ {
-            $hessian_message = $self->write_hessian_envelope($datastructure);
-        }
-        case /packet/ {
-            $hessian_message = $self->write_hessian_packet($datastructure);
-        }
+    }
+    else {
+        $hessian_message = $self->write_hessian_chunk($hessian_data);
     }
     return $hessian_message;
 }    #}}}

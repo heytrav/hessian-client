@@ -28,22 +28,22 @@ sub read_typed_list_element {    #{{{
             $element = $self->read_boolean_handle_chunk($first_bit);
         }
         case /int/ {
-            $element = $self->read_integer_handle_chunk( $first_bit );
+            $element = $self->read_integer_handle_chunk($first_bit);
         }
         case /long/ {
-            $element = $self->read_long_handle_chunk( $first_bit );
+            $element = $self->read_long_handle_chunk($first_bit);
         }
         case /double/ {
-            $element = $self->read_double_handle_chunk( $first_bit );
+            $element = $self->read_double_handle_chunk($first_bit);
         }
         case /date/ {
-            $element = $self->read_date_handle_chunk( $first_bit );
+            $element = $self->read_date_handle_chunk($first_bit);
         }
         case /string/ {
-            $element = $self->read_string_handle_chunk( $first_bit );
+            $element = $self->read_string_handle_chunk($first_bit);
         }
         case /binary/ {
-            $element = $self->read_binary_handle_chunk( $first_bit );
+            $element = $self->read_binary_handle_chunk($first_bit);
         }
         case /list/ {
             $element = $self->read_composite_datastructure($first_bit);
@@ -57,7 +57,7 @@ sub read_list_type {    #{{{
     my $input_handle = $self->input_handle();
     my $type_length;
     read $input_handle, $type_length, 1;
-    my $type = $self->read_string_handle_chunk( $type_length);
+    my $type = $self->read_string_handle_chunk($type_length);
     binmode( $input_handle, 'bytes' );
     return $type;
 }    #}}}
@@ -82,7 +82,7 @@ sub store_class_definition {    #{{{
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
-    my $number_of_fields = $self->read_integer_handle_chunk( $length);
+    my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 
     foreach my $field_index ( 1 .. $number_of_fields ) {
@@ -103,8 +103,7 @@ sub fetch_class_for_data {    #{{{
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
-    my $class_definition_number =
-      $self->read_integer_handle_chunk( $length);
+    my $class_definition_number = $self->read_integer_handle_chunk($length);
     return $self->instantiate_class($class_definition_number);
 
 }    #}}}
@@ -152,7 +151,7 @@ sub read_list_length {    #{{{
     if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
         my $length;
         read $input_handle, $length, 1;
-        $array_length = $self->read_integer_handle_chunk( $length);
+        $array_length = $self->read_integer_handle_chunk($length);
     }
     elsif ( $first_bit =~ /[\x70-\x77]/ ) {
         my $hex_bit = unpack 'C*', $first_bit;
@@ -163,7 +162,7 @@ sub read_list_length {    #{{{
         $array_length = $hex_bit - 0x78;
     }
     elsif ( $first_bit =~ /\x6c/ ) {
-        $array_length = $self->read_integer_handle_chunk( 'I');
+        $array_length = $self->read_integer_handle_chunk('I');
     }
     return $array_length;
 }    #}}}
@@ -189,23 +188,16 @@ sub read_hessian_chunk {    #{{{
 sub write_hessian_chunk {    #{{{
     my ( $self, $element ) = @_;
     my $hessian_element;
-    if ( $self->binary_mode() ) { 
-        # In binary mode we'll only send binary data
-
-    }
-    else {
-
-        my $element_type = ref $element ? ref $element : \$element;
-        switch ("$element_type") {
-            case /SCALAR/ {
-                $hessian_element = $self->write_scalar_element($element);
-            }
-            case /DateTime/ { 
-                    $hessian_element = $self->write_hessian_date($element);
-                }
-            case /ARRAY|HASH/ {
-                $hessian_element = $self->write_composite_element($element);
-            }
+    my $element_type = ref $element ? ref $element : \$element;
+    switch ("$element_type") {
+        case /SCALAR/ {
+            $hessian_element = $self->write_scalar_element($element);
+        }
+        case /DateTime/ {
+            $hessian_element = $self->write_hessian_date($element);
+        }
+        case /ARRAY|HASH/ {
+            $hessian_element = $self->write_composite_element($element);
         }
     }
     return $hessian_element;
@@ -242,7 +234,7 @@ sub write_scalar_element {    #{{{
         }
         case /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
             my @chunks = $element =~ /(.{1,66})/g;
-            $hessian_element = $self->write_hessian_string(\@chunks);
+            $hessian_element = $self->write_hessian_string( \@chunks );
         }
     }
     return $hessian_element;
