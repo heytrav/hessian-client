@@ -34,7 +34,7 @@ sub read_message_chunk_data {    #{{{
             my $result                = $self->deserialize_data();
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
-              $exception_name->throw( error => $exception_description );
+            $exception_name->throw( error => $exception_description );
         }
         case /\x52/ {    # Reply
             my $reply_data = $self->deserialize_data();
@@ -82,6 +82,8 @@ sub read_composite_data {    #{{{
 
         }
         case /[\x43\x4f\x60-\x6f]/ {
+            push @{ $self->reference_list() }, {
+            };
             $datastructure = $self->read_class_handle( $first_bit, );
 
         }
@@ -291,6 +293,43 @@ sub write_hessian_date {    #{{{
     return $self->write_date($epoch);
 }    #}}}
 
+sub write_object {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $type              = ref $datastructure;
+    my @class_definitions = @{ $self->class_definitions() };
+    my ( $hessian_string, $class_already_stored );
+    my $index = 0;
+    foreach my $class_def (@class_definitions) {
+        my $defined_type = $class_def->{type};
+        if ( $defined_type eq $type ) {
+            $class_already_stored = 1;
+            last;
+        }
+        $index++;
+    }
+    my @fields = keys %{$datastructure};
+    if ( not $class_already_stored ) {
+        my $hessian_type = $self->write_scalar_element($type);
+        $hessian_string = "C" . $hessian_type;
+        my $num_of_fields = scalar @fields;
+        $hessian_string .= ( $self->write_scalar_element($num_of_fields) );
+        foreach my $field (@fields) {
+            my $hessian_field = $self->write_scalar_element($field);
+            $hessian_string .= $hessian_field;
+        }
+        my $store_definition = { type => $type, fields => \@fields };
+        push @{ $self->class_definitions() }, $store_definition;
+        $index = ( scalar @{ $self->class_definitions } ) - 1;
+    }
+    $hessian_string .= 'O';
+    $hessian_string .= ( $self->write_scalar_element($index) );
+    foreach my $field (@fields) {
+        my $value = $datastructure->$field();
+        $hessian_string .= ( $self->write_scalar_element($value) );
+    }
+    return $hessian_string;
+}    #}}}
+
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;
     my $hessian_call   = "C";
@@ -309,11 +348,11 @@ sub write_hessian_call {    #{{{
     return $hessian_call;
 }    #}}}
 
-sub  serialize_message { #{{{
-    my ( $self, $datastructure) = @_;
+sub serialize_message {    #{{{
+    my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);
-    return "H\x02\x00".$result;
-} #}}}
+    return "H\x02\x00" . $result;
+}    #}}}
 
 "one, but we're not the same";
 
@@ -420,3 +459,7 @@ Serialize a datastructure into a Hessian 2.0 message.
 =head2 write_hessian_call
 
 Writes out a Hessian 2 specific remote procedure call
+
+=head2 write_object
+
+Serialize an object into a Hessian 1.0 string.

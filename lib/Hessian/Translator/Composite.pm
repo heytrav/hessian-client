@@ -196,9 +196,9 @@ sub write_hessian_chunk {    #{{{
         case /DateTime/ {
             $hessian_element = $self->write_hessian_date($element);
         }
-        case /ARRAY|HASH/ {
+        else { 
             $hessian_element = $self->write_composite_element($element);
-        }
+            }
     }
     return $hessian_element;
 }    #}}}
@@ -214,8 +214,10 @@ sub write_composite_element {    #{{{
         }
         case /ARRAY/ {
             $hessian_string = $self->write_hessian_array($datastructure);
-
         }
+        else { 
+            $hessian_string = $self->write_object($datastructure);
+            }
 
     }
     return $hessian_string;

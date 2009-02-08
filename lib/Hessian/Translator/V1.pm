@@ -388,6 +388,25 @@ sub write_hessian_call {    #{{{
     return $hessian_call;
 }    #}}}
 
+sub  write_object { #{{{
+    my ($self , $datastructure) = @_;
+    my $type = ref $datastructure;
+    my $hessian_string = "\x4d";
+    my $hessian_type = $self->write_scalar_element($type);
+    $hessian_type =~ s/^S/t/;
+    $hessian_string .= $hessian_type;
+    my @fields = keys %{$datastructure};
+    foreach my $field (@fields) {
+        my $hessian_field = $self->write_scalar_element($field);
+        my $value = $datastructure->$field();
+        my $hessian_value = $self->write_hessian_chunk($value);
+        $hessian_string .= $hessian_field . $hessian_value;
+    }
+    $hessian_string .= "z";
+    return $hessian_string;
+
+} #}}}
+
 sub serialize_message {    #{{{
     my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);
@@ -498,4 +517,7 @@ Writes a string scalar into the outgoing Hessian message.
 =head2 serialize_message
 
 Performs Hessian 1 specific processing of datastructures into hessian.
+ 
+=head2 write_object
 
+Serialize an object into a Hessian 1.0 string.

@@ -16,6 +16,7 @@ use Hessian::Translator;
 use Hessian::Serializer;
 use Hessian::Translator::V1;
 use Hessian::Client;
+use SomeType;
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
@@ -101,6 +102,27 @@ sub t020_serialize_hash_map : Test(2) {    #{{{
         "Mapped a simple hash back to itself." );
 }    #}}}
 
+sub t021_serialize_object : Test(1) {    #{{{
+    my $self     = shift;
+    my $some_obj = SomeType->new(
+        color   => 'aquamarine',
+        model   => 'Beetle',
+        mileage => 65536
+    );
+    my $client = Hessian::Translator->new( version => 1 );
+    Hessian::Translator::V1->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
+    my $hessian_output = $client->serialize_chunk($some_obj);
+    # Re-parse hessian to create object:
+    $client->input_string($hessian_output);
+    my $processed_obj      = $client->deserialize_message();
+    my $hessian_serialized = "\x4dt\x00\x08SomeType\x05color\x0aaquamarine"
+      . "\x05model\x06Beetle\x07mileageI\x00\x01\x00\x00z";
+    $client->input_string($hessian_serialized);
+    my $processed_data = $client->deserialize_message();
+    cmp_deeply( $processed_obj, $processed_data, "Compared datastructures." );
+}    #}}}
+
 sub t021_serialize_mixed : Test(1) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 1 );
@@ -171,11 +193,11 @@ sub t025_serialize_call : Test(3) {    #{{{
 }    #}}}
 
 sub t030_client_request : Test(3) {    #{{{
-    my $self           = shift;
-    my $service = 'http://localhost:8080/HessianRIADemo/words' ;
-    local $TODO = "This test requires a running the HessianRIADemo"
-    ." servlet.";
-    my ($reply_header, $reply_body);
+    my $self    = shift;
+    my $service = 'http://localhost:8080/HessianRIADemo/words';
+    local $TODO =
+      "This test requires a running the HessianRIADemo" . " servlet.";
+    my ( $reply_header, $reply_body );
     lives_ok {
         my $hessian_client = Hessian::Client->new(
             {
@@ -184,24 +206,24 @@ sub t030_client_request : Test(3) {    #{{{
             }
         );
         my $result = $hessian_client->getRecent();
-         $reply_header = $result->[0];
-         $reply_body = $result->[1];
-    } "No exception thrown by rpc.";
+        $reply_header = $result->[0];
+        $reply_body   = $result->[1];
+    }
+    "No exception thrown by rpc.";
     cmp_deeply(
         $reply_header,
-        { hessian_version => '1.0', state => 'reply'},
+        { hessian_version => '1.0', state => 'reply' },
         "Received expected header from service."
     );
-    isa_ok($reply_body, 'ARRAY', 
-    'Datastructure returned in response body');
+    isa_ok( $reply_body, 'ARRAY', 'Datastructure returned in response body' );
 
 }    #}}}
 
-sub  t032_fail_client_request : Test(1) { #{{{
+sub t032_fail_client_request : Test(1) {    #{{{
     my $self = shift;
-    local $TODO = "This test requires a running the HessianRIADemo"
-    ." servlet.";
-    my $service = 'http://localhost:8080/HessianRIADemo/words' ; 
+    local $TODO =
+      "This test requires a running the HessianRIADemo" . " servlet.";
+    my $service        = 'http://localhost:8080/HessianRIADemo/words';
     my $hessian_client = Hessian::Client->new(
         {
             version => 1,
@@ -209,16 +231,13 @@ sub  t032_fail_client_request : Test(1) { #{{{
         }
     );
     my $result;
-    eval {
-         $result = $hessian_client->bogusMethod();
-    };
-    if (my $e = $@) {
-        isa_ok($e,'NoSuchMethodException',
-        "Received expected exception from servlet."
-        );
+    eval { $result = $hessian_client->bogusMethod(); };
+    if ( my $e = $@ ) {
+        isa_ok( $e, 'NoSuchMethodException',
+            "Received expected exception from servlet." );
     }
 
-} #}}}
+}    #}}}
 
 "one, but we're not the same";
 

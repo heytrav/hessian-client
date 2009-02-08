@@ -13,6 +13,7 @@ use URI;
 use Hessian::Translator;
 use Hessian::Serializer;
 use Hessian::Translator::V2;
+use SomeType;
 use YAML;
 
 sub t007_compose_serializer : Test(2) {    #{{{
@@ -106,6 +107,27 @@ sub t021_serialize_mixed : Test(1) {    #{{{
     my $processed = $client->deserialize_message();
     cmp_deeply( $processed, $datastructure,
         "Matched a complex datastructure to itself." );
+}    #}}}
+
+sub t022_serialize_object : Test(1) {    #{{{
+    my $self     = shift;
+    my $some_obj = SomeType->new(
+        color   => 'aquamarine',
+        model   => 'Beetle',
+        mileage => 65536
+    );
+    my $client = Hessian::Translator->new( version => 2 );
+    Hessian::Translator::V2->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
+    my $hessian_output = $client->serialize_chunk($some_obj);
+
+    my ($hessian_obj) = $hessian_output =~ /(O.*)/s;
+    # Re-parse hessian to create object:
+    $client->input_string($hessian_obj);
+    my $processed_obj      = $client->deserialize_message();
+    cmp_deeply($processed_obj,
+    $some_obj,
+    "Processed object as expected.");
 }    #}}}
 
 sub t023_serialize_date : Test(2) {    #{{{
