@@ -96,16 +96,6 @@ sub read_header_or_footer {    #{{{
     return $header;
 }    #}}}
 
-sub read_envelope_chunk {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
-    switch ($first_bit) {
-        case /[\x4f\x50\x70-\x7f\x80-\x8f]/ {    # packet
-
-        }
-    }
-}    #}}}
-
 sub read_packet {    #{{{
     my ( $self, $packet_size ) = @_;
     my $input_handle = $self->input_handle();
@@ -123,7 +113,6 @@ sub write_hessian_message {    #{{{
     if ( ( ref $hessian_data ) eq 'HASH'
         and any { exists $hessian_data->{$_} } qw/call envelope packet/ )
     {
-
         my @keys          = keys %{$hessian_data};
         my $datastructure = $hessian_data->{ $keys[0] };
         switch ( $keys[0] ) {

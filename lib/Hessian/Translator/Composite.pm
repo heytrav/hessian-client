@@ -196,9 +196,27 @@ sub write_hessian_chunk {    #{{{
         case /DateTime/ {
             $hessian_element = $self->write_hessian_date($element);
         }
-        else { 
-            $hessian_element = $self->write_composite_element($element);
+        else {
+            my $reference_list = $self->reference_list();
+            my @list           = @{$reference_list};
+            my ( $referenced_index, $found_reference );
+            foreach my $index ( 0 .. $#{$reference_list} ) {
+                my $referenced_element = $reference_list->[$index];
+                if ( $element == $referenced_element ) {
+                    $found_reference  = 1;
+                    $referenced_index = $index;
+                    last;
+                }
             }
+            if ($found_reference) {
+                $hessian_element =
+                  $self->write_referenced_data($referenced_index);
+            }
+            else {
+                push @{$self->reference_list() }, $element;
+                $hessian_element = $self->write_composite_element($element);
+            }
+        }
     }
     return $hessian_element;
 }    #}}}
@@ -215,9 +233,9 @@ sub write_composite_element {    #{{{
         case /ARRAY/ {
             $hessian_string = $self->write_hessian_array($datastructure);
         }
-        else { 
+        else {
             $hessian_string = $self->write_object($datastructure);
-            }
+        }
 
     }
     return $hessian_string;

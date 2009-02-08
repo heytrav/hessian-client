@@ -330,6 +330,15 @@ sub write_object {    #{{{
     return $hessian_string;
 }    #}}}
 
+sub  write_referenced_data { #{{{
+    my ($self, $index) = @_;
+    my $hessian_string = "\x51";
+    my $hessian_index = $self->write_scalar_element($index);
+    $hessian_string .= $hessian_index;
+    return $hessian_string;
+} #}}}
+
+
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;
     my $hessian_call   = "C";
@@ -463,3 +472,7 @@ Writes out a Hessian 2 specific remote procedure call
 =head2 write_object
 
 Serialize an object into a Hessian 1.0 string.
+
+=head2 write_referenced_data
+
+Write a referenced datastructure into a Hessian 1.0 string.

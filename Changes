@@ -1,5 +1,9 @@
 Revision history for Hessian::Client
 
+0.1.4 Sun Feb 08 2009
+        Throw an exception for any Hessian Fault received from service.
+        Serialization for objects
+
 0.1.2 Thu Jan 29 2009
         Bugfix for installation script.
 
