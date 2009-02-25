@@ -82,7 +82,6 @@ sub read_envelope {    #{{{
         redo ENVELOPECHUNKS;
     }
     return \@chunks;
-
 }    #}}}
 
 sub read_header_or_footer {    #{{{
@@ -105,6 +104,11 @@ sub read_packet {    #{{{
         $self->deserialize_message( { input_string => $packet_string } );
     };
 }    #}}}
+
+sub write_hessian_packet { #{{{
+    my ( $self, $packets) = @_;
+} #}}}
+
 
 sub write_hessian_message {    #{{{
     my ( $self, $hessian_data ) = @_;

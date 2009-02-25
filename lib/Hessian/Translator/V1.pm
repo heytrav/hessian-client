@@ -416,7 +416,6 @@ sub write_referenced_data  { #{{{
     return $hessian_string;
 } #}}}
 
-
 sub serialize_message {    #{{{
     my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);

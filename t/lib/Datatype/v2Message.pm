@@ -9,6 +9,7 @@ use base 'Datatype::Message';
 use Test::More;
 use Test::Deep;
 use YAML;
+use Data::Dumper;
 use Hessian::Translator;
 use Hessian::Deserializer;
 use Hessian::Translator::Composite;
@@ -81,7 +82,7 @@ sub t016_multi_chunk_envelope : Test(1) {    #{{{
         "Parsed expected datastructure." );
 }    #}}}
 
-sub t017_hessian_fault : Test(1) {    #{{{
+sub t040_hessian_fault : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
     my $hessian_data = "FH\x04code\x10ServiceException\x07message"
@@ -99,7 +100,7 @@ sub t017_hessian_fault : Test(1) {    #{{{
 
 }    #}}}
 
-sub t019_hessian_call : Test(3) {    #{{{
+sub t050_hessian_call : Test(3) {    #{{{
     my $self         = shift;
     my $hessian_data = "H\x02\x00C\x02eq\x92M\x07qa.Bean\x03foo\x9dZQ\x90";
     my $hessian_obj  = Hessian::Translator->new( version => 2 );

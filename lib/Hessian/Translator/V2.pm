@@ -17,8 +17,14 @@ sub read_message_chunk_data {    #{{{
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {            # TOP with version
-            my $hessian_version = $self->read_version();
-            $datastructure = { hessian_version => $hessian_version };
+            if ( $self->chunked()) { # use as hashmap if chunked
+                my $params = { first_bit => $first_bit };
+                $datastructure = $self->deserialize_data($params);
+            }
+            else {
+                my $hessian_version = $self->read_version();
+                $datastructure = { hessian_version => $hessian_version };
+            }
         }
         case /\x43/ {            # Hessian Remote Procedure Call
              # call will need to be dispatched to object designated in some kind of
@@ -28,7 +34,6 @@ sub read_message_chunk_data {    #{{{
         }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
-
         }
         case /\x46/ {    # Fault
             my $result                = $self->deserialize_data();
@@ -330,14 +335,13 @@ sub write_object {    #{{{
     return $hessian_string;
 }    #}}}
 
-sub  write_referenced_data { #{{{
+sub write_referenced_data { #{{{
     my ($self, $index) = @_;
     my $hessian_string = "\x51";
     my $hessian_index = $self->write_scalar_element($index);
     $hessian_string .= $hessian_index;
     return $hessian_string;
 } #}}}
-
 
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;

@@ -1,7 +1,7 @@
 package Hessian::Translator;
 
 use Moose;
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 use Module::Load;
 use YAML;
@@ -15,6 +15,7 @@ has 'reference_list'    => ( is => 'rw', default => sub { [] } );
 has 'input_string'      => ( is => 'rw', isa     => 'Str' );
 has 'version'           => ( is => 'ro', isa     => 'Int' );
 has 'binary_mode'       => ( is => 'ro', isa => 'Bool', default => 0);
+has 'chunked'           => ( is => 'ro', isa => 'Bool', default => 0);
 has 'serializer'           => (
     is      => 'rw',
     isa     => 'Bool',

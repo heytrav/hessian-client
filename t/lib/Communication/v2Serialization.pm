@@ -122,12 +122,11 @@ sub t022_serialize_object : Test(1) {    #{{{
     my $hessian_output = $client->serialize_chunk($some_obj);
 
     my ($hessian_obj) = $hessian_output =~ /(O.*)/s;
+
     # Re-parse hessian to create object:
     $client->input_string($hessian_obj);
-    my $processed_obj      = $client->deserialize_message();
-    cmp_deeply($processed_obj,
-    $some_obj,
-    "Processed object as expected.");
+    my $processed_obj = $client->deserialize_message();
+    cmp_deeply( $processed_obj, $some_obj, "Processed object as expected." );
 }    #}}}
 
 sub t023_serialize_date : Test(2) {    #{{{
@@ -179,6 +178,27 @@ sub t025_serialize_call : Test(3) {    #{{{
         $datastructure->{call},
         "Received same structure as call."
     );
+}    #}}}
+
+sub t027_serialize_enveloped_message {    #{{{
+    my $self = shift;
+
+    # A datastructure to be serialized should look something like this
+#    my $datastructure = [
+#        {
+#            headers => [],
+#            packets => [
+#                {
+#                    call => {
+#                        method    => 'hello',
+#                        arguments => ['hello, world']
+#                    }
+#                }
+#            ],
+#            footers => []
+#        },
+#    ];
+
 }    #}}}
 
 "one, but we're not the same";
