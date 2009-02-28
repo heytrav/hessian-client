@@ -35,7 +35,7 @@ sub read_version {    #{{{
 
 sub read_envelope {    #{{{
     my $self = shift;
-    my ( $first_bit, @chunks );
+    my ( $first_bit, $packet_body, @chunks );
     my $input_handle = $self->input_handle();
     read $input_handle, $first_bit, 1;
     EndOfInput::X->throw( error => 'End of datastructure.' )
@@ -61,9 +61,9 @@ sub read_envelope {    #{{{
                 $first_bit =~ /[\x70-\x7f]/
               ? $length - 0x70
               : $length - 0x80;
-            my $packet = $self->read_packet($packet_size);
-            push @packets, $packet;
-
+            my $packet_string;
+            read $input_handle, $packet_string, $packet_size;
+            $packet_body .= $packet_string;
             last PACKETCHUNKS if $first_bit =~ /[\x80-\x8f]/;
             redo PACKETCHUNKS;
         }
@@ -76,12 +76,12 @@ sub read_envelope {    #{{{
         push @chunks,
           {
             headers => \@headers,
-            packets => \@packets,
             footers => \@footers
           };
         redo ENVELOPECHUNKS;
     }
-    return \@chunks;
+    my $packet = $self->read_packet($packet_body);
+    return { envelope => \@chunks, packet => $packet };
 }    #}}}
 
 sub read_header_or_footer {    #{{{
@@ -96,19 +96,19 @@ sub read_header_or_footer {    #{{{
 }    #}}}
 
 sub read_packet {    #{{{
-    my ( $self, $packet_size ) = @_;
-    my $input_handle = $self->input_handle();
-    my $packet_string;
-    read $input_handle, $packet_string, $packet_size;
+    my ( $self, $packet_string ) = @_;
+
+    #    my $input_handle = $self->input_handle();
+    #    my $packet_string;
+    #    read $input_handle, $packet_string, $packet_size;
     return FIXED NONVOID {
         $self->deserialize_message( { input_string => $packet_string } );
     };
 }    #}}}
 
-sub write_hessian_packet { #{{{
-    my ( $self, $packets) = @_;
-} #}}}
-
+sub write_hessian_packet {    #{{{
+    my ( $self, $packets ) = @_;
+}    #}}}
 
 sub write_hessian_message {    #{{{
     my ( $self, $hessian_data ) = @_;

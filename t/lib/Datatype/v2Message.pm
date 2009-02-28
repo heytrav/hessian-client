@@ -59,14 +59,10 @@ sub t015_read_envelope : Test(2) {    #{{{
         { hessian_version => "2.0" },
         "Parsed hessian version 2."
     );
-    my $reply_data = $tokens->[1]->[0]->{packets}->[0];
-    my $text       = "$reply_data->{reply_data}";
-    cmp_deeply(
-        $reply_data,
-        superhashof( { reply_data => 'hello' } ),
-        "Parsed expected datastructure."
-    );
-
+my $packet = $tokens->[1]->{packet};
+my $reply_data = $packet->{reply_data};
+is($reply_data, 'hello', 
+"Retrieved correct answer from enveloped reply.");
 }    #}}}
 
 sub t016_multi_chunk_envelope : Test(1) {    #{{{
@@ -75,11 +71,15 @@ sub t016_multi_chunk_envelope : Test(1) {    #{{{
     my $hessian_data = "H\x02\x00E\x06Header\x90\x88C\x05hello"
       . "\x91\x90\x90\x8d\x0chello, world\x90Z";
     $deserializer->input_string($hessian_data);
-    my $tokens        = $deserializer->process_message();
-    my $second_packet = $tokens->[1]->[1]->{packets}->[0];
-    my $text          = "$second_packet";
-    cmp_deeply( $second_packet, "hello, world",
-        "Parsed expected datastructure." );
+    my $tokens = $deserializer->process_message();
+    my $packet = $tokens->[1]->{packet};
+    my $call   = $packet->{call};
+
+    cmp_deeply(
+        $call,
+        { method => 'hello', arguments => ['hello, world'] },
+        "Parsed call from envelope."
+    );
 }    #}}}
 
 sub t040_hessian_fault : Test(1) {    #{{{
