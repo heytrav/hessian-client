@@ -97,10 +97,6 @@ sub read_header_or_footer {    #{{{
 
 sub read_packet {    #{{{
     my ( $self, $packet_string ) = @_;
-
-    #    my $input_handle = $self->input_handle();
-    #    my $packet_string;
-    #    read $input_handle, $packet_string, $packet_size;
     return FIXED NONVOID {
         $self->deserialize_message( { input_string => $packet_string } );
     };
