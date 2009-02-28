@@ -81,7 +81,7 @@ sub read_envelope {    #{{{
         redo ENVELOPECHUNKS;
     }
     my $packet = $self->read_packet($packet_body);
-    return { envelope => \@chunks, packet => $packet };
+    return { envelope => { packet => $packet, meta => \@chunks}};
 }    #}}}
 
 sub read_header_or_footer {    #{{{

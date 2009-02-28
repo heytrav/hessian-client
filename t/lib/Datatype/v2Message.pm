@@ -59,10 +59,10 @@ sub t015_read_envelope : Test(2) {    #{{{
         { hessian_version => "2.0" },
         "Parsed hessian version 2."
     );
-my $packet = $tokens->[1]->{packet};
-my $reply_data = $packet->{reply_data};
-is($reply_data, 'hello', 
-"Retrieved correct answer from enveloped reply.");
+    my $packet     = $tokens->[1]->{envelope}->{packet};
+    my $reply_data = $packet->{reply_data};
+    is( $reply_data, 'hello',
+        "Retrieved correct answer from enveloped reply." );
 }    #}}}
 
 sub t016_multi_chunk_envelope : Test(1) {    #{{{
@@ -72,7 +72,7 @@ sub t016_multi_chunk_envelope : Test(1) {    #{{{
       . "\x91\x90\x90\x8d\x0chello, world\x90Z";
     $deserializer->input_string($hessian_data);
     my $tokens = $deserializer->process_message();
-    my $packet = $tokens->[1]->{packet};
+    my $packet = $tokens->[1]->{envelope}->{packet};
     my $call   = $packet->{call};
 
     cmp_deeply(
