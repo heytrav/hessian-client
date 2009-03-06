@@ -186,4 +186,8 @@ Reads the version of the message.
 
 Writes a datastructure as a hessian message.
 
+=head2 write_hessian_packet
+
+Write a subset of hessian data out as a packet.
+
 

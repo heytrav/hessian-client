@@ -181,23 +181,30 @@ sub t025_serialize_call : Test(3) {    #{{{
 }    #}}}
 
 sub t027_serialize_enveloped_message {    #{{{
-    my $self = shift;
+    my $self          = shift;
+    my $datastructure = {
+        envelope => {
+            packet =>
+              { call => { method => 'hello', arguments => ['hello, world'] } },
+            meta => []
+        }
+    };
 
     # A datastructure to be serialized should look something like this
-#    my $datastructure = [
-#        {
-#            headers => [],
-#            packets => [
-#                {
-#                    call => {
-#                        method    => 'hello',
-#                        arguments => ['hello, world']
-#                    }
-#                }
-#            ],
-#            footers => []
-#        },
-#    ];
+    #    my $datastructure = [
+    #        {
+    #            headers => [],
+    #            packets => [
+    #                {
+    #                    call => {
+    #                        method    => 'hello',
+    #                        arguments => ['hello, world']
+    #                    }
+    #                }
+    #            ],
+    #            footers => []
+    #        },
+    #    ];
 
 }    #}}}
 
