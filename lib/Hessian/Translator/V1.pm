@@ -11,47 +11,47 @@ use Hessian::Simple;
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 's' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 
-sub read_message_chunk_data {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
-    my $datastructure;
-    switch ($first_bit) {
-        case /\x63/ {            # version 1 call
-            my $hessian_version = $self->read_version();
-            my $rpc_data        = $self->read_rpc();
-            $datastructure = {
-                hessian_version => $hessian_version,
-                call            => $rpc_data
-            };
+#sub read_message_chunk_data {    #{{{
+#    my ( $self, $first_bit ) = @_;
+#    my $input_handle = $self->input_handle();
+#    my $datastructure;
+#    switch ($first_bit) {
+#        case /\x63/ {            # version 1 call
+#            my $hessian_version = $self->read_version();
+#            my $rpc_data        = $self->read_rpc();
+#            $datastructure = {
+#                hessian_version => $hessian_version,
+#                call            => $rpc_data
+#            };
 
-        }
-        case /\x66/ {            # version 1 fault
-            my @tokens;
-            eval {
-                while ( my $token = $self->deserialize_data() )
-                {
-                    push @tokens, $token;
-                }
-            };
-            if ( Exception::Class->caught('EndOfInput::X') ) {
-                my $exception_name        = $tokens[1];
-                my $exception_description = $tokens[3];
-                $exception_name->throw( error => $exception_description );
-            }
-        }
-        case /\x72/ {    # version 1 reply
-            my $hessian_version = $self->read_version();
-            $datastructure =
-              { hessian_version => $hessian_version, state => 'reply' };
-        }
-        else {
-            my $param = { first_bit => $first_bit };
-            $datastructure = $self->deserialize_data($param);
-        }
-    }
-    return $datastructure;
+#        }
+#        case /\x66/ {            # version 1 fault
+#            my @tokens;
+#            eval {
+#                while ( my $token = $self->deserialize_data() )
+#                {
+#                    push @tokens, $token;
+#                }
+#            };
+#            if ( Exception::Class->caught('EndOfInput::X') ) {
+#                my $exception_name        = $tokens[1];
+#                my $exception_description = $tokens[3];
+#                $exception_name->throw( error => $exception_description );
+#            }
+#        }
+#        case /\x72/ {    # version 1 reply
+#            my $hessian_version = $self->read_version();
+#            $datastructure =
+#              { hessian_version => $hessian_version, state => 'reply' };
+#        }
+#        else {
+#            my $param = { first_bit => $first_bit };
+#            $datastructure = $self->deserialize_data($param);
+#        }
+#    }
+#    return $datastructure;
 
-}    #}}}
+#}    #}}}
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;

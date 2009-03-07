@@ -11,47 +11,47 @@ use Hessian::Simple;
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 'R' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 
-sub read_message_chunk_data {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
-    my $datastructure;
-    switch ($first_bit) {
-        case /\x48/ {            # TOP with version
-            if ( $self->chunked()) { # use as hashmap if chunked
-                my $params = { first_bit => $first_bit };
-                $datastructure = $self->deserialize_data($params);
-            }
-            else {
-                my $hessian_version = $self->read_version();
-                $datastructure = { hessian_version => $hessian_version };
-            }
-        }
-        case /\x43/ {            # Hessian Remote Procedure Call
-             # call will need to be dispatched to object designated in some kind of
-             # service descriptor
-            my $rpc_data = $self->read_rpc();
-            $datastructure = { call => $rpc_data };
-        }
-        case /\x45/ {    # Envelope
-            $datastructure = $self->read_envelope();
-        }
-        case /\x46/ {    # Fault
-            my $result                = $self->deserialize_data();
-            my $exception_name        = $result->{code};
-            my $exception_description = $result->{message};
-            $exception_name->throw( error => $exception_description );
-        }
-        case /\x52/ {    # Reply
-            my $reply_data = $self->deserialize_data();
-            $datastructure = { reply_data => $reply_data };
-        }
-        else {
-            my $params = { first_bit => $first_bit };
-            $datastructure = $self->deserialize_data($params);
-        }
-    }
-    return $datastructure;
-}    #}}}
+#sub read_message_chunk_data {    #{{{
+#    my ( $self, $first_bit ) = @_;
+#    my $input_handle = $self->input_handle();
+#    my $datastructure;
+#    switch ($first_bit) {
+#        case /\x48/ {            # TOP with version
+#            if ( $self->chunked()) { # use as hashmap if chunked
+#                my $params = { first_bit => $first_bit };
+#                $datastructure = $self->deserialize_data($params);
+#            }
+#            else {
+#                my $hessian_version = $self->read_version();
+#                $datastructure = { hessian_version => $hessian_version };
+#            }
+#        }
+#        case /\x43/ {            # Hessian Remote Procedure Call
+#             # call will need to be dispatched to object designated in some kind of
+#             # service descriptor
+#            my $rpc_data = $self->read_rpc();
+#            $datastructure = { call => $rpc_data };
+#        }
+#        case /\x45/ {    # Envelope
+#            $datastructure = $self->read_envelope();
+#        }
+#        case /\x46/ {    # Fault
+#            my $result                = $self->deserialize_data();
+#            my $exception_name        = $result->{code};
+#            my $exception_description = $result->{message};
+#            $exception_name->throw( error => $exception_description );
+#        }
+#        case /\x52/ {    # Reply
+#            my $reply_data = $self->deserialize_data();
+#            $datastructure = { reply_data => $reply_data };
+#        }
+#        else {
+#            my $params = { first_bit => $first_bit };
+#            $datastructure = $self->deserialize_data($params);
+#        }
+#    }
+#    return $datastructure;
+#}    #}}}
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -253,6 +253,7 @@ sub read_rpc {    #{{{
     my $method_name = $self->read_hessian_chunk();
     $call_data->{method} = $method_name;
     my $number_of_args = $self->read_hessian_chunk();
+    return $call_data unless $number_of_args;
     foreach ( 1 .. $number_of_args ) {
         my $argument = $self->read_hessian_chunk();
         push @{$call_args}, $argument;

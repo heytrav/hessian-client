@@ -38,12 +38,12 @@ sub t004_initialize_hessian : Test(3) {    #{{{
 sub t010_read_hessian_version : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
-    my $hessian_data = "H\x02\x00";
+    my $hessian_data = "c\x02\x00";
     $deserializer->input_string($hessian_data);
     my $result = $deserializer->deserialize_message();
     cmp_deeply(
         $result,
-        { hessian_version => "2.0" },
+        superhashof({ hessian_version => "2.0" }),
         "Parsed hessian version 2."
     );
 }    #}}}
@@ -51,15 +51,16 @@ sub t010_read_hessian_version : Test(1) {    #{{{
 sub t015_read_envelope : Test(2) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
-    my $hessian_data = "H\x02\x00E\x06Header\x90\x87R\x05hello\x90Z";
+    my $hessian_data = "E\x02\x00m\x00\x08Identity\x90"
+    ."B\x00\x0ar\x02\x00\x05helloz\x90z";
     $deserializer->input_string($hessian_data);
     my $tokens = $deserializer->process_message();
     cmp_deeply(
         $tokens->[0],
-        { hessian_version => "2.0" },
+        superhashof({ hessian_version => "2.0" }),
         "Parsed hessian version 2."
     );
-    my $packet     = $tokens->[1]->{envelope}->{packet};
+    my $packet     = $tokens->[0]->{envelope}->{packet};
     my $reply_data = $packet->{reply_data};
     is( $reply_data, 'hello',
         "Retrieved correct answer from enveloped reply." );
@@ -68,8 +69,9 @@ sub t015_read_envelope : Test(2) {    #{{{
 sub t016_multi_chunk_envelope : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
-    my $hessian_data = "H\x02\x00E\x06Header\x90\x88C\x05hello"
-      . "\x91\x90\x90\x8d\x0chello, world\x90Z";
+    my $hessian_data = "E\x02\x00m\x00\x08Identity"
+    ."\x90B\x00\x0cp\x02\x00\x07hello, z\x90"
+    ."\x90B\x00\x08p\x02\x00\x05worldz\x90z";
     $deserializer->input_string($hessian_data);
     my $tokens = $deserializer->process_message();
     my $packet = $tokens->[1]->{envelope}->{packet};
@@ -85,7 +87,7 @@ sub t016_multi_chunk_envelope : Test(1) {    #{{{
 sub t040_hessian_fault : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
-    my $hessian_data = "FH\x04code\x10ServiceException\x07message"
+    my $hessian_data = "fH\x04code\x10ServiceException\x07message"
       . "\x0eFile Not Found\x06detailM\x1djava.io.FileNotFoundExceptionZZ";
 
     eval {
@@ -102,7 +104,7 @@ sub t040_hessian_fault : Test(1) {    #{{{
 
 sub t050_hessian_call : Test(3) {    #{{{
     my $self         = shift;
-    my $hessian_data = "H\x02\x00C\x02eq\x92M\x07qa.Bean\x03foo\x9dZQ\x90";
+    my $hessian_data = "c\x02\x00m\x02eq\x92M\x07qa.Bean\x03foo\x9dZQ\x90";
     my $hessian_obj  = Hessian::Translator->new( version => 2 );
     $hessian_obj->input_string($hessian_data);
 

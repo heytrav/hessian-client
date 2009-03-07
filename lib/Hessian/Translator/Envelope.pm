@@ -9,6 +9,55 @@ use List::MoreUtils qw/any/;
 
 use Hessian::Exception;
 
+sub read_message_chunk_data {    #{{{
+    my ( $self, $first_bit ) = @_;
+    my $input_handle = $self->input_handle();
+    my $datastructure;
+    switch ($first_bit) {
+        case /\x45/ {    # Envelope
+            my $hessian_version = $self->read_version();
+            $datastructure = { 
+                hessian_version => $hessian_version,
+                envelope => $self->read_envelope()
+            };
+        }
+        case /\x63/ {
+            my $hessian_version = $self->read_version();
+            my $rpc_data        = $self->read_rpc();
+            $datastructure = {
+                hessian_version => $hessian_version,
+                call            => $rpc_data
+            };
+
+        }
+        case /\x66/ {
+            my @tokens;
+            eval {
+                while ( my $token = $self->deserialize_data() )
+                {
+                    push @tokens, $token;
+                }
+            };
+            if ( Exception::Class->caught('EndOfInput::X') ) {
+                my $exception_name        = $tokens[1];
+                my $exception_description = $tokens[3];
+                $exception_name->throw( error => $exception_description );
+            }
+        }
+        case /\x72/ {
+            my $hessian_version = $self->read_version();
+            $datastructure =
+              { hessian_version => $hessian_version, state => 'reply' };
+        }
+        else {
+            my $param = { first_bit => $first_bit };
+            $datastructure = $self->deserialize_data($param);
+        }
+    }
+    return $datastructure;
+
+}    #}}}
+
 sub read_message_chunk {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
@@ -50,8 +99,11 @@ sub read_envelope {    #{{{
         read $input_handle, $first_bit, 1;
         last ENVELOPECHUNKS if $first_bit =~ /z/i;
         $header_count = $self->read_integer_handle_chunk( $first_bit, );
+        PROCESSHEADERS: { 
+            last PROCESSHEADERS unless $header_count;
         foreach ( 1 .. $header_count ) {
             push @headers, $self->read_header_or_footer();
+        }
         }
 
       PACKETCHUNKS: {
@@ -70,9 +122,12 @@ sub read_envelope {    #{{{
 
         read $input_handle, $first_bit, 1;
         $footer_count = $self->read_integer_handle_chunk( $first_bit, );
+         PROCESSFOOTERS: { 
+            last PROCESSFOOTERS unless $footer_count;
         foreach ( 1 .. $footer_count ) {
             push @footers, $self->read_header_or_footer();
         }
+         }
         push @chunks,
           {
             headers => \@headers,
@@ -81,7 +136,7 @@ sub read_envelope {    #{{{
         redo ENVELOPECHUNKS;
     }
     my $packet = $self->read_packet($packet_body);
-    return { envelope => { packet => $packet, meta => \@chunks}};
+    return { packet => $packet, meta => \@chunks};
 }    #}}}
 
 sub read_header_or_footer {    #{{{
