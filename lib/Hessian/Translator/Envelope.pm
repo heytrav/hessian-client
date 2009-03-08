@@ -6,7 +6,6 @@ use Switch;
 use YAML;
 use Contextual::Return;
 use List::MoreUtils qw/any/;
-
 use Hessian::Exception;
 
 sub read_message_chunk_data {    #{{{
@@ -14,11 +13,11 @@ sub read_message_chunk_data {    #{{{
     my $input_handle = $self->input_handle();
     my $datastructure;
     switch ($first_bit) {
-        case /\x45/ {    # Envelope
+        case /\x45/ {            # Envelope
             my $hessian_version = $self->read_version();
-            $datastructure = { 
+            $datastructure = {
                 hessian_version => $hessian_version,
-                envelope => $self->read_envelope()
+                envelope        => $self->read_envelope()
             };
         }
         case /\x63/ {
@@ -28,7 +27,6 @@ sub read_message_chunk_data {    #{{{
                 hessian_version => $hessian_version,
                 call            => $rpc_data
             };
-
         }
         case /\x66/ {
             my @tokens;
@@ -43,6 +41,10 @@ sub read_message_chunk_data {    #{{{
                 my $exception_description = $tokens[3];
                 $exception_name->throw( error => $exception_description );
             }
+        }
+        case /\x70/ {    # read packet
+            my $hessian_version = $self->read_version();
+            $datastructure = $self->read_packet();
         }
         case /\x72/ {
             my $hessian_version = $self->read_version();
@@ -91,7 +93,8 @@ sub read_envelope {    #{{{
       if $first_bit =~ /z/i;
 
     # Just the word "Header" as far as I understand
-    my $header_string = $self->read_string_handle_chunk($first_bit);
+    my $method_string = $self->read_string_handle_chunk('S')
+      if $first_bit eq 'm';
     binmode( $input_handle, 'bytes' );
   ENVELOPECHUNKS: {
         my ( $header_count, $footer_count, $packet_size );
@@ -99,35 +102,27 @@ sub read_envelope {    #{{{
         read $input_handle, $first_bit, 1;
         last ENVELOPECHUNKS if $first_bit =~ /z/i;
         $header_count = $self->read_integer_handle_chunk( $first_bit, );
-        PROCESSHEADERS: { 
+      PROCESSHEADERS: {
             last PROCESSHEADERS unless $header_count;
-        foreach ( 1 .. $header_count ) {
-            push @headers, $self->read_header_or_footer();
-        }
+            foreach ( 1 .. $header_count ) {
+                push @headers, $self->read_header_or_footer();
+            }
         }
 
-      PACKETCHUNKS: {
-            read $input_handle, $first_bit, 1;
-            my $length = unpack "C*", $first_bit;
-            $packet_size =
-                $first_bit =~ /[\x70-\x7f]/
-              ? $length - 0x70
-              : $length - 0x80;
-            my $packet_string;
-            read $input_handle, $packet_string, $packet_size;
-            $packet_body .= $packet_string;
-            last PACKETCHUNKS if $first_bit =~ /[\x80-\x8f]/;
-            redo PACKETCHUNKS;
-        }
+        my $body = $self->deserialize_message();
+        $body =~ s/^p\x02\x00(.*)z$/$1/;
+
+        #            print "Got body\n------------\n$body\n-----------\n";
+        $packet_body .= $body;
 
         read $input_handle, $first_bit, 1;
         $footer_count = $self->read_integer_handle_chunk( $first_bit, );
-         PROCESSFOOTERS: { 
+      PROCESSFOOTERS: {
             last PROCESSFOOTERS unless $footer_count;
-        foreach ( 1 .. $footer_count ) {
-            push @footers, $self->read_header_or_footer();
+            foreach ( 1 .. $footer_count ) {
+                push @footers, $self->read_header_or_footer();
+            }
         }
-         }
         push @chunks,
           {
             headers => \@headers,
@@ -135,8 +130,49 @@ sub read_envelope {    #{{{
           };
         redo ENVELOPECHUNKS;
     }
-    my $packet = $self->read_packet($packet_body);
-    return { packet => $packet, meta => \@chunks};
+    my $message_body = $self->read_body($packet_body);
+    return { packet => $message_body, meta => \@chunks };
+}    #}}}
+
+sub read_rpc {    #{{{
+    my $self         = shift;
+    my $input_handle = $self->input_handle();
+    my $call_data    = {};
+    my $call_args;
+    my $in_header;
+  RPCSTRUCTURE: {
+        my $first_bit;
+        read $input_handle, $first_bit, 1;
+        last RPCSTRUCTURE unless $first_bit;
+        last RPCSTRUCTURE if $first_bit eq 'z';
+        my $element;
+        eval {
+            $element = $self->read_hessian_chunk( { first_bit => $first_bit } );
+        };
+        last RPCSTRUCTURE if Exception::Class->caught('EndOfInput::X');
+        switch ($first_bit) {
+            case /\x6d/ {
+                $in_header = 0;
+                $call_data->{method} = $element;
+            }
+            case /\x48/ {
+                $in_header = 1;
+                push @{ $call_data->{headers} }, { header => $element };
+            }
+
+            else {
+                if ($in_header) {
+                    push @{ $call_data->{headers}->[-1]->{elements} }, $element;
+                }
+                else {
+                    push @{$call_args}, $element;
+                }
+            }
+        }
+        redo RPCSTRUCTURE;
+    }
+    $call_data->{arguments} = $call_args;
+    return $call_data;
 }    #}}}
 
 sub read_header_or_footer {    #{{{
@@ -148,6 +184,14 @@ sub read_header_or_footer {    #{{{
     my $header = $self->read_string_handle_chunk($first_bit);
     binmode( $input_handle, 'bytes' );
     return $header;
+}    #}}}
+
+sub read_body {    #{{{
+    my ( $self, $body_string ) = @_;
+    return FIXED NONVOID {
+        $self->input_string($body_string);
+        $self->process_message();
+    };
 }    #}}}
 
 sub read_packet {    #{{{

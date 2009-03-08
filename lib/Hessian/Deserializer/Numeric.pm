@@ -8,6 +8,7 @@ use Math::BigInt;
 use POSIX qw/floor ceil/;
 use Switch;
 
+
 sub read_boolean {  #{{{
     my ($self, $hessian_value) = @_;
     return
@@ -31,7 +32,7 @@ sub read_integer{   #{{{
 
 sub read_long {  #{{{
     my ($self, $hessian_data) = @_;
-    ( my $raw_octets = $hessian_data ) =~ s/^L(.*)/$1/;
+    ( my $raw_octets = $hessian_data ) =~ s/^(?:L|\x77)(.*)/$1/;
     my @chars = unpack 'C*', $raw_octets;
     my $octet_count = scalar @chars;
     my $result =
@@ -46,9 +47,9 @@ sub read_long {  #{{{
 sub read_double {    #{{{
     my ($self, $octet) = @_;
     my $double_value =
-        $octet =~ /\x{5b}/                    ? 0.0
-      : $octet =~ /\x{5c}/                    ? 1.0
-      : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
+        $octet =~ /\x67/                    ? 0.0
+      : $octet =~ /\x68/                    ? 1.0
+      : $octet =~ /(?: \x69 | \x6a ) .*/x ? _read_compact_double($octet)
       :                                         _read_full_double($octet);
 }    #}}}
 
@@ -169,10 +170,10 @@ sub read_double_handle_chunk  {    #{{{
     my $input_handle = $self->input_handle();
     my ( $number, $data );
     switch ($first_bit) {
-        case /[\x5b-\x5c]/ { $data = $first_bit; }
-        case /\x5d/ { read $input_handle, $data, 1; }
-        case /\x5e/ { read $input_handle, $data, 2; }
-        case /\x5f/ {
+        case /[\x67-\x68]/ { $data = $first_bit; }
+        case /\x69/ { read $input_handle, $data, 1; }
+        case /\x6a/ { read $input_handle, $data, 2; }
+        case /\x6b/ {
             read $input_handle, $data, 4;
         }
         case /\x44/ {

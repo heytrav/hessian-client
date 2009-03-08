@@ -8,6 +8,7 @@ use Switch;
 use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
+use Contextual::Return;
 
 sub read_typed_list_element {    #{{{
     my ( $self, $type, $args ) = @_;
@@ -82,6 +83,7 @@ sub store_class_definition {    #{{{
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
+    print "Length = $class_type\n";
     my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 
@@ -178,10 +180,9 @@ sub read_hessian_chunk {    #{{{
     else {
         read $input_handle, $first_bit, 1;
     }
-
-    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
-      if $first_bit =~ /z/i;
-
+    EndOfInput::X->throw( 
+        error => 'Reached end of datastructure.' 
+    )  if $first_bit =~ /z/i;
     return $self->read_simple_datastructure($first_bit);
 }    #}}}
 
@@ -265,6 +266,102 @@ sub read_composite_datastructure {    #{{{
     my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
     return $self->read_composite_data($first_bit);
+}    #}}}
+
+sub read_typed_list {    #{{{
+    my ( $self, $first_bit ) = @_;
+    my $input_handle = $self->input_handle();
+    my $v1_type      = $self->read_v1_type($first_bit);
+    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
+    return $self->read_untyped_list($next_bit) unless defined $entity_type;
+
+    my $type = $self->store_fetch_type($entity_type);
+    my $array_length;
+    my $datastructure = $self->reference_list()->[-1];
+    my $index         = 0;
+    read $input_handle, $next_bit, 1 unless $next_bit;
+    if ( $next_bit eq 'l' ) {
+        $array_length = $self->read_list_length($next_bit);
+    }
+    elsif (  $next_bit =~/\x6e/) {
+       read $input_handle, $array_length, 1;
+    }
+    else {
+         my $element = $self->read_typed_list_element( $type, 
+         {first_bit => $next_bit }); 
+        push @{$datastructure}, $element;
+        $index++;
+          
+    }
+
+  LISTLOOP:
+    {
+
+        #  last LISTLOOP if ( $array_length and ( $index == $array_length ) );
+        my $element;
+        eval { $element = $self->read_typed_list_element($type); };
+        last LISTLOOP if Exception::Class->caught('EndOfInput::X');
+        push @{$datastructure}, $element;
+        $index++;
+        redo LISTLOOP;
+    }
+    return $datastructure;
+}    #}}}
+
+sub read_map_handle {    #{{{
+    my $self         = shift;
+    my $input_handle = $self->input_handle();
+    my $v1_type      = $self->read_v1_type();
+    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
+    my $type;
+    $type = $self->store_fetch_type($entity_type) if $entity_type;
+    my $key;
+    if ($next_bit) {
+        $key = $self->read_hessian_chunk( { first_bit => $next_bit } );
+    }
+
+    # For now only accept integers or strings as keys
+    my @key_value_pairs;
+  MAPLOOP:
+    {
+        eval { $key = $self->read_hessian_chunk(); } unless $key;
+        last MAPLOOP if Exception::Class->caught('EndOfInput::X');
+        my $value = $self->read_hessian_chunk();
+        push @key_value_pairs, $key => $value;
+        undef $key;
+        redo MAPLOOP;
+    }
+
+    # should throw an exception if @key_value_pairs has an odd number of
+    # elements
+
+    my $datastructure = $self->reference_list()->[-1];
+    my $hash          = {@key_value_pairs};
+    foreach my $key ( keys %{$hash} ) {
+        $datastructure->{$key} = $hash->{$key};
+    }
+    my $map = defined $type ? bless $datastructure => $type : $datastructure;
+    return $map;
+
+}    #}}}
+
+sub read_v1_type {    #{{{
+    my ( $self, $list_bit ) = @_;
+    my ( $type, $first_bit, $array_length );
+    my $input_handle = $self->input_handle();
+    if ( $list_bit and $list_bit =~ /\x76/ ) {    # v
+        read $input_handle, $type,         1;
+        read $input_handle, $array_length, 1;
+    }
+    else {
+        read $input_handle, $first_bit, 1;
+        if ( $first_bit =~ /t/ ) {
+            $type = $self->read_hessian_chunk( { first_bit => 'S' } );
+        }
+    }
+
+    return { type => $type, next_bit => $array_length } if $type;
+    return { next_bit => $first_bit };
 }    #}}}
 
 "one, but we're not the same";
