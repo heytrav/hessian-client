@@ -83,7 +83,7 @@ sub store_class_definition {    #{{{
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
-    print "Length = $class_type\n";
+    print "Length = $length\n";
     my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 

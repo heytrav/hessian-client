@@ -130,22 +130,23 @@ sub read_class_handle {    #{{{
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
         case /\x4f/ {      # Read class definition
-            my $class_type = $self->read_string_handle_chunk( 'S'  );
+    my $v1_type      = $self->read_v1_type($first_bit);
+    my ( $class_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
             print "Class type = $class_type\n";
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
             $datastructure = $self->store_class_definition($class_type);
         }
-#        case /\x6f/ {    # Read hessian data and create instance of class
-#            $save_reference = 1;
-#            $datastructure  = $self->fetch_class_for_data();
-#        }
-        case /\x6f/ {    # The class definition is in the ref list
+        case /\x6f/ {    # Read hessian data and create instance of class
             $save_reference = 1;
-            my $hex_bit = unpack 'C*', $first_bit;
-            my $class_definition_number = $hex_bit - 0x60;
-            $datastructure = $self->instantiate_class($class_definition_number);
+            $datastructure  = $self->fetch_class_for_data();
         }
+#        case /\x6f/ {    # The class definition is in the ref list
+#            $save_reference = 1;
+#            my $hex_bit = unpack 'C*', $first_bit;
+#            my $class_definition_number = $hex_bit - 0x60;
+#            $datastructure = $self->instantiate_class($class_definition_number);
+#        }
     }
     push @{ $self->reference_list() }, $datastructure
       if $save_reference;
@@ -222,7 +223,7 @@ sub read_simple_datastructure {    #{{{
         case /[\x44\x5b-\x5f]/ {
             $element = $self->read_double_handle_chunk($first_bit);
         }
-        case /[\x4a\x4b]/ {
+        case /\x64/ {
             $element = $self->read_date_handle_chunk($first_bit);
         }
         case /[\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
@@ -238,8 +239,10 @@ sub read_simple_datastructure {    #{{{
         {                                        # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
-        case /\x52/ {
-            my $reference_id = $self->read_integer_handle_chunk('I');
+        case /[\x4a\x4b]/ {
+            my $hex_reference;
+            read $input_handle, $hex_reference, 1;
+            my $reference_id = unpack 'C*', $hex_reference;
             $element = $self->reference_list()->[$reference_id];
 
         }

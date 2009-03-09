@@ -146,13 +146,13 @@ sub t030_read_class_definition : Test(1) {    #{{{
 
 sub t031_basic_object : Test(3) {    #{{{
     my $self          = shift;
-    my $hessian_data1 = "\x60\x03RED\x06ferari";
+    my $hessian_data1 = "o\x90\x03RED\x06ferari";
     my $example_car   = $self->class_instance_generator($hessian_data1);
 
     is( $example_car->model(), 'ferari', "Correct car from referenced class." );
     is( $example_car->color(), 'RED',    "Car has the correct color." );
 
-    my $hessian_data2 = "\x61\x05dingy\x06thingy\x05wingy";
+    my $hessian_data2 = "o\x91\x05dingy\x06thingy\x05wingy";
     my $example_cap   = $self->class_instance_generator($hessian_data2);
 
     is( $example_cap->boat(), 'wingy', "Boat is correct." );
@@ -161,7 +161,7 @@ sub t031_basic_object : Test(3) {    #{{{
 
 sub t032_object_long_form : Test(2) {    #{{{
     my $self          = shift;
-    my $hessian_data1 = "O\x90\x05green\x05civic";
+    my $hessian_data1 = "o\x90\x05green\x05civic";
     my $example_car   = $self->class_instance_generator($hessian_data1);
 
     is( $example_car->model(), 'civic', "Correct car from referenced class." );
@@ -173,8 +173,7 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     my $last_index = scalar @{ $self->{deserializer}->reference_list() } - 1;
     Hessian::Serializer->meta()->apply($self->{deserializer});
     my $hessian_integer = $self->{deserializer}->serialize_chunk($last_index);
-
-    my $hessian_data = "\x51" . $hessian_integer;
+    my $hessian_data = "\x4a\x0c";
     my $example_car =
       $self->{deserializer}
       ->deserialize_data( { input_string => $hessian_data } );
