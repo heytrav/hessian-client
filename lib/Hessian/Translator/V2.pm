@@ -239,6 +239,11 @@ sub read_simple_datastructure {    #{{{
         {                                        # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
+        case /\x52/ { 
+           my $reference_id = $self->read_integer_handle_chunk('I');
+            $element = $self->reference_list()->[$reference_id];
+
+            }
         case /[\x4a\x4b]/ {
             my $hex_reference;
             read $input_handle, $hex_reference, 1;

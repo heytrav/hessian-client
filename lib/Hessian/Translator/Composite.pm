@@ -286,12 +286,12 @@ sub read_typed_list {    #{{{
     elsif (  $next_bit =~/\x6e/) {
        read $input_handle, $array_length, 1;
     }
-    else {
+    elsif (  $first_bit !~ /v/) {
+        
          my $element = $self->read_typed_list_element( $type, 
          {first_bit => $next_bit }); 
         push @{$datastructure}, $element;
         $index++;
-          
     }
 
   LISTLOOP:
