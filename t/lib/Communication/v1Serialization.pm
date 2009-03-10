@@ -148,16 +148,18 @@ sub t023_serialize_date : Test(2) {    #{{{
     my $client = Hessian::Translator->new( version => 1 );
     Hessian::Translator::V1->meta()->apply($client);
     Hessian::Serializer->meta()->apply($client);
+    $client->serializer();
     my $date = DateTime->new(
         year      => 1998,
         month     => 5,
         day       => 8,
         hour      => 9,
         minute    => 51,
+        second    => 31,
         time_zone => 'UTC'
     );
     my $hessian_date = $client->serialize_chunk($date);
-    like( $hessian_date, qr/d\x{35}\x{52}\x{d5}\x{84}/,
+    like( $hessian_date, qr/d\x00\x00\x00\xd0\x4b\x92\x84\xb8/,
         "Processed a hessian date." );
     $client->input_string($hessian_date);
     my $processed_time = $client->deserialize_message();

@@ -173,7 +173,7 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     my $last_index = scalar @{ $self->{deserializer}->reference_list() } - 1;
     Hessian::Serializer->meta()->apply($self->{deserializer});
     my $hessian_integer = $self->{deserializer}->serialize_chunk($last_index);
-    my $hessian_data = "\x4a\x0c";
+    my $hessian_data = "\x4a\x0a";
     my $example_car =
       $self->{deserializer}
       ->deserialize_data( { input_string => $hessian_data } );

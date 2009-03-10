@@ -209,35 +209,35 @@ sub read_class_handle {    #{{{
 
 #}    #}}}
 
-sub read_untyped_list {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
-    my $array_length;
-    my $datastructure = $self->reference_list()->[-1];
-    my $index         = 0;
-    if ( $first_bit eq 'l' ) {
-        $array_length = $self->read_list_length( $first_bit, );
-    }
-    else {
-        my $param = { first_bit => $first_bit };
-        my $first_element = $self->read_hessian_chunk($param);
-        push @{$datastructure}, $first_element;
-        $index++;
-    }
-  LISTLOOP:
-    {
-        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element;
-        eval { $element = $self->read_hessian_chunk(); };
-        last LISTLOOP
-          if Exception::Class->caught('EndOfInput::X');
+#sub read_untyped_list {    #{{{
+#    my ( $self, $first_bit ) = @_;
+#    my $input_handle = $self->input_handle();
+#    my $array_length;
+#    my $datastructure = $self->reference_list()->[-1];
+#    my $index         = 0;
+#    if ( $first_bit eq 'l' ) {
+#        $array_length = $self->read_list_length( $first_bit, );
+#    }
+#    else {
+#        my $param = { first_bit => $first_bit };
+#        my $first_element = $self->read_hessian_chunk($param);
+#        push @{$datastructure}, $first_element;
+#        $index++;
+#    }
+#  LISTLOOP:
+#    {
+#        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
+#        my $element;
+#        eval { $element = $self->read_hessian_chunk(); };
+#        last LISTLOOP
+#          if Exception::Class->caught('EndOfInput::X');
 
-        push @{$datastructure}, $element;
-        $index++;
-        redo LISTLOOP;
-    }
-    return $datastructure;
-}    #}}}
+#        push @{$datastructure}, $element;
+#        $index++;
+#        redo LISTLOOP;
+#    }
+#    return $datastructure;
+#}    #}}}
 
 sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -349,16 +349,16 @@ sub write_hessian_hash {    #{{{
     return $anonymous_map_string;
 }    #}}}
 
-sub write_hessian_array {    #{{{
-    my ( $self, $datastructure ) = @_;
-    my $anonymous_array_string = "V";
-    foreach my $element ( @{$datastructure} ) {
-        my $hessian_element = $self->write_hessian_chunk($element);
-        $anonymous_array_string .= $hessian_element;
-    }
-    $anonymous_array_string .= "z";
-    return $anonymous_array_string;
-}    #}}}
+#sub write_hessian_array {    #{{{
+#    my ( $self, $datastructure ) = @_;
+#    my $anonymous_array_string = "V";
+#    foreach my $element ( @{$datastructure} ) {
+#        my $hessian_element = $self->write_hessian_chunk($element);
+#        $anonymous_array_string .= $hessian_element;
+#    }
+#    $anonymous_array_string .= "z";
+#    return $anonymous_array_string;
+#}    #}}}
 
 sub write_hessian_string {    #{{{
     my ( $self, $chunks ) = @_;
@@ -368,8 +368,8 @@ sub write_hessian_string {    #{{{
 
 sub write_hessian_date {    #{{{
     my ( $self, $datetime ) = @_;
-    my $epoch = $datetime->epoch();
-    return $self->write_date( $epoch, 'd' );
+#    my $epoch = $datetime->epoch();
+    return $self->write_date( $datetime, );
 }    #}}}
 
 sub write_hessian_call {    #{{{

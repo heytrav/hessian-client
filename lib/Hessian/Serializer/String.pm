@@ -41,8 +41,8 @@ sub hessianify_chunks {    #{{{
     }
     @chunks[ 0 .. ( $#chunks ) ];
     my $last_prefix = $prefixes->{last_prefix};
-    push @message, $last_prefix . write_chunk($last_chunk);
-    
+    my $processed_last_chunk = ($last_prefix . write_chunk($last_chunk));
+    push @message, $processed_last_chunk;
     my $result = join "" => @message;
     return $result;
 }    #}}}
