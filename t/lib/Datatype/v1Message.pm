@@ -18,7 +18,7 @@ sub t005_hessian_v1_parse : Test(1) {    #{{{
     my $result = $hessian_obj->process_message();
 
     #    is($hessian_obj->is_version_1(), 1, "Processing version 1.");
-    is( $result->[1], 5, "Correct integer parsed from hessian." );
+    is( $result, 5, "Correct integer parsed from hessian." );
 
 }    #}}}
 

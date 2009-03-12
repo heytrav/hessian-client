@@ -11,48 +11,6 @@ use Hessian::Simple;
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 's' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 
-#sub read_message_chunk_data {    #{{{
-#    my ( $self, $first_bit ) = @_;
-#    my $input_handle = $self->input_handle();
-#    my $datastructure;
-#    switch ($first_bit) {
-#        case /\x48/ {            # TOP with version
-#            if ( $self->chunked()) { # use as hashmap if chunked
-#                my $params = { first_bit => $first_bit };
-#                $datastructure = $self->deserialize_data($params);
-#            }
-#            else {
-#                my $hessian_version = $self->read_version();
-#                $datastructure = { hessian_version => $hessian_version };
-#            }
-#        }
-#        case /\x43/ {            # Hessian Remote Procedure Call
-#             # call will need to be dispatched to object designated in some kind of
-#             # service descriptor
-#            my $rpc_data = $self->read_rpc();
-#            $datastructure = { call => $rpc_data };
-#        }
-#        case /\x45/ {    # Envelope
-#            $datastructure = $self->read_envelope();
-#        }
-#        case /\x46/ {    # Fault
-#            my $result                = $self->deserialize_data();
-#            my $exception_name        = $result->{code};
-#            my $exception_description = $result->{message};
-#            $exception_name->throw( error => $exception_description );
-#        }
-#        case /\x52/ {    # Reply
-#            my $reply_data = $self->deserialize_data();
-#            $datastructure = { reply_data => $reply_data };
-#        }
-#        else {
-#            my $params = { first_bit => $first_bit };
-#            $datastructure = $self->deserialize_data($params);
-#        }
-#    }
-#    return $datastructure;
-#}    #}}}
-
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -62,67 +20,29 @@ sub read_composite_data {    #{{{
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_typed_list( $first_bit, );
         }
-
-#        case /[\x57\x58\x78-\x7f]/ {    # untyped lists
-#            push @{ $self->reference_list() }, [];
-#            $datastructure = $self->read_untyped_list( $first_bit, );
-#        }
-#        case /\x4d/ {
-#            push @{ $self->reference_list() }, {
-#            };
-#            $datastructure = $self->read_map_handle();
-#        }
-        case /\x4d/ {                   # typed map
+        case /\x4d/ {          # typed map
             push @{ $self->reference_list() }, {
             };
 
             # Get the type for this map. This seems to be more like a
             # perl style object or "blessed hash".
 
-#            my $entity_type = $self->read_hessian_chunk();
-#            my $map_type    = $self->store_fetch_type($entity_type);
-            my $map         = $self->read_map_handle();
-#            $datastructure = bless $map, $map_type;
-            $datastructure =  $map;
+            my $map = $self->read_map_handle();
+            $datastructure = $map;
 
         }
         case /[\x4f\x6f]/ {
             push @{ $self->reference_list() }, {
-            } if $first_bit =~ /\x6f/;
+            }
+            if $first_bit =~ /\x6f/;
             $datastructure = $self->read_class_handle( $first_bit, );
 
         }
     }
 
-    #    push @{ $self->reference_list() }, $datastructure
-    #      if $save_reference;
     return $datastructure;
 
 }    #}}}
-
-#sub read_typed_list {    #{{{
-#    my ( $self, $first_bit ) = @_;
-#    my $input_handle  = $self->input_handle();
-#    my $entity_type   = $self->read_hessian_chunk();
-#    my $type          = $self->store_fetch_type($entity_type);
-#    my $array_length  = $self->read_list_length($first_bit);
-#    my $datastructure = $self->reference_list()->[-1];
-#    my $index         = 0;
-#  LISTLOOP:
-#    {
-#        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-#        my $element;
-#        eval { $element = $self->read_typed_list_element($type); };
-#        last LISTLOOP
-#          if $first_bit =~ /\x55/
-#              && Exception::Class->caught('EndOfInput::X');
-
-#        push @{$datastructure}, $element;
-#        $index++;
-#        redo LISTLOOP;
-#    }
-#    return $datastructure;
-#}    #}}}
 
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -130,8 +50,8 @@ sub read_class_handle {    #{{{
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
         case /\x4f/ {      # Read class definition
-    my $v1_type      = $self->read_v1_type($first_bit);
-    my ( $class_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
+            my $v1_type = $self->read_v1_type($first_bit);
+            my ( $class_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
             $datastructure = $self->store_class_definition($class_type);
@@ -140,68 +60,11 @@ sub read_class_handle {    #{{{
             $save_reference = 1;
             $datastructure  = $self->fetch_class_for_data();
         }
-#        case /\x6f/ {    # The class definition is in the ref list
-#            $save_reference = 1;
-#            my $hex_bit = unpack 'C*', $first_bit;
-#            my $class_definition_number = $hex_bit - 0x60;
-#            $datastructure = $self->instantiate_class($class_definition_number);
-#        }
     }
     push @{ $self->reference_list() }, $datastructure
       if $save_reference;
     return $datastructure;
 }    #}}}
-
-#sub read_map_handle {    #{{{
-#    my $self         = shift;
-#    my $input_handle = $self->input_handle();
-
-#    # For now only accept integers or strings as keys
-#    my @key_value_pairs;
-#  MAPLOOP:
-#    {
-#        my $key;
-#        eval { $key = $self->read_hessian_chunk($input_handle); };
-#        last MAPLOOP if Exception::Class->caught('EndOfInput::X');
-#        my $value = $self->read_hessian_chunk($input_handle);
-#        push @key_value_pairs, $key => $value;
-#        redo MAPLOOP;
-#    }
-
-#    # should throw an exception if @key_value_pairs has an odd number of
-#    # elements
-#    my $hash          = {@key_value_pairs};
-#    my $datastructure = $self->reference_list()->[-1];
-#    foreach my $key ( keys %{$hash} ) {
-#        $datastructure->{$key} = $hash->{$key};
-#    }
-#    return $datastructure;
-
-#}    #}}}
-
-#sub read_untyped_list {    #{{{
-#    my ( $self, $first_bit ) = @_;
-#    my $input_handle = $self->input_handle();
-#    my $array_length = $self->read_list_length( $first_bit, );
-
-#    my $datastructure = [];
-#    my $index         = 0;
-#  LISTLOOP:
-#    {
-#        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-#        my $element;
-#        eval { $element = $self->read_hessian_chunk(); };
-#        print $element."\n";
-#        last LISTLOOP
-#          if $first_bit =~ /\x56/
-#              && Exception::Class->caught('EndOfInput::X');
-
-#        push @{$datastructure}, $element;
-#        $index++;
-#        redo LISTLOOP;
-#    }
-#    return $datastructure;
-#}    #}}}
 
 sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -217,7 +80,7 @@ sub read_simple_datastructure {    #{{{
         case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
             $element = $self->read_integer_handle_chunk($first_bit);
         }
-        case /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
+        case /[\x4c\x77\xd8-\xef\xf0-\xff\x38-\x3f]/ {
             $element = $self->read_long_handle_chunk($first_bit);
         }
         case /[\x44\x5b-\x5f]/ {
@@ -226,24 +89,24 @@ sub read_simple_datastructure {    #{{{
         case /\x64/ {
             $element = $self->read_date_handle_chunk($first_bit);
         }
-        case /[\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
+        case /[\x53\x00-\x1f\x73]/ {    #   for version 2: \x73
             $element = $self->read_string_handle_chunk($first_bit);
         }
         case /[\x42\x62\x20-\x2f]/ {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        case /[\x48\x6d]/ {                     # a header or method name
+        case /[\x48\x6d]/ {                  # a header or method name
             $element = $self->read_string_handle_chunk('S');
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
-        {                                        # recursive datastructure
+        {                                    # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
-        case /\x52/ { 
-           my $reference_id = $self->read_integer_handle_chunk('I');
+        case /\x52/ {
+            my $reference_id = $self->read_integer_handle_chunk('I');
             $element = $self->reference_list()->[$reference_id];
 
-            }
+        }
         case /[\x4a\x4b]/ {
             my $hex_reference;
             read $input_handle, $hex_reference, 1;
@@ -256,24 +119,6 @@ sub read_simple_datastructure {    #{{{
     return $element;
 
 }    #}}}
-
-#sub read_rpc {    #{{{
-#    my $self         = shift;
-#    my $input_handle = $self->input_handle();
-#    my $call_data    = {};
-#    my $call_args;
-#    my $method_name = $self->read_hessian_chunk();
-#    $call_data->{method} = $method_name;
-#    my $number_of_args = $self->read_hessian_chunk();
-#    return $call_data unless $number_of_args;
-#    foreach ( 1 .. $number_of_args ) {
-#        my $argument = $self->read_hessian_chunk();
-#        push @{$call_args}, $argument;
-#    }
-#    $call_data->{arguments} = $call_args;
-#    return $call_data;
-
-#}    #}}}
 
 sub write_hessian_hash {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -288,17 +133,6 @@ sub write_hessian_hash {    #{{{
     return $anonymous_map_string;
 }    #}}}
 
-#sub write_hessian_array {    #{{{
-#    my ( $self, $datastructure ) = @_;
-#    my $anonymous_array_string = "\x57";
-#    foreach my $element ( @{$datastructure} ) {
-#        my $hessian_element = $self->write_hessian_chunk($element);
-#        $anonymous_array_string .= $hessian_element;
-#    }
-#    $anonymous_array_string .= "Z";
-#    return $anonymous_array_string;
-#}    #}}}
-
 sub write_hessian_string {    #{{{
     my ( $self, $chunks ) = @_;
     return $self->write_string( { chunks => $chunks } );
@@ -307,7 +141,6 @@ sub write_hessian_string {    #{{{
 
 sub write_hessian_date {    #{{{
     my ( $self, $datetime ) = @_;
-#    my $epoch = $datetime->epoch();
     return $self->write_date($datetime);
 }    #}}}
 
@@ -349,35 +182,13 @@ sub write_object {    #{{{
     return $hessian_string;
 }    #}}}
 
-#sub write_object { #{{{
-#    my ($self , $datastructure) = @_;
-#    my $type = ref $datastructure;
-#    my $hessian_string = "\x4f";
-#    my $hessian_object_data_string = "\x6f";
-#    my $hessian_type = $self->write_scalar_element($type);
-#    $hessian_type =~ s/\x53/t/;
-#    print "hessian type $hessian_type\n";
-#    $hessian_string .= $hessian_type;
-#    my @fields = keys %{$datastructure};
-#    my $num_of_fields = $self->write_scalar_element(scalar @fields);
-#   $hessian_string .= $num_of_fields; 
-#    foreach my $field (@fields) {
-#        my $hessian_field = $self->write_scalar_element($field);
-#        my $value = $datastructure->{$field};
-#        my $hessian_value = $self->write_hessian_chunk($value);
-#        $hessian_string .= $hessian_field . $hessian_value;
-#    }
-#    return $hessian_string;
-
-#} #}}}
-
-sub write_referenced_data { #{{{
-    my ($self, $index) = @_;
+sub write_referenced_data {    #{{{
+    my ( $self, $index ) = @_;
     my $hessian_string = "\x51";
-    my $hessian_index = $self->write_scalar_element($index);
+    my $hessian_index  = $self->write_scalar_element($index);
     $hessian_string .= $hessian_index;
     return $hessian_string;
-} #}}}
+}    #}}}
 
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -386,23 +197,13 @@ sub write_hessian_call {    #{{{
     my $hessian_method = $self->write_scalar_element($method);
     $hessian_method =~ s/S/m/;
     $hessian_call .= $hessian_method;
-    my $arguments   = $datastructure->{arguments};
-#    my $num_of_args = scalar @{$arguments};
-#    my $hessian_num = $self->write_scalar_element($num_of_args);
-#    $hessian_call .= $hessian_num;
-
+    my $arguments = $datastructure->{arguments};
     foreach my $argument ( @{$arguments} ) {
         my $hessian_arg = $self->write_hessian_chunk($argument);
         $hessian_call .= $hessian_arg;
     }
     $hessian_call .= "z";
     return $hessian_call;
-}    #}}}
-
-sub serialize_message {    #{{{
-    my ( $self, $datastructure ) = @_;
-    my $result = $self->write_hessian_message($datastructure);
-    return  $result;
 }    #}}}
 
 "one, but we're not the same";
@@ -502,10 +303,6 @@ Writes a HASH reference into the outgoing Hessian message.
 =head2 write_hessian_string
 
 Writes a string scalar into the outgoing Hessian message.
-
-=head2 serialize_message
-
-Serialize a datastructure into a Hessian 2.0 message.
 
 =head2 write_hessian_call
 

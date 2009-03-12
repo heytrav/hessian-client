@@ -83,7 +83,6 @@ sub store_class_definition {    #{{{
     my $input_handle = $self->input_handle();
     my $length;
     read $input_handle, $length, 1;
-#    print "Length = $length\n";
     my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 
@@ -471,10 +470,30 @@ Reads a complex datastructure (ARRAY, HASH or object) from the Hessian stream.
 
 =head2 write_map
 
-
-
 =head2 write_scalar_element
 
+
+=head2 read_map_handle
+
+Read a map (perl HASH) from the stream. If a type attribute is present, the
+hash will be I<blessed> into an object.
+
+
+=head2 read_typed_list
+
+
+=head2 read_untyped_list
+
+
+=head2 read_v1_type
+
+Read the type attribute (if present) from a Hessian 1.0 list or map.
+
+=head2 write_hessian_array
+
+Writes an array datastructure into the outgoing Hessian message. 
+
+Note: This object only writes B<untyped variable length> arrays.
 
 
 

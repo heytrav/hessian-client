@@ -55,14 +55,17 @@ sub t015_read_envelope : Test(2) {    #{{{
       "E\x02\x00m\x00\x08Identity\x90" . "B\x00\x0ar\x02\x00\x05helloz\x90z";
     $deserializer->input_string($hessian_data);
     my $tokens = $deserializer->process_message();
+
     cmp_deeply(
-        $tokens->[0],
+        $tokens,
         superhashof( { hessian_version => "2.0" } ),
         "Parsed hessian version 2."
     );
-    my $packet = $tokens->[0]->{envelope}->{packet};
-    if ( $packet) {
-        is( $packet->[1], 'hello',
+
+    #    my $packet = $tokens->[0]->{envelope}->{packet};
+    my $packet = $tokens->{envelope}->{packet};
+    if ($packet) {
+        is( $packet, 'hello',
             "Retrieved correct answer from enveloped reply." );
     }
 }    #}}}
@@ -70,8 +73,8 @@ sub t015_read_envelope : Test(2) {    #{{{
 sub t016_multi_chunk_envelope : Test(1) {    #{{{
     my $self         = shift;
     my $deserializer = $self->{deserializer};
-    my $hessian_data = "E\x02\x00m\x00\x08Identity"
-      . "\x90"
+    my $hessian_data =
+        "E\x02\x00m\x00\x08Identity" . "\x90"
       . "B\x00\x0e"
       . "p\x02\x00"
       . "c\x02\x00m\x00\x04add2" . "z" . "\x90" . "\x90"
@@ -80,10 +83,10 @@ sub t016_multi_chunk_envelope : Test(1) {    #{{{
       . "\x92\x93z" . "z" . "\x90" . "z";
     $deserializer->input_string($hessian_data);
     my $tokens = $deserializer->process_message();
-    my $packet = $tokens->[0]->{envelope}->{packet};
+    my $packet = $tokens->{envelope}->{packet};
     my $call;
-    if ( $packet) {
-    $call   = $packet->[0]->{call};
+    if ($packet) {
+        $call = $packet->{call};
     }
 
     cmp_deeply(
@@ -112,22 +115,23 @@ sub t040_hessian_fault : Test(1) {    #{{{
 }    #}}}
 
 sub t050_hessian_call : Test(3) {    #{{{
-    my $self         = shift;
-    my $hessian_data = "c\x02\x00m\x00\x02eq"
-    ."Mt\x00\x07qa.BeanS\x00\x03foo"
-    ."I\x00\x00\x00\x0dzR\x00\x00\x00\x00z";
-    my $hessian_obj  = Hessian::Translator->new( version => 2 );
+    my $self = shift;
+    my $hessian_data =
+        "c\x02\x00m\x00\x02eq"
+      . "Mt\x00\x07qa.BeanS\x00\x03foo"
+      . "I\x00\x00\x00\x0dzR\x00\x00\x00\x00z";
+    my $hessian_obj = Hessian::Translator->new( version => 2 );
     $hessian_obj->input_string($hessian_data);
 
     my $datastructure = $hessian_obj->process_message();
     cmp_deeply(
-        $datastructure->[0]->{call},
+        $datastructure->{call},
         {
             arguments => ignore(),
             method    => 'eq'
         }
     );
-    my @arguments = @{ $datastructure->[0]->{call}->{arguments} };
+    my @arguments = @{ $datastructure->{call}->{arguments} };
 
     foreach my $argument (@arguments) {
         isa_ok( $argument, 'qa.Bean', "Type parsed from call" );

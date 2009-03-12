@@ -10,12 +10,18 @@ with qw/
   Hessian::Serializer::Binary
   /;
 
+
 sub serialize_chunk {    #{{{
     my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_chunk($datastructure);
     return $result;
 }    #}}}
 
+sub serialize_message {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $result = $self->write_hessian_message($datastructure);
+    return  $result;
+}    #}}}
 
 "one, but we're not the same";
 
@@ -36,3 +42,7 @@ Hessian::Serializer - Serialize data into Hessian messages
 
 =head2   serialize_chunk
 
+=head2 serialize_message
+
+Performs Hessian versioversion specific processing of datastructures into hessian.
+ 

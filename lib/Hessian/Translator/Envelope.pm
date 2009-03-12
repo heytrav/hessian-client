@@ -8,6 +8,9 @@ use Contextual::Return;
 use List::MoreUtils qw/any/;
 use Hessian::Exception;
 
+# Experimental. Regulates the size of an average packet.
+has 'max_packet_size' => ( is => 'ro', isa => 'Int', default => 15 );
+
 sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
@@ -92,8 +95,8 @@ sub read_envelope {    #{{{
     EndOfInput::X->throw( error => 'End of datastructure.' )
       if $first_bit =~ /z/i;
 
-    # Just the word "Header" as far as I understand
-    my $method_string = $self->read_string_handle_chunk('S')
+    my $method_string;
+    $method_string = $self->read_string_handle_chunk('S')
       if $first_bit eq 'm';
     binmode( $input_handle, 'bytes' );
   ENVELOPECHUNKS: {
@@ -102,6 +105,7 @@ sub read_envelope {    #{{{
         read $input_handle, $first_bit, 1;
         last ENVELOPECHUNKS if $first_bit =~ /z/i;
         $header_count = $self->read_integer_handle_chunk( $first_bit, );
+
       PROCESSHEADERS: {
             last PROCESSHEADERS unless $header_count;
             foreach ( 1 .. $header_count ) {
@@ -111,8 +115,6 @@ sub read_envelope {    #{{{
 
         my $body = $self->deserialize_message();
         $body =~ s/^p\x02\x00(.*)z$/$1/;
-
-        #            print "Got body\n------------\n$body\n-----------\n";
         $packet_body .= $body;
 
         read $input_handle, $first_bit, 1;
@@ -194,15 +196,35 @@ sub read_body {    #{{{
     };
 }    #}}}
 
-sub read_packet {    #{{{
-    my ( $self, $packet_string ) = @_;
-    return FIXED NONVOID {
-        $self->deserialize_message( { input_string => $packet_string } );
-    };
-}    #}}}
+sub write_hessian_envelope {    #{{{
+    my ( $self, $envelope ) = @_;
+    my $meta = 'Identity';
+    $meta = delete $envelope->{meta} if exists $envelope->{meta};
+    my $headers         = delete $envelope->{headers};
+    my $footers         = delete $envelope->{footers};
+    my $envelope_string = "E\x02\x00";
+    my $envelope_meta   = $self->write_hessian_string( [$meta] );
+    $envelope_meta =~ s/S/m/;
+    $envelope_string .= $envelope_meta;
+    my $header_count = $self->write_integer( scalar @{$headers} );
+    my $footer_count = $self->write_integer( scalar @{$footers} );
 
-sub write_hessian_packet {    #{{{
-    my ( $self, $packets ) = @_;
+    my $serialized_message = $self->write_hessian_message($envelope);
+    my $max_packet_size    = $self->max_packet_size() - 4;
+    my @packets = $serialized_message =~ /([\x00-\xff]{1,$max_packet_size})/g;
+    my @packaged_packets;
+    @packaged_packets = map { "p\x02\x00" . $_ . "z" } @packets 
+        if scalar @packets > 1;
+    my @body_chunks;
+    foreach my $packet (@packaged_packets) {
+        push @body_chunks, $self->write_binary($packet);
+    }
+
+    my @wrapped_body = map { $header_count . $_ . $footer_count } @body_chunks;
+
+    $envelope_string .= join "" => @wrapped_body;
+    $envelope_string .= 'z';
+    return $envelope_string;
 }    #}}}
 
 sub write_hessian_message {    #{{{
@@ -210,7 +232,7 @@ sub write_hessian_message {    #{{{
 
     my $hessian_message;
     if ( ( ref $hessian_data ) eq 'HASH'
-        and any { exists $hessian_data->{$_} } qw/call envelope packet/ )
+        and any { exists $hessian_data->{$_} } qw/data call envelope packet/ )
     {
         my @keys          = keys %{$hessian_data};
         my $datastructure = $hessian_data->{ $keys[0] };
@@ -222,8 +244,12 @@ sub write_hessian_message {    #{{{
                 $hessian_message =
                   $self->write_hessian_envelope($datastructure);
             }
-            case /packet/ {
-                $hessian_message = $self->write_hessian_packet($datastructure);
+            case /reply/ {
+
+            }
+            case /data/ {
+                $hessian_message = $self->write_hessian_chunk($datastructure);
+
             }
         }
     }
@@ -257,25 +283,32 @@ I<reply> elements.
 
 =head1 INTERFACE
 
-=head2    next_token
+=head2 read_message_chunk_data
+
+Read Hessian I<wrapper> level message components.  For version 1.0 of the
+protocol this mainly applies to I<reply>, I<call> and I<fault> objects. For
+version 2.0 this applies to the envelope and any nested I<call>, I<reply> or
+I<fault> entities.
+
+=head2 next_token
 
 
-=head2    process_message
+=head2 read_rpc
+
+Read a remote procedure call from the input stream.
 
 
-=head2    read_envelope
+=head2 read_envelope
 
+This method is starting point for processing Hessian version 2.0 messages.
+An enveloped message is passed to this subroutine to be broken down in to its
+components.
 
-=head2    read_envelope_chunk
+=head2 read_header_or_footer
 
+Read the contents of a header or footer for a message chunk.
 
-=head2    read_header_or_footer
-
-
-=head2    read_message_chunk
-
-
-=head2    read_packet
+=head2 read_message_chunk
 
 =head2 read_version
 
@@ -289,4 +322,47 @@ Writes a datastructure as a hessian message.
 
 Write a subset of hessian data out as a packet.
 
+=head2 write_hessian_envelope
 
+Write a datastructure into a Hessian serialized message.
+
+This method is called internally if the datastructure passed to
+L<Hessian::Serializer|Hessian::Serializer/"serialize_message"> contains hash
+with the key I<envelope> pointing to a nested hash datastructure.  The nested
+datastructure may vary.
+
+Here are two examples of datastructures that will be passed to the
+I<write_hessian_envelope> method:
+
+
+In this case, the envelope points to a RPC for the method I<hello> and a
+signle argument "hello, world".
+
+    my $datastructure = {
+        envelope => {
+            call => {
+                method    => 'hello',
+                arguments => ['hello, world']
+            },
+            meta    => 'Identity',
+            headers => [],
+            footers => []
+        }
+    };
+
+
+In the second example, the envelope wraps some basic data which could
+represent any datastructure.
+
+    my $datastructure2 = {
+        envelope => {
+            data    => "Lorem ipsum dolor sit amet, consectetur adipisicing",
+            meta    => 'Identity',
+            headers => [],
+            footers => []
+        }
+    };
+
+=head2 read_body
+
+Read the binary wrapped body of a Hessian envelope.
