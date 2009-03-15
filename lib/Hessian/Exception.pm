@@ -3,7 +3,6 @@ package  Hessian::Exception;
 use strict;
 use warnings;
 
-
 use Exception::Class (
     'Hessian::Exception',
     'StandardHessian::X' => {
@@ -45,9 +44,14 @@ use Exception::Class (
         description => 'The called method threw an exception.'
     },
     'EndOfInput::X' => {
-        isa => 'Hessian::Exception',
+        isa         => 'Implementation::X',
         description => 'Not an error. Should interrupt loop processing.'
-        }
+    },
+    'MessageIncomplete::X' => {
+        isa         => 'Implementation::X',
+        description => 'The serialized message string '
+          . 'did not contain a complete message'
+    }
 );
 
 "one, but we're not the same";

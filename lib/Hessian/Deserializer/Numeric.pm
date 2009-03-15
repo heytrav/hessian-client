@@ -121,18 +121,21 @@ sub read_integer_handle_chunk {    #{{{
     my ( $number, $data );
     switch ($first_bit) {
         case /\x49/ {
-            read $input_handle, $data, 4;
+#            read $input_handle, $data, 4;
+            $data = $self->read_from_inputhandle(4);
             $number = $self->read_integer($data);
         }
         case /[\x80-\xbf]/ {
             $number = $self->read_integer($first_bit);
         }
         case /[\xc0-\xcf]/ {
-            read $input_handle, $data, 1;
+#            read $input_handle, $data, 1;
+            $data = $self->read_from_inputhandle(1);
             $number = $self->read_integer( $first_bit . $data );
         }
         case /[\xd0-\xd7]/ {
-            read $input_handle, $data, 2;
+#            read $input_handle, $data, 2;
+            $data = $self->read_from_inputhandle(2);
             $number = $self->read_integer( $first_bit . $data );
         }
 
@@ -149,15 +152,18 @@ sub read_long_handle_chunk  {    #{{{
         case /[\xd8-\xef]/ { 
             $number = $self->read_long($first_bit); }
         case /[\xf0-\xff]/ {
-            read $input_handle, $data, 1;
+#            read $input_handle, $data, 1;
+            $data = $self->read_from_inputhandle(1);
             $number = $self->read_long( $first_bit . $data );
         }
         case /[\x38-\x3f]/ {
-            read $input_handle, $data, 2;
+#            read $input_handle, $data, 2;
+            $data = $self->read_from_inputhandle(2);
             $number = $self->read_long( $first_bit . $data );
         }
         case /\x4c/ {
-            read $input_handle, $data, 8;
+#            read $input_handle, $data, 8;
+            $data = $self->read_from_inputhandle(8);
             $number = $self->read_long($data);
         }
 
@@ -171,14 +177,24 @@ sub read_double_handle_chunk  {    #{{{
     my ( $number, $data );
     switch ($first_bit) {
         case /[\x67-\x68]/ { $data = $first_bit; }
-        case /\x69/ { read $input_handle, $data, 1; }
-        case /\x6a/ { read $input_handle, $data, 2; }
+        case /\x69/ { 
+            $data = $self->read_from_inputhandle(1);
+#            read $input_handle, $data, 1; 
+            }
+        case /\x6a/ {
+            
+            $data = $self->read_from_inputhandle(2);
+            
+#            read $input_handle, $data, 2; 
+            }
         case /\x6b/ {
-            read $input_handle, $data, 4;
+#            read $input_handle, $data, 4;
+            $data = $self->read_from_inputhandle(4);
         }
         case /\x44/ {
             $first_bit = "";
-            read $input_handle, $data, 8;
+#            read $input_handle, $data, 8;
+            $data = $self->read_from_inputhandle(8);
         }
 
     }

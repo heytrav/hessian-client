@@ -76,6 +76,7 @@ sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
     my $hessian_obj  = $self->{deserializer};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
+    print "Got data:\n".Dump($datastructure)."\n";
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
 }    #}}}
 

@@ -13,6 +13,7 @@ use Data::Dumper;
 use Hessian::Translator;
 use Hessian::Deserializer;
 use Hessian::Translator::Composite;
+use Test::Exception;
 
 sub t004_initialize_hessian : Test(3) {    #{{{
     my $self = shift;
@@ -136,6 +137,45 @@ sub t050_hessian_call : Test(3) {    #{{{
     foreach my $argument (@arguments) {
         isa_ok( $argument, 'qa.Bean', "Type parsed from call" );
     }
+}    #}}}
+
+sub t060_multi_chunk_envelope : Test(3) {    #{{{
+    my $self         = shift;
+    my $deserializer = $self->{deserializer};
+    my $hessian_data = "E\x02\x00m\x00\x08Identity\x90B\x00\x0e" ;
+    $deserializer->input_string($hessian_data);
+    my $start_position = tell $deserializer->input_handle();
+    throws_ok {
+        eval { my $tokens = $deserializer->process_message(); };
+        if ( my $e = $@ ) {
+            $e->rethrow();
+        }
+
+    }
+    'MessageIncomplete::X', "Threw expected exception.";
+    my $after_error_position = tell $deserializer->input_handle();
+    is( $start_position, $after_error_position,
+        "Input handle in same place as before error." );
+    my $rest_of_string =
+        "p\x02\x00"
+      . "c\x02\x00m\x00\x04add2z\x90\x90"
+      . "B\x00\x07"
+      . "p\x02\x00"
+      . "\x92\x93zz\x90z";
+    $deserializer->append_input_buffer($rest_of_string);
+    my $tokens = $deserializer->process_message();
+    my $packet = $tokens->{envelope}->{packet};
+    my $call;
+
+    if ($packet) {
+        $call = $packet->{call};
+    }
+
+    cmp_deeply(
+        $call,
+        { method => 'add2', arguments => [ 2, 3 ] },
+        "Parsed call from envelope."
+    );
 }    #}}}
 
 "one, but we're not the same";

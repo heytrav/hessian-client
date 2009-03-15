@@ -16,6 +16,9 @@ sub read_composite_data {    #{{{
     my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     switch ($first_bit) {
+        case /\x72/ {
+            $datastructure = $self->read_remote_object();
+        }
         case /[\x56\x76]/ {    # lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_typed_list( $first_bit, );

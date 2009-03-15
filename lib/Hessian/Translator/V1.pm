@@ -13,7 +13,7 @@ has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
+#    my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     switch ($first_bit) {
         case /\x72/ {
@@ -38,34 +38,15 @@ sub read_composite_data {    #{{{
 
 }    #}}}
 
-sub read_remote_object {    #{{{
-    my $self         = shift;
-    my $input_handle = $self->input_handle();
-    my $remote_type  = $self->read_v1_type()->{type};
-    $remote_type =~ s/\./::/g;
-    my $class_definition = {
-        type   => $remote_type,
-        fields => ['remote_url']
-    };
-    return $self->assemble_class(
-        {
-            type      => $remote_type,
-            data      => {},
-            class_def => $class_definition
-        }
-    );
-}    #}}}
-
 sub read_class_handle {    #{{{
-
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
         case /\x4f/ {      # Read class definition
             my $class_name_length = $self->read_hessian_chunk();
-            my $class_type;
-            read $input_handle, $class_type, $class_name_length;
+            my $class_type = $self->read_from_inputhandle($class_name_length);
+#            read $input_handle, $class_type, $class_name_length;
 
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
@@ -131,10 +112,10 @@ sub read_simple_datastructure {    #{{{
 sub read_list_type {    #{{{
     my $self         = shift;
     my $input_handle = $self->input_handle();
-    my $type_length;
-    read $input_handle, $type_length, 1;
+    my $type_length = $self->read_from_inputhandle(1);
+#    read $input_handle, $type_length, 1;
     my $type = $self->read_string_handle_chunk( $type_length, $input_handle );
-    binmode( $input_handle, 'bytes' );
+#    binmode( $input_handle, 'bytes' );
     return $type;
 }    #}}}
 
@@ -246,7 +227,6 @@ Read Hessian 1.0 specific datastructures from the stream.
 
 Read the I<type> attribute of a Hessian 1.0 typed list
 
-=head2 read_remote_object
 
 
 =head2 read_simple_datastructure

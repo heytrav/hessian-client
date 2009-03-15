@@ -7,7 +7,7 @@ use Switch;
 sub read_binary_handle_chunk  {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
-    my ( $binary, $data, $length );
+    my ($data, $length );
     switch ($first_bit) {
         case /[\x42\x62]/ {
             read $input_handle, $data, 2;
@@ -19,7 +19,8 @@ sub read_binary_handle_chunk  {    #{{{
             $length -= 0x20;
         }
     }
-    read $input_handle, $binary, $length;
+#    read $input_handle, $binary, $length;
+    my $binary = $self->read_from_inputhandle($length);
     return $binary;
 }    #}}}
 
