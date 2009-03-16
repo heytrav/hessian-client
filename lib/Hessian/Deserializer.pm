@@ -5,7 +5,6 @@ use version; our $VERSION = qv('0.0.1');
 use YAML;
 
 
-use Hessian::IO;
 
 with qw/
   Hessian::Deserializer::Numeric
@@ -17,7 +16,6 @@ with qw/
 has 'input_handle' => (    #{{{
     is      => 'rw',
     isa     => 'GlobRef',
-#    isa     => 'Hessian::IO',
     lazy    => 1,
     default => sub {
         my $self = shift;

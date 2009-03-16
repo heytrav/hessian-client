@@ -223,7 +223,6 @@ sub write_composite_element {    #{{{
         else {
             $hessian_string = $self->write_object($datastructure);
         }
-
     }
     return $hessian_string;
 }    #}}}

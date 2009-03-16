@@ -113,7 +113,7 @@ sub t020_read_typed_map : Test(3) {    #{{{
 
 sub t023_read_untyped_map : Test(1) {    #{{{
     my $self         = shift;
-    my $hessian_data = "M\x91\x05hello\x04word\x06BeetleZ";
+    my $hessian_data = "M\x91\x05hello\x04word\x06Beetlez";
 
     my $datastructure =
       $self->{deserializer}

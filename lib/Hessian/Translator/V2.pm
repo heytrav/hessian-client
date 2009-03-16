@@ -98,11 +98,11 @@ sub read_simple_datastructure {    #{{{
         case /[\x42\x62\x20-\x2f]/ {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        case /[\x48\x6d]/ {                  # a header or method name
+        case /[\x48\x6d]/ {             # a header or method name
             $element = $self->read_string_handle_chunk('S');
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
-        {                                    # recursive datastructure
+        {                               # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x52/ {
@@ -179,7 +179,12 @@ sub write_object {    #{{{
     $hessian_string .= "\x6f";
     $hessian_string .= ( $self->write_scalar_element($index) );
     foreach my $field (@fields) {
-        my $value = $datastructure->$field();
+        my $value;
+        eval { $value = $datastructure->$field(); };
+        if ( my $e = $@ ) {
+            $value = $datastructure->{$field} if $e =~ /locate\sobject\smethod/;
+        }
+
         $hessian_string .= ( $self->write_scalar_element($value) );
     }
     return $hessian_string;
