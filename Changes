@@ -1,6 +1,15 @@
 Revision history for Hessian::Client
 
 
+0.1.6 Thu Mar 16 2009
+        Added logic to check the length to read from the handle against the
+        remaining length of the string.  If the remaining string is too short,
+        the translator now throws a MessageIncomplete::X.  This is mainly for
+        integration into a POE filter. If the message is incomplete then the
+        internal buffer should return to some initial position and wait for
+        the next call to process_message.  
+        
+
 0.1.5 Thu Mar 12 2009
         Completely rewrote version 2 serialization/deserilization modules to
         conform to http://www.caucho.com/resin-3.1/doc/hessian-2.0-spec.xtp.
