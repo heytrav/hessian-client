@@ -4,6 +4,8 @@ use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 use YAML;
 
+
+
 with qw/
   Hessian::Deserializer::Numeric
   Hessian::Deserializer::String
@@ -67,11 +69,17 @@ sub next_token {    #{{{
 
 sub process_message {    #{{{
     my $self = shift;
-    my @tokens;
+    my $tokens;
     while ( my $token = $self->next_token() ) {
-        push @tokens, $token;
+        if ( ( ref $token) eq 'HASH') {
+            my @token_keys = keys %{$token};
+            @{ $tokens }{ @token_keys } = @{$token}{@token_keys };
+        }
+        else {
+            $tokens = $token;
+        }
     }
-    return \@tokens;
+    return $tokens;
 }    #}}}
 
 "one, but we're not the same";
@@ -110,6 +118,9 @@ Iterate to the next chunk in the input handle.
 
 =head2 process_message
 
-For a more complex message, repeatedly calls L</"next_token"> until reaching
-the end of the message.
+Process a complete Hessian message by reading chunk by chunk until reaching
+the end of the input filehandle. The deserialized message is currently
+returned in an array reference, although this is likely to change in future
+iterations.  The contents of this array reference depend on the data that is
+parsed from the Hessian message.
 

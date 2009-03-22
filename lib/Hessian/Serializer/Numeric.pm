@@ -36,6 +36,8 @@ sub write_double {    #{{{
     my $compare_with = $double < 0 ? ceil($double) : floor($double);
     if ( $double eq $compare_with ) {
         $hessian_string =
+        $double == 0 ? "\x5b"    :
+        $double == 1 ? "\x5c"    :
              $double > -129
           && $double < 128 ? "\x5d" . _write_single_octet_float($double)
           : $double > -32769

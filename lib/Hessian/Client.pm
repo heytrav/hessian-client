@@ -3,7 +3,7 @@ package Hessian::Client;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.1.7');
+use version; our $VERSION = qv('0.1.6');
 
 use LWP::UserAgent;
 use HTTP::Request;
@@ -95,10 +95,16 @@ Hessian::Client - RPC via Hessian with a remote server.
 =head1 DESCRIPTION
 
 The goal of Hessian::Client and all associated classes in this namespace is to
-provide support for communication via the Hessian protocol in Perl.  For a
-more detailed introduction into the Hessian protocol, see the main project
-documentation for http://hessian.caucho.com/doc/hessian-ws.html
-and http://www.caucho.com/resin-3.0/protocols/hessian-2.0-spec.xtp.  
+provide support for communication via the Hessian protocol in Perl.  
+
+Hessian is a binary protocol optimized for communication in situations where
+it is necessary to preserve bandwidth such as in mobile web services. Due to
+the concise nature of the API, implementations of the Hessian protocol can be
+found in several languages including Java, Python, Ruby, Erlang and PHP. For some
+reason, till now there has been no implementation in Perl.
+
+For a more detailed introduction into the Hessian protocol, see the main
+project documentation at http://www.caucho.com/resin-3.1/doc/hessian.xtp.
 
 Hessian::Client implements basic RPC for Hessian. Although currently only
 tested with version 1, communication with version 2.0 servers should also
