@@ -142,15 +142,13 @@ sub t023_serialize_date : Test(2) {    #{{{
         time_zone => 'UTC'
     );
     my $hessian_date = $client->serialize_chunk($date);
-    like(
-        $hessian_date,
-        qr/\x4b\x{35}\x{52}\x{d5}\x{84}/,
-        "Processed a hessian date."
-    );
     $client->input_string($hessian_date);
     my $processed_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_time );
-
+    my $hessian_compact_date ="\x4b\x00\xe3\x83\x8f";
+    $client->input_string($hessian_compact_date);
+    my $processed_compact_time = $client->deserialize_message();
+    $self->compare_date( $date, $processed_compact_time );
 }    #}}}
 
 sub t025_serialize_call : Test(3) {    #{{{
@@ -174,7 +172,7 @@ sub t025_serialize_call : Test(3) {    #{{{
     $client->input_string($hessian_data);
     my $processed_data = $client->process_message();
     cmp_deeply(
-        $processed_data->[1]->{call},
+        $processed_data->{call},
         $datastructure->{call},
         "Received same structure as call."
     );

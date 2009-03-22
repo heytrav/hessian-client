@@ -366,11 +366,11 @@ sub write_hessian_string {    #{{{
 
 }    #}}}
 
-sub write_hessian_date {    #{{{
-    my ( $self, $datetime ) = @_;
-    my $epoch = $datetime->epoch();
-    return $self->write_date( $epoch, 'd' );
-}    #}}}
+#sub write_hessian_date {    #{{{
+#    my ( $self, $datetime ) = @_;
+#    my $epoch = $datetime->epoch();
+#    return $self->write_date( $epoch, 'd' );
+#}    #}}}
 
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;

@@ -181,7 +181,7 @@ sub write_hessian_chunk {    #{{{
             $hessian_element = $self->write_scalar_element($element);
         }
         case /DateTime/ {
-            $hessian_element = $self->write_hessian_date($element);
+            $hessian_element = $self->write_date($element);
         }
         else {
             my $reference_list = $self->reference_list();
@@ -207,6 +207,11 @@ sub write_hessian_chunk {    #{{{
     }
     return $hessian_element;
 }    #}}}
+
+#sub write_hessian_date {    #{{{
+#    my ( $self, $datetime ) = @_;
+#    return $self->write_date($datetime);
+#}    #}}}
 
 sub write_composite_element {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -284,43 +289,6 @@ sub read_untyped_list {    #{{{
         last LISTLOOP
           if Exception::Class->caught('EndOfInput::X');
 
-        push @{$datastructure}, $element;
-        $index++;
-        redo LISTLOOP;
-    }
-    return $datastructure;
-}    #}}}
-
-sub read_typed_list {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $v1_type      = $self->read_v1_type($first_bit);
-    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
-    return $self->read_untyped_list($next_bit) unless defined $entity_type;
-
-    my $type = $self->store_fetch_type($entity_type);
-    my $array_length;
-    my $datastructure = $self->reference_list()->[-1];
-    my $index         = 0;
-    $next_bit = $self->read_from_inputhandle(1) unless $next_bit;
-    if ( $next_bit eq 'l' ) {
-        $array_length = $self->read_list_length($next_bit);
-    }
-    elsif (  $next_bit =~/\x6e/) {
-        $array_length = $self->read_from_inputhandle(1);
-    }
-    elsif (  $first_bit !~ /v/) {
-        
-         my $element = $self->read_typed_list_element( $type, 
-         {first_bit => $next_bit }); 
-        push @{$datastructure}, $element;
-        $index++;
-    }
-  LISTLOOP:
-    {
-        #  last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element;
-        eval { $element = $self->read_typed_list_element($type); };
-        last LISTLOOP if Exception::Class->caught('EndOfInput::X');
         push @{$datastructure}, $element;
         $index++;
         redo LISTLOOP;
@@ -468,6 +436,10 @@ Reads a complex datastructure (ARRAY, HASH or object) from the Hessian stream.
 =head2 write_map
 
 =head2 write_scalar_element
+
+=head2 write_hessian_date
+
+Writes a L<DateTime|DateTime> object into the outgoing Hessian message. 
 
 
 =head2 read_map_handle

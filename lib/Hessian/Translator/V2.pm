@@ -292,12 +292,6 @@ sub write_hessian_string {    #{{{
 
 }    #}}}
 
-sub write_hessian_date {    #{{{
-    my ( $self, $datetime ) = @_;
-    my $epoch = $datetime->epoch();
-    return $self->write_date($epoch);
-}    #}}}
-
 sub write_object {    #{{{
     my ( $self, $datastructure ) = @_;
     my $type              = ref $datastructure;
@@ -452,10 +446,6 @@ Read a list of arbitrarily typed entities.
 Writes an array datastructure into the outgoing Hessian message. 
 
 Note: This object only writes B<untyped variable length> arrays.
-
-=head2 write_hessian_date
-
-Writes a L<DateTime|DateTime> object into the outgoing Hessian message. 
 
 =head2 write_hessian_hash
 

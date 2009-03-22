@@ -5,7 +5,7 @@ use Moose::Role;
 requires qw/write_integer write_long/;
 
 use DateTime;
-use DateTime::Format::Strptime;
+#use DateTime::Format::Strptime;
 use DateTime::Format::Epoch;
 
 sub write_date  {    #{{{
