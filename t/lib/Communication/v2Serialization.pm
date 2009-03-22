@@ -8,6 +8,7 @@ use base 'Communication';
 
 use Test::More;
 use Test::Deep;
+use Test::Exception;
 use DateTime;
 use URI;
 use Hessian::Translator;
@@ -15,6 +16,7 @@ use Hessian::Serializer;
 use Hessian::Translator::V2;
 use SomeType;
 use YAML;
+use Hessian::Client;
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
@@ -205,6 +207,32 @@ sub t027_serialize_enveloped_message {    #{{{
     #    ];
 
 }    #}}}
+
+sub  t030_client_request : Test(1) { #{{{
+    my $self = shift;
+    my $service = 'http://hessian.caucho.com/test/test2';
+    local $TODO =
+      "This test requires a running the HessianRIADemo" . " servlet.";
+    my ( $reply_header, $reply_body );
+    lives_ok {
+        my $hessian_client = Hessian::Client->new(
+            {
+                version => 2,
+                service => $service
+            }
+        );
+        my $result = $hessian_client->replyObject_16();
+        print "Got datastructure: ".Dump($result)."\n";
+    }
+    "No exception thrown by rpc.";
+    cmp_deeply(
+        $reply_header,
+        { hessian_version => '2.0', state => 'reply' },
+        "Received expected header from service."
+    );
+    isa_ok( $reply_body, 'ARRAY', 'Datastructure returned in response body' );
+} #}}}
+
 
 "one, but we're not the same";
 

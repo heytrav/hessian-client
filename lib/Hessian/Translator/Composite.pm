@@ -208,11 +208,6 @@ sub write_hessian_chunk {    #{{{
     return $hessian_element;
 }    #}}}
 
-#sub write_hessian_date {    #{{{
-#    my ( $self, $datetime ) = @_;
-#    return $self->write_date($datetime);
-#}    #}}}
-
 sub write_composite_element {    #{{{
     my ( $self, $datastructure ) = @_;
     my $element_type =

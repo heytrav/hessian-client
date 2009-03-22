@@ -133,6 +133,7 @@ sub read_class_handle {    #{{{
             my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
+                        print "Storing class definition: $class_type\n";
             $datastructure = $self->store_class_definition($class_type);
         }
         case /\x4f/ {    # Read hessian data and create instance of class
@@ -143,6 +144,7 @@ sub read_class_handle {    #{{{
             $save_reference = 1;
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
+            print "Getting class # $class_definition_number\n";
             $datastructure = $self->instantiate_class($class_definition_number);
         }
     }

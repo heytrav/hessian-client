@@ -201,7 +201,6 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
       ->deserialize_data( { input_string => $hessian_data } );
     is( $example_car->model(), 'civic', "Correct car from referenced object." );
     is( $example_car->color(), 'green', "Correct color from class." );
-
 }    #}}}
 
 sub class_instance_generator {    #{{{

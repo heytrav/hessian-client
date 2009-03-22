@@ -8,17 +8,16 @@ use Math::BigInt;
 use POSIX qw/floor ceil/;
 use Switch;
 
-
-sub read_boolean {  #{{{
-    my ($self, $hessian_value) = @_;
+sub read_boolean {    #{{{
+    my ( $self, $hessian_value ) = @_;
     return
         $hessian_value =~ /T/ ? 1
       : $hessian_value =~ /F/ ? 0
       :                         die "Not an acceptable boolean value";
 }    #}}}
 
-sub read_integer{   #{{{
-    my ($self,$hessian_data) = @_;
+sub read_integer {    #{{{
+    my ( $self, $hessian_data ) = @_;
     ( my $raw_octets = $hessian_data ) =~ s/^I(.*)/$1/;
     my @chars = unpack 'C*', $raw_octets;
     my $octet_count = scalar @chars;
@@ -30,8 +29,8 @@ sub read_integer{   #{{{
     return $result;
 }    #}}}
 
-sub read_long {  #{{{
-    my ($self, $hessian_data) = @_;
+sub read_long {    #{{{
+    my ( $self, $hessian_data ) = @_;
     ( my $raw_octets = $hessian_data ) =~ s/^(?:L|\x77)(.*)/$1/;
     my @chars = unpack 'C*', $raw_octets;
     my $octet_count = scalar @chars;
@@ -45,19 +44,20 @@ sub read_long {  #{{{
 }    #}}}
 
 sub read_double {    #{{{
-    my ($self, $octet) = @_;
+    my ( $self, $octet ) = @_;
     my $double_value =
-#        $octet =~ /\x{5b}/                    ? 0.0
-#      : $octet =~ /\x{5c}/                    ? 1.0
-#      : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
-        $octet =~ /\x67/                    ? 0.0
-      : $octet =~ /\x68/                    ? 1.0
+
+   #        $octet =~ /\x{5b}/                    ? 0.0
+   #      : $octet =~ /\x{5c}/                    ? 1.0
+   #      : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
+        $octet =~ /\x67/                  ? 0.0
+      : $octet =~ /\x68/                  ? 1.0
       : $octet =~ /(?: \x69 | \x6a ) .*/x ? _read_compact_double($octet)
-      :                                         _read_full_double($octet);
+      :                                     _read_full_double($octet);
 }    #}}}
 
 sub _read_single_octet {    #{{{
-    my (  $octet, $octet_shift ) = @_;
+    my ( $octet, $octet_shift ) = @_;
     my $integer = $octet - $octet_shift;
     return $integer;
 }    #}}}
@@ -88,7 +88,7 @@ sub _read_quadruple_octet {    #{{{
     return $sum;
 }    #}}}
 
-sub _read_full_long{    #{{{
+sub _read_full_long {    #{{{
     my $bytes     = shift;
     my $big_int   = Math::BigInt->new();
     my $shift_val = 0;
@@ -119,26 +119,29 @@ sub _read_full_double {    #{{{
 }    #}}}
 
 sub read_integer_handle_chunk {    #{{{
-    my ($self, $first_bit) = @_;
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $number, $data );
     switch ($first_bit) {
         case /\x49/ {
-#            read $input_handle, $data, 4;
-            $data = $self->read_from_inputhandle(4);
+
+            #            read $input_handle, $data, 4;
+            $data   = $self->read_from_inputhandle(4);
             $number = $self->read_integer($data);
         }
         case /[\x80-\xbf]/ {
             $number = $self->read_integer($first_bit);
         }
         case /[\xc0-\xcf]/ {
-#            read $input_handle, $data, 1;
-            $data = $self->read_from_inputhandle(1);
+
+            #            read $input_handle, $data, 1;
+            $data   = $self->read_from_inputhandle(1);
             $number = $self->read_integer( $first_bit . $data );
         }
         case /[\xd0-\xd7]/ {
-#            read $input_handle, $data, 2;
-            $data = $self->read_from_inputhandle(2);
+
+            #            read $input_handle, $data, 2;
+            $data   = $self->read_from_inputhandle(2);
             $number = $self->read_integer( $first_bit . $data );
         }
 
@@ -147,26 +150,30 @@ sub read_integer_handle_chunk {    #{{{
 
 }    #}}}
 
-sub read_long_handle_chunk  {    #{{{
-    my ( $self, $first_bit) = @_;
+sub read_long_handle_chunk {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $number, $data );
     switch ($first_bit) {
-        case /[\xd8-\xef]/ { 
-            $number = $self->read_long($first_bit); }
+        case /[\xd8-\xef]/ {
+            $number = $self->read_long($first_bit);
+        }
         case /[\xf0-\xff]/ {
-#            read $input_handle, $data, 1;
-            $data = $self->read_from_inputhandle(1);
+
+            #            read $input_handle, $data, 1;
+            $data   = $self->read_from_inputhandle(1);
             $number = $self->read_long( $first_bit . $data );
         }
         case /[\x38-\x3f]/ {
-#            read $input_handle, $data, 2;
-            $data = $self->read_from_inputhandle(2);
+
+            #            read $input_handle, $data, 2;
+            $data   = $self->read_from_inputhandle(2);
             $number = $self->read_long( $first_bit . $data );
         }
         case /\x4c/ {
-#            read $input_handle, $data, 8;
-            $data = $self->read_from_inputhandle(8);
+
+            #            read $input_handle, $data, 8;
+            $data   = $self->read_from_inputhandle(8);
             $number = $self->read_long($data);
         }
 
@@ -174,34 +181,38 @@ sub read_long_handle_chunk  {    #{{{
     return $number;
 }    #}}}
 
-sub read_double_handle_chunk  {    #{{{
-    my ($self, $first_bit) = @_;
+sub read_double_handle_chunk {    #{{{
+    my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $number, $data );
     switch ($first_bit) {
-#        case /[\x5b-\x5c]/ { $data = $first_bit; }
-#        case /\x5d/ { read $input_handle, $data, 1; }
-#        case /\x5e/ { read $input_handle, $data, 2; }
-#        case /\x5f/ {
-#            read $input_handle, $data, 4;
+
+        #        case /[\x5b-\x5c]/ { $data = $first_bit; }
+        #        case /\x5d/ { read $input_handle, $data, 1; }
+        #        case /\x5e/ { read $input_handle, $data, 2; }
+        #        case /\x5f/ {
+        #            read $input_handle, $data, 4;
         case /[\x67-\x68]/ { $data = $first_bit; }
-        case /\x69/ { 
+        case /\x69/ {
             $data = $self->read_from_inputhandle(1);
-#            read $input_handle, $data, 1; 
-            }
+
+            #            read $input_handle, $data, 1;
+        }
         case /\x6a/ {
-            
+
             $data = $self->read_from_inputhandle(2);
-            
-#            read $input_handle, $data, 2; 
-            }
+
+            #            read $input_handle, $data, 2;
+        }
         case /\x6b/ {
-#            read $input_handle, $data, 4;
+
+            #            read $input_handle, $data, 4;
             $data = $self->read_from_inputhandle(4);
         }
         case /\x44/ {
             $first_bit = "";
-#            read $input_handle, $data, 8;
+
+            #            read $input_handle, $data, 8;
             $data = $self->read_from_inputhandle(8);
         }
 
@@ -210,8 +221,8 @@ sub read_double_handle_chunk  {    #{{{
     return $number;
 }    #}}}
 
-sub read_boolean_handle_chunk  {    #{{{
-    my ($self, $first_bit) = @_;
+sub read_boolean_handle_chunk {    #{{{
+    my ( $self, $first_bit ) = @_;
     return $self->read_boolean($first_bit);
 
 }    #}}}
