@@ -239,6 +239,21 @@ sub read_untyped_list {    #{{{
     return $datastructure;
 }    #}}}
 
+sub read_hessian_chunk {    #{{{
+    my ( $self, $args ) = @_;
+    my ( $first_bit, $element );
+    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
+        $first_bit = $args->{first_bit};
+    }
+    else {
+        $first_bit = $self->read_from_inputhandle(1);
+    }
+    EndOfInput::X->throw( 
+        error => 'Reached end of datastructure.' 
+    )  if $first_bit =~ /z/i;
+    return $self->read_simple_datastructure($first_bit);
+}    #}}}
+
 sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();

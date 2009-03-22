@@ -17,7 +17,7 @@ sub read_message_chunk_data {    #{{{
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {            # TOP with version
-            if ( $self->chunked()) { # use as hashmap if chunked
+            if ( $self->chunked() ) {    # use as hashmap if chunked
                 my $params = { first_bit => $first_bit };
                 $datastructure = $self->deserialize_data($params);
             }
@@ -26,7 +26,7 @@ sub read_message_chunk_data {    #{{{
                 $datastructure = { hessian_version => $hessian_version };
             }
         }
-        case /\x43/ {            # Hessian Remote Procedure Call
+        case /\x43/ {                    # Hessian Remote Procedure Call
              # call will need to be dispatched to object designated in some kind of
              # service descriptor
             my $rpc_data = $self->read_rpc();
@@ -64,6 +64,7 @@ sub read_composite_data {    #{{{
         }
 
         case /[\x57\x58\x78-\x7f]/ {    # untyped lists
+            print "Reading an untyped list\n";
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_untyped_list( $first_bit, );
         }
@@ -87,9 +88,16 @@ sub read_composite_data {    #{{{
 
         }
         case /[\x43\x4f\x60-\x6f]/ {
-            push @{ $self->reference_list() }, {
-            };
-            $datastructure = $self->read_class_handle( $first_bit, );
+            if ( $first_bit !~ /\x43/ ) {
+                push @{ $self->reference_list() }, {
+                };
+
+                $datastructure = $self->read_class_handle( $first_bit, );
+            }
+            else {
+                $self->read_class_handle( $first_bit, );
+                return;
+            }
 
         }
     }
@@ -133,8 +141,11 @@ sub read_class_handle {    #{{{
             my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
-                        print "Storing class definition: $class_type\n";
-            $datastructure = $self->store_class_definition($class_type);
+            print "Storing class definition: $class_type\n";
+            $self->store_class_definition($class_type);
+            return;
+
+       #            $datastructure = $self->store_class_definition($class_type);
         }
         case /\x4f/ {    # Read hessian data and create instance of class
             $save_reference = 1;
@@ -144,12 +155,12 @@ sub read_class_handle {    #{{{
             $save_reference = 1;
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
-            print "Getting class # $class_definition_number\n";
             $datastructure = $self->instantiate_class($class_definition_number);
         }
     }
-    push @{ $self->reference_list() }, $datastructure
-      if $save_reference;
+
+    #    push @{ $self->reference_list() }, $datastructure
+    #      if $save_reference;
     return $datastructure;
 }    #}}}
 
@@ -184,7 +195,7 @@ sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my $array_length = $self->read_list_length( $first_bit, );
-
+    print "Array length = $array_length\n";
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
@@ -196,8 +207,9 @@ sub read_untyped_list {    #{{{
           if $first_bit =~ /\x57/
               && Exception::Class->caught('EndOfInput::X');
 
-        push @{$datastructure}, $element;
+        push @{$datastructure}, $element if $element;
         $index++;
+        print "Iteration $index, data:\n" . Dump($datastructure) . "\n";
         redo LISTLOOP;
     }
     return $datastructure;
@@ -234,6 +246,7 @@ sub read_simple_datastructure {    #{{{
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
         {                                        # recursive datastructure
+        print "Reading  composite data\n";
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x51/ {
@@ -245,6 +258,22 @@ sub read_simple_datastructure {    #{{{
     binmode( $input_handle, 'bytes' );
     return $element;
 
+}    #}}}
+
+sub read_hessian_chunk {    #{{{
+    my ( $self, $args ) = @_;
+    my ( $first_bit, $element );
+
+    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
+        $first_bit = $args->{first_bit};
+    }
+    else {
+        $first_bit = $self->read_from_inputhandle(1);
+    }
+    printf "Got first bit %#02x\n", $first_bit;
+    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
+      if $first_bit =~ /Z/;
+    return $self->read_simple_datastructure($first_bit);
 }    #}}}
 
 sub read_rpc {    #{{{
@@ -331,13 +360,13 @@ sub write_object {    #{{{
     return $hessian_string;
 }    #}}}
 
-sub write_referenced_data { #{{{
-    my ($self, $index) = @_;
+sub write_referenced_data {    #{{{
+    my ( $self, $index ) = @_;
     my $hessian_string = "\x51";
-    my $hessian_index = $self->write_scalar_element($index);
+    my $hessian_index  = $self->write_scalar_element($index);
     $hessian_string .= $hessian_index;
     return $hessian_string;
-} #}}}
+}    #}}}
 
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;
