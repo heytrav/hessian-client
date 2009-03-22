@@ -14,16 +14,18 @@ sub read_string_handle_chunk  {    #{{{
             $length = unpack "n", "\x00" . $first_bit;
         }
         case /[\x30-\x33]/ {
-            read $input_handle, $data, 1;
+#            read $input_handle, $data, 1;
+            $data = $self->read_from_inputhandle(1);
             $length = unpack "n", $first_bit . $data;
         }
         case /[\x52-\x53\x73]/ {
-            read $input_handle, $data, 2;
+#            read $input_handle, $data, 2;
+            $data = $self->read_from_inputhandle(2);
             $length = unpack "n", $data;
         }
     }
  
-    binmode( $input_handle, 'utf8' );
+#    binmode( $input_handle, 'utf8' );
     read $input_handle, $string, $length;
     return $string;
 }    #}}}

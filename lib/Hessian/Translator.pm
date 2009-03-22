@@ -8,17 +8,17 @@ use YAML;
 use List::MoreUtils qw/any/;
 
 use Hessian::Exception;
-
+has 'original_position' => ( is => 'rw', isa => 'Int', default => 0 );
 has 'class_definitions' => ( is => 'rw', default => sub { [] } );
 has 'type_list'         => ( is => 'rw', default => sub { [] } );
 has 'reference_list'    => ( is => 'rw', default => sub { [] } );
 has 'input_string'      => ( is => 'rw', isa     => 'Str' );
 has 'version'           => ( is => 'ro', isa     => 'Int' );
-has 'binary_mode'       => ( is => 'ro', isa => 'Bool', default => 0);
-has 'chunked'           => ( is => 'ro', isa => 'Bool', default => 0);
-has 'serializer'           => (
-    is      => 'rw',
-    isa     => 'Bool',
+has 'binary_mode' => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'chunked'     => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'serializer'  => (
+    is  => 'rw',
+    isa => 'Bool',
 );
 
 before 'input_string' => sub {    #{{{
@@ -30,14 +30,29 @@ before 'input_string' => sub {    #{{{
     $self->version();
 };    #}}}
 
-before 'serializer' => sub   { #{{{
+sub append_input_buffer {    #{{{
+    my ( $self, $hessian_string ) = @_;
+    if ( $self->{input_string} ) {
+        my $fh_pos = tell $self->input_handle();
+        my $input_string = substr $self->{input_string}, $fh_pos;
+
+        
+        my $entire_string = $input_string . $hessian_string;
+        $self->input_string($entire_string);
+    }
+    else {
+        $self->input_string($hessian_string);
+    }
+}    #}}}
+
+before 'serializer' => sub {    #{{{
     my $self = shift;
     if ( !$self->does('Hessian::Serializer') ) {
         load 'Hessian::Serializer';
         Hessian::Serializer->meta()->apply($self);
     }
     $self->version();
-}; #}}}
+};    #}}}
 
 after 'version' => sub {    #{{{
     my ($self) = @_;
@@ -57,6 +72,43 @@ after 'version' => sub {    #{{{
         $version_role->meta()->apply($self);
     }    #PROCESSVERSION
 };    #}}}
+
+sub read_from_inputhandle {    #{{{
+    my ( $self, $read_length ) = @_;
+    my $original_pos            = $self->original_position();
+    my $current_position        = (tell $self->input_handle() ) -1  ;
+    my $sub_string = $self->{input_string};
+    my $remaining_string_buffer = substr $self->{input_string},
+      $current_position;
+    my $remaining_length = length $remaining_string_buffer;
+    my $result;
+    if ( $read_length > $remaining_length ) {
+        # Set filehandle back to the original position
+        seek $self->input_handle(), $original_pos, 0;
+
+        # Throw an exception that will be caught by the caller
+        MessageIncomplete::X->throw(
+            error => "Input buffer does not contain" 
+            . " a complete message.\n$remaining_string_buffer\n"
+            ."Current position $current_position\n"
+            ."read length: $read_length\nremaining: $remaining_length\n"
+            ."string: ".$self->{input_string}.".\n"
+            
+            );
+    }
+    else {
+        read $self->input_handle(), $result, $read_length;
+    }
+    return $result;
+
+}    #}}}
+
+sub set_current_position { #{{{
+    my ($self, $offset) = @_;
+    my $input_handle = $self->input_handle();
+    my $current_position = (tell $input_handle) + $offset;
+    $self->original_position($current_position);
+} #}}}
 
 sub BUILD {    #{{{
     my ( $self, $params ) = @_;
@@ -155,6 +207,10 @@ class.
 Retrieves the current version for which this client was initialized. See
 L</"new">.
 
+=head2 append_input_buffer
+
+Appends the string parameter to the filehandle.
+
 
 =head2 class_definitions
 
@@ -174,6 +230,10 @@ Provides access to the internal list of references.
 
 Causes the L<Hessian::Serializer|Hessian::Serializer> methods to be applied to
 the current object.
+
+=head2 read_from_inputhandle
+
+=head2 set_current_position
 
 
 =head1 DEPENDENCIES
