@@ -203,9 +203,18 @@ sub read_untyped_list {    #{{{
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
         eval { $element = $self->read_hessian_chunk(); };
-        last LISTLOOP
-          if $first_bit =~ /\x57/
-              && Exception::Class->caught('EndOfInput::X');
+        if ( my $e = $@ ) {
+            last LISTLOOP
+              if $first_bit =~ /\x57/
+                  && Exception::Class->caught('EndOfInput::X');
+            if ( $e->isa('MessageIncomplete::X') ) {
+               
+                print
+                  "Caught exception\n-----------------\n $e\n---------------\n";
+                print Dump($e);
+                last LISTLOOP;
+            }
+        }
 
         push @{$datastructure}, $element if $element;
         $index++;
@@ -246,7 +255,7 @@ sub read_simple_datastructure {    #{{{
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
         {                                        # recursive datastructure
-        print "Reading  composite data\n";
+            print "Reading  composite data\n";
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x51/ {

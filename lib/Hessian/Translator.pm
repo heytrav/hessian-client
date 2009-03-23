@@ -83,6 +83,7 @@ sub read_from_inputhandle {    #{{{
     my $remaining_length = length $remaining_string_buffer;
     my $result;
     if ( $read_length > $remaining_length ) {
+      
         # Set filehandle back to the original position
         seek $self->input_handle(), $original_pos, 0;
 

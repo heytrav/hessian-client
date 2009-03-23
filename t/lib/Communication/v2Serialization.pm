@@ -214,7 +214,6 @@ sub  t030_client_request : Test(1) { #{{{
     local $TODO =
       "This test requires a running the HessianRIADemo" . " servlet.";
     my ( $reply_header, $reply_body );
-    lives_ok {
         my $hessian_client = Hessian::Client->new(
             {
                 version => 2,
@@ -223,8 +222,6 @@ sub  t030_client_request : Test(1) { #{{{
         );
         my $result = $hessian_client->replyObject_16();
         print "Got datastructure: ".Dump($result)."\n";
-    }
-    "No exception thrown by rpc.";
     cmp_deeply(
         $reply_header,
         { hessian_version => '2.0', state => 'reply' },
