@@ -105,6 +105,7 @@ sub instantiate_class {    #{{{
     my $class_definitions = $self->class_definitions;
     my $class_definition  = $self->class_definitions()->[$index];
     my $class_type        = $class_definition->{type};
+    return unless $class_type;
     return $self->assemble_class(
         {
             class_def => $class_definition,
@@ -246,34 +247,34 @@ sub read_composite_datastructure {    #{{{
     return $self->read_composite_data($first_bit);
 }    #}}}
 
-sub read_untyped_list {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $array_length;
-    my $datastructure = $self->reference_list()->[-1];
-    my $index         = 0;
-    if ( $first_bit eq 'l' ) {
-        $array_length = $self->read_list_length( $first_bit, );
-    }
-    else {
-        my $param = { first_bit => $first_bit };
-        my $first_element = $self->read_hessian_chunk($param);
-        push @{$datastructure}, $first_element;
-        $index++;
-    }
-  LISTLOOP:
-    {
-        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element;
-        eval { $element = $self->read_hessian_chunk(); };
-        last LISTLOOP
-          if Exception::Class->caught('EndOfInput::X');
+#sub read_untyped_list {    #{{{
+#    my ( $self, $first_bit ) = @_;
+#    my $array_length;
+#    my $datastructure = $self->reference_list()->[-1];
+#    my $index         = 0;
+#    if ( $first_bit eq 'l' ) {
+#        $array_length = $self->read_list_length( $first_bit, );
+#    }
+#    else {
+#        my $param = { first_bit => $first_bit };
+#        my $first_element = $self->read_hessian_chunk($param);
+#        push @{$datastructure}, $first_element;
+#        $index++;
+#    }
+#  LISTLOOP:
+#    {
+#        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
+#        my $element;
+#        eval { $element = $self->read_hessian_chunk(); };
+#        last LISTLOOP
+#          if Exception::Class->caught('EndOfInput::X');
 
-        push @{$datastructure}, $element;
-        $index++;
-        redo LISTLOOP;
-    }
-    return $datastructure;
-}    #}}}
+#        push @{$datastructure}, $element;
+#        $index++;
+#        redo LISTLOOP;
+#    }
+#    return $datastructure;
+#}    #}}}
 
 sub read_map_handle {    #{{{
     my $self    = shift;
@@ -291,7 +292,8 @@ sub read_map_handle {    #{{{
   MAPLOOP:
     {
         eval { $key = $self->read_hessian_chunk(); } unless $key;
-        last MAPLOOP if Exception::Class->caught('EndOfInput::X');
+        last MAPLOOP if Exception::Class->caught('EndOfInput::X') or
+        Exception::Class->caught('MessageIncomplete::X');
         my $value = $self->read_hessian_chunk();
         push @key_value_pairs, $key => $value;
         undef $key;

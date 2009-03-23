@@ -10,12 +10,9 @@ use List::MoreUtils qw/any/;
 use Hessian::Exception;
 
 sub read_message_chunk {    #{{{
-    my $self         = shift;
-    my $input_handle = $self->input_handle();
-    my ( $first_bit, $element );
-    binmode( $input_handle, 'bytes' );
-    read $input_handle, $first_bit, 1
-      or EndOfInput->throw( error => "Reached end of input" );
+    my $self = shift;
+    my ($first_bit);
+    $first_bit = $self->read_from_inputhandle(1);
     EndOfInput->throw( error => "Encountered end of datastructure." )
       if $first_bit =~ /z/i;
     my $datastructure = $self->read_message_chunk_data($first_bit);
@@ -23,10 +20,9 @@ sub read_message_chunk {    #{{{
 }    #}}}
 
 sub read_version {    #{{{
-    my $self         = shift;
-    my $input_handle = $self->input_handle();
+    my $self = shift;
     my $version;
-    read $input_handle, $version, 2;
+    $version = $self->read_from_inputhandle(2);
     my @values = unpack 'C*', $version;
     my $hessian_version = join "." => @values;
     return $hessian_version;
@@ -36,18 +32,16 @@ sub read_version {    #{{{
 sub read_envelope {    #{{{
     my $self = shift;
     my ( $first_bit, $packet_body, @chunks );
-    my $input_handle = $self->input_handle();
-    read $input_handle, $first_bit, 1;
+    $first_bit = $self->read_from_inputhandle(1);
     EndOfInput::X->throw( error => 'End of datastructure.' )
       if $first_bit =~ /z/i;
 
     # Just the word "Header" as far as I understand
     my $header_string = $self->read_string_handle_chunk($first_bit);
-    binmode( $input_handle, 'bytes' );
   ENVELOPECHUNKS: {
         my ( $header_count, $footer_count, $packet_size );
         my ( @headers,      @footers,      @packets );
-        read $input_handle, $first_bit, 1;
+        $first_bit = $self->read_from_inputhandle(1);
         last ENVELOPECHUNKS if $first_bit =~ /z/i;
         $header_count = $self->read_integer_handle_chunk( $first_bit, );
         foreach ( 1 .. $header_count ) {
@@ -55,20 +49,20 @@ sub read_envelope {    #{{{
         }
 
       PACKETCHUNKS: {
-            read $input_handle, $first_bit, 1;
+            $first_bit = $self->read_from_inputhandle(1);
             my $length = unpack "C*", $first_bit;
             $packet_size =
                 $first_bit =~ /[\x70-\x7f]/
               ? $length - 0x70
               : $length - 0x80;
             my $packet_string;
-            read $input_handle, $packet_string, $packet_size;
+            $packet_string = $self->read_from_inputhandle($packet_size);
             $packet_body .= $packet_string;
             last PACKETCHUNKS if $first_bit =~ /[\x80-\x8f]/;
             redo PACKETCHUNKS;
         }
 
-        read $input_handle, $first_bit, 1;
+        $first_bit    = $self->read_from_inputhandle(1);
         $footer_count = $self->read_integer_handle_chunk( $first_bit, );
         foreach ( 1 .. $footer_count ) {
             push @footers, $self->read_header_or_footer();
@@ -81,17 +75,15 @@ sub read_envelope {    #{{{
         redo ENVELOPECHUNKS;
     }
     my $packet = $self->read_packet($packet_body);
-    return { envelope => { packet => $packet, meta => \@chunks}};
+    return { envelope => { packet => $packet, meta => \@chunks } };
 }    #}}}
 
 sub read_header_or_footer {    #{{{
     my $self = shift;
 
-    my $input_handle = $self->input_handle();
     my $first_bit;
-    read $input_handle, $first_bit, 1;
+    $first_bit = $self->read_from_inputhandle(1);
     my $header = $self->read_string_handle_chunk($first_bit);
-    binmode( $input_handle, 'bytes' );
     return $header;
 }    #}}}
 

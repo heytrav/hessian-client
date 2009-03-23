@@ -13,7 +13,6 @@ has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 
 sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {            # TOP with version
@@ -55,7 +54,6 @@ sub read_message_chunk_data {    #{{{
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     switch ($first_bit) {
         case /[\x55\x56\x70-\x77]/ {    # typed lists
@@ -64,7 +62,6 @@ sub read_composite_data {    #{{{
         }
 
         case /[\x57\x58\x78-\x7f]/ {    # untyped lists
-            print "Reading an untyped list\n";
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_untyped_list( $first_bit, );
         }
@@ -110,7 +107,6 @@ sub read_composite_data {    #{{{
 
 sub read_typed_list {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle  = $self->input_handle();
     my $entity_type   = $self->read_hessian_chunk();
     my $type          = $self->store_fetch_type($entity_type);
     my $array_length  = $self->read_list_length($first_bit);
@@ -121,9 +117,12 @@ sub read_typed_list {    #{{{
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
         eval { $element = $self->read_typed_list_element($type); };
-        last LISTLOOP
-          if $first_bit =~ /\x55/
-              && Exception::Class->caught('EndOfInput::X');
+        if ( my $e = $@ ) {
+            if ( $e->isa('MessageIncomplete::X') or 
+                ( $first_bit =~ /\x55/ and $e->isa('EndOfInput::X'))) {
+                last LISTLOOP;
+            }
+        }
 
         push @{$datastructure}, $element;
         $index++;
@@ -134,14 +133,12 @@ sub read_typed_list {    #{{{
 
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
         case /\x43/ {      # Read class definition
             my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
-            print "Storing class definition: $class_type\n";
             $self->store_class_definition($class_type);
             return;
 
@@ -166,16 +163,18 @@ sub read_class_handle {    #{{{
 
 sub read_map_handle {    #{{{
     my $self         = shift;
-    my $input_handle = $self->input_handle();
 
     # For now only accept integers or strings as keys
     my @key_value_pairs;
   MAPLOOP:
     {
         my $key;
-        eval { $key = $self->read_hessian_chunk($input_handle); };
-        last MAPLOOP if Exception::Class->caught('EndOfInput::X');
-        my $value = $self->read_hessian_chunk($input_handle);
+        eval { $key = $self->read_hessian_chunk(); };
+        last MAPLOOP if (
+            Exception::Class->caught('EndOfInput::X') 
+                or Exception::Class->caught('MessageIncomplete::X')
+        );
+        my $value = $self->read_hessian_chunk();
         push @key_value_pairs, $key => $value;
         redo MAPLOOP;
     }
@@ -193,32 +192,23 @@ sub read_map_handle {    #{{{
 
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
     my $array_length = $self->read_list_length( $first_bit, );
-    print "Array length = $array_length\n";
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
+#        eval { $element = $self->deserialize_data(); };
         eval { $element = $self->read_hessian_chunk(); };
         if ( my $e = $@ ) {
-            last LISTLOOP
-              if $first_bit =~ /\x57/
-                  && Exception::Class->caught('EndOfInput::X');
-            if ( $e->isa('MessageIncomplete::X') ) {
-               
-                print
-                  "Caught exception\n-----------------\n $e\n---------------\n";
-                print Dump($e);
+            if ( $e->isa('MessageIncomplete::X') or 
+                ( $first_bit =~ /\x57/ and $e->isa('EndOfInput::X'))) {
                 last LISTLOOP;
             }
         }
-
         push @{$datastructure}, $element if $element;
         $index++;
-        print "Iteration $index, data:\n" . Dump($datastructure) . "\n";
         redo LISTLOOP;
     }
     return $datastructure;
@@ -226,7 +216,6 @@ sub read_untyped_list {    #{{{
 
 sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $input_handle = $self->input_handle();
     my $element;
     switch ($first_bit) {
         case /\x4e/ {              # 'N' for NULL
@@ -250,12 +239,11 @@ sub read_simple_datastructure {    #{{{
         case /[\x52\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
             $element = $self->read_string_handle_chunk($first_bit);
         }
-        case /[\x41\x42\x20-\x2f\x34-\x37\x62]/ {
+        case /[\x41\x42\x20-\x2f]/ {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
         case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
         {                                        # recursive datastructure
-            print "Reading  composite data\n";
             $element = $self->read_composite_datastructure( $first_bit, );
         }
         case /\x51/ {
@@ -264,7 +252,6 @@ sub read_simple_datastructure {    #{{{
 
         }
     }
-    binmode( $input_handle, 'bytes' );
     return $element;
 
 }    #}}}
@@ -279,7 +266,6 @@ sub read_hessian_chunk {    #{{{
     else {
         $first_bit = $self->read_from_inputhandle(1);
     }
-    printf "Got first bit %#02x\n", $first_bit;
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
       if $first_bit =~ /Z/;
     return $self->read_simple_datastructure($first_bit);
@@ -287,7 +273,6 @@ sub read_hessian_chunk {    #{{{
 
 sub read_rpc {    #{{{
     my $self         = shift;
-    my $input_handle = $self->input_handle();
     my $call_data    = {};
     my $call_args;
     my $method_name = $self->read_hessian_chunk();

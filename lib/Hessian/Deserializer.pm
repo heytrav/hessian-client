@@ -57,7 +57,8 @@ sub deserialize_message {    #{{{
     eval { $result = $self->read_message_chunk(); };
     if ( my $e = $@ ) {
         return if Exception::Class->caught('EndOfInput::X');
-        $e->rethrow() if $e->isa('Hessian::Exception');
+        $e->rethrow() if $e->isa('Hessian::Exception') or
+        $e->isa('MessageIncomplete::X');
     }
     return $result;
 }    #}}}

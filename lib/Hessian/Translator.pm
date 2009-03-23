@@ -36,7 +36,6 @@ sub append_input_buffer {    #{{{
         my $fh_pos = tell $self->input_handle();
         my $input_string = substr $self->{input_string}, $fh_pos;
 
-        
         my $entire_string = $input_string . $hessian_string;
         $self->input_string($entire_string);
     }
@@ -75,27 +74,30 @@ after 'version' => sub {    #{{{
 
 sub read_from_inputhandle {    #{{{
     my ( $self, $read_length ) = @_;
+    my $input_handle = $self->input_handle();
+    binmode( $input_handle, 'bytes' );
     my $original_pos            = $self->original_position();
-    my $current_position        = (tell $self->input_handle() ) -1  ;
-    my $sub_string = $self->{input_string};
+    my $current_position        = ( tell $input_handle ) - 1;
+    my $sub_string              = $self->{input_string};
     my $remaining_string_buffer = substr $self->{input_string},
       $current_position;
+
     my $remaining_length = length $remaining_string_buffer;
     my $result;
     if ( $read_length > $remaining_length ) {
-      
-        # Set filehandle back to the original position
-        seek $self->input_handle(), $original_pos, 0;
 
+        # Set filehandle back to the original position
+        my $message =
+            "Input buffer does not contain"
+          . " a complete message.\n$remaining_string_buffer\n"
+          . "Current position $current_position\n"
+          . "read length: $read_length\nremaining: $remaining_length\n"
+          . "string: "
+          . $self->{input_string} . ".\n";
+
+        #        seek $input_handle, $original_pos, 0;
         # Throw an exception that will be caught by the caller
-        MessageIncomplete::X->throw(
-            error => "Input buffer does not contain" 
-            . " a complete message.\n$remaining_string_buffer\n"
-            ."Current position $current_position\n"
-            ."read length: $read_length\nremaining: $remaining_length\n"
-            ."string: ".$self->{input_string}.".\n"
-            
-            );
+        MessageIncomplete::X->throw( error => $message );
     }
     else {
         read $self->input_handle(), $result, $read_length;
@@ -104,12 +106,12 @@ sub read_from_inputhandle {    #{{{
 
 }    #}}}
 
-sub set_current_position { #{{{
-    my ($self, $offset) = @_;
-    my $input_handle = $self->input_handle();
-    my $current_position = (tell $input_handle) + $offset;
+sub set_current_position {    #{{{
+    my ( $self, $offset ) = @_;
+    my $input_handle     = $self->input_handle();
+    my $current_position = ( tell $input_handle ) + $offset;
     $self->original_position($current_position);
-} #}}}
+}    #}}}
 
 sub BUILD {    #{{{
     my ( $self, $params ) = @_;
