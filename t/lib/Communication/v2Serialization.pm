@@ -221,7 +221,6 @@ sub  t030_client_request : Test(1) { #{{{
             }
         );
         my $result = $hessian_client->replyObject_16();
-        print "Got datastructure: ".Dump($result)."\n";
     cmp_deeply(
         $reply_header,
         { hessian_version => '2.0', state => 'reply' },
