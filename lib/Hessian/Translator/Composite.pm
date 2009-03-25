@@ -92,6 +92,22 @@ sub store_class_definition {    #{{{
     return $class_definition;
 }    #}}}
 
+sub read_hessian_chunk {    #{{{
+    my ( $self, $args ) = @_;
+    my ( $first_bit, $element );
+    my $end_symbol = $self->end_of_datastructure_symbol();
+    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
+        $first_bit = $args->{first_bit};
+    }
+    else {
+        $first_bit = $self->read_from_inputhandle(1);
+    }
+    EndOfInput::X->throw( 
+        error => 'Reached end of datastructure.' 
+    )  if $first_bit =~ /$end_symbol/i;
+    return $self->read_simple_datastructure($first_bit);
+}    #}}}
+
 sub fetch_class_for_data {    #{{{
     my $self                    = shift;
     my $length                  = $self->read_from_inputhandle(1);
@@ -246,35 +262,6 @@ sub read_composite_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
     return $self->read_composite_data($first_bit);
 }    #}}}
-
-#sub read_untyped_list {    #{{{
-#    my ( $self, $first_bit ) = @_;
-#    my $array_length;
-#    my $datastructure = $self->reference_list()->[-1];
-#    my $index         = 0;
-#    if ( $first_bit eq 'l' ) {
-#        $array_length = $self->read_list_length( $first_bit, );
-#    }
-#    else {
-#        my $param = { first_bit => $first_bit };
-#        my $first_element = $self->read_hessian_chunk($param);
-#        push @{$datastructure}, $first_element;
-#        $index++;
-#    }
-#  LISTLOOP:
-#    {
-#        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-#        my $element;
-#        eval { $element = $self->read_hessian_chunk(); };
-#        last LISTLOOP
-#          if Exception::Class->caught('EndOfInput::X');
-
-#        push @{$datastructure}, $element;
-#        $index++;
-#        redo LISTLOOP;
-#    }
-#    return $datastructure;
-#}    #}}}
 
 sub read_map_handle {    #{{{
     my $self    = shift;

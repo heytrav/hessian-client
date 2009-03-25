@@ -10,12 +10,15 @@ use Hessian::Simple;
 
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 'R' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
+has 'end_of_datastructure_symbol' =>
+  ( is => 'ro', isa => 'Str', default => 'Z' );
 
 sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $datastructure;
     switch ($first_bit) {
         case /\x48/ {            # TOP with version
+            $self->in_interior(0);
             if ( $self->chunked() ) {    # use as hashmap if chunked
                 my $params = { first_bit => $first_bit };
                 $datastructure = $self->deserialize_data($params);
@@ -26,21 +29,32 @@ sub read_message_chunk_data {    #{{{
             }
         }
         case /\x43/ {                    # Hessian Remote Procedure Call
-             # call will need to be dispatched to object designated in some kind of
-             # service descriptor
-            my $rpc_data = $self->read_rpc();
-            $datastructure = { call => $rpc_data };
+            if ( $self->in_interior() ) {
+
+                my $params = { first_bit => $first_bit };
+                $datastructure = $self->deserialize_data($params);
+            }
+            else {
+
+          # call will need to be dispatched to object designated in some kind of
+          # service descriptor
+                my $rpc_data = $self->read_rpc();
+                $datastructure = { call => $rpc_data };
+
+            }
         }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
         }
         case /\x46/ {    # Fault
+            $self->in_interior(1);
             my $result                = $self->deserialize_data();
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
             $exception_name->throw( error => $exception_description );
         }
         case /\x52/ {    # Reply
+            $self->in_interior(1);
             my $reply_data = $self->deserialize_data();
             $datastructure = { reply_data => $reply_data };
         }
@@ -88,7 +102,6 @@ sub read_composite_data {    #{{{
             if ( $first_bit !~ /\x43/ ) {
                 push @{ $self->reference_list() }, {
                 };
-
                 $datastructure = $self->read_class_handle( $first_bit, );
             }
             else {
@@ -118,8 +131,9 @@ sub read_typed_list {    #{{{
         my $element;
         eval { $element = $self->read_typed_list_element($type); };
         if ( my $e = $@ ) {
-            if ( $e->isa('MessageIncomplete::X') or 
-                ( $first_bit =~ /\x55/ and $e->isa('EndOfInput::X'))) {
+            if ( $e->isa('MessageIncomplete::X')
+                or ( $first_bit =~ /\x55/ and $e->isa('EndOfInput::X') ) )
+            {
                 last LISTLOOP;
             }
         }
@@ -140,6 +154,7 @@ sub read_class_handle {    #{{{
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
             $self->store_class_definition($class_type);
+
             return;
 
        #            $datastructure = $self->store_class_definition($class_type);
@@ -162,7 +177,7 @@ sub read_class_handle {    #{{{
 }    #}}}
 
 sub read_map_handle {    #{{{
-    my $self         = shift;
+    my $self = shift;
 
     # For now only accept integers or strings as keys
     my @key_value_pairs;
@@ -170,10 +185,9 @@ sub read_map_handle {    #{{{
     {
         my $key;
         eval { $key = $self->read_hessian_chunk(); };
-        last MAPLOOP if (
-            Exception::Class->caught('EndOfInput::X') 
-                or Exception::Class->caught('MessageIncomplete::X')
-        );
+        last MAPLOOP
+          if ( Exception::Class->caught('EndOfInput::X')
+            or Exception::Class->caught('MessageIncomplete::X') );
         my $value = $self->read_hessian_chunk();
         push @key_value_pairs, $key => $value;
         redo MAPLOOP;
@@ -199,16 +213,19 @@ sub read_untyped_list {    #{{{
     {
         last LISTLOOP if ( $array_length and ( $index == $array_length ) );
         my $element;
-#        eval { $element = $self->deserialize_data(); };
         eval { $element = $self->read_hessian_chunk(); };
         if ( my $e = $@ ) {
-            if ( $e->isa('MessageIncomplete::X') or 
-                ( $first_bit =~ /\x57/ and $e->isa('EndOfInput::X'))) {
+            if ( $e->isa('MessageIncomplete::X')
+                or ( $first_bit =~ /\x57/ and $e->isa('EndOfInput::X') ) )
+            {
                 last LISTLOOP;
             }
         }
-        push @{$datastructure}, $element if $element;
-        $index++;
+        if (defined $element) {
+            push @{$datastructure}, $element;
+            $index++;
+
+        }
         redo LISTLOOP;
     }
     return $datastructure;
@@ -256,24 +273,9 @@ sub read_simple_datastructure {    #{{{
 
 }    #}}}
 
-sub read_hessian_chunk {    #{{{
-    my ( $self, $args ) = @_;
-    my ( $first_bit, $element );
-
-    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
-        $first_bit = $args->{first_bit};
-    }
-    else {
-        $first_bit = $self->read_from_inputhandle(1);
-    }
-    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
-      if $first_bit =~ /Z/;
-    return $self->read_simple_datastructure($first_bit);
-}    #}}}
-
 sub read_rpc {    #{{{
-    my $self         = shift;
-    my $call_data    = {};
+    my $self      = shift;
+    my $call_data = {};
     my $call_args;
     my $method_name = $self->read_hessian_chunk();
     $call_data->{method} = $method_name;

@@ -17,7 +17,6 @@ sub read_string_handle_chunk  {    #{{{
             $data = $self->read_from_inputhandle(1);
             my $first_part = $first_bit - 0x30;
             my $string_length = $first_part . $data;
-#$length = $self->read_integer($string_length);
 
             $length = unpack "n", "\x00".$data;
         }

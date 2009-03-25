@@ -10,6 +10,7 @@ use Hessian::Simple;
 
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 's' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
+has 'end_of_datastructure_symbol' => (is => 'ro', isa => 'Str', default => 'z');
 
 sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -237,21 +238,6 @@ sub read_untyped_list {    #{{{
         redo LISTLOOP;
     }
     return $datastructure;
-}    #}}}
-
-sub read_hessian_chunk {    #{{{
-    my ( $self, $args ) = @_;
-    my ( $first_bit, $element );
-    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
-        $first_bit = $args->{first_bit};
-    }
-    else {
-        $first_bit = $self->read_from_inputhandle(1);
-    }
-    EndOfInput::X->throw( 
-        error => 'Reached end of datastructure.' 
-    )  if $first_bit =~ /z/i;
-    return $self->read_simple_datastructure($first_bit);
 }    #}}}
 
 sub read_simple_datastructure {    #{{{

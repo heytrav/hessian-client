@@ -4,8 +4,6 @@ use Moose::Role;
 use version; our $VERSION = qv('0.0.1');
 use YAML;
 
-
-
 with qw/
   Hessian::Deserializer::Numeric
   Hessian::Deserializer::String
@@ -54,11 +52,15 @@ sub deserialize_data {    #{{{
 sub deserialize_message {    #{{{
     my ( $self, $args ) = @_;
     my $result;
-    eval { $result = $self->read_message_chunk(); };
+    eval {
+        $result =
+           $self->read_message_chunk();
+    };
     if ( my $e = $@ ) {
         return if Exception::Class->caught('EndOfInput::X');
-        $e->rethrow() if $e->isa('Hessian::Exception') or
-        $e->isa('MessageIncomplete::X');
+        $e->rethrow()
+          if $e->isa('Hessian::Exception')
+              or $e->isa('MessageIncomplete::X');
     }
     return $result;
 }    #}}}
@@ -72,9 +74,9 @@ sub process_message {    #{{{
     my $self = shift;
     my $tokens;
     while ( my $token = $self->next_token() ) {
-        if ( ( ref $token) eq 'HASH') {
+        if ( ( ref $token ) eq 'HASH' ) {
             my @token_keys = keys %{$token};
-            @{ $tokens }{ @token_keys } = @{$token}{@token_keys };
+            @{$tokens}{@token_keys} = @{$token}{@token_keys};
         }
         else {
             $tokens = $token;

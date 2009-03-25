@@ -53,6 +53,7 @@ sub t011_serialize_integer : Test(2) {    #{{{
 
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
+    local $TODO = "Test results vary depending on platform.";
     my $client = Hessian::Translator->new( version => 2 );
     $client->serializer();
     my $hessian_string = $client->serialize_chunk(12.25);
@@ -73,7 +74,7 @@ sub t017_serialize_array : Test(2) {    #{{{
         "Interpreted a perl array." );
     $client->input_string($hessian_data);
     my $processed_datastructure = $client->deserialize_message();
-    cmp_deeply( $datastructure, $processed_datastructure,
+    cmp_deeply( $processed_datastructure, $datastructure,
         "Mapped a simple array back to itself." );
 
 }    #}}}
@@ -208,26 +209,6 @@ sub t027_serialize_enveloped_message {    #{{{
 
 }    #}}}
 
-sub  t030_client_request : Test(1) { #{{{
-    my $self = shift;
-    my $service = 'http://hessian.caucho.com/test/test2';
-    local $TODO =
-      "This test requires a running the HessianRIADemo" . " servlet.";
-    my ( $reply_header, $reply_body );
-        my $hessian_client = Hessian::Client->new(
-            {
-                version => 2,
-                service => $service
-            }
-        );
-        my $result = $hessian_client->replyObject_16();
-    cmp_deeply(
-        $reply_header,
-        { hessian_version => '2.0', state => 'reply' },
-        "Received expected header from service."
-    );
-    isa_ok( $reply_body, 'ARRAY', 'Datastructure returned in response body' );
-} #}}}
 
 
 "one, but we're not the same";
