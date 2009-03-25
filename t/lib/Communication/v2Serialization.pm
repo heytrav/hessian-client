@@ -210,7 +210,6 @@ sub t027_serialize_enveloped_message {    #{{{
 }    #}}}
 
 
-
 "one, but we're not the same";
 
 __END__
