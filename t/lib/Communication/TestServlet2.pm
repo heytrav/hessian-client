@@ -69,8 +69,7 @@ sub test_reply_int_mx800 : Test(1) {    #{{{
     is( $result->{reply_data}, -0x800 );
 }    #}}}
 
-
-sub test_reply_int_mOx80000000 : Test(1) {    #{{{
+sub test_reply_long_mOx80000000 : Test(1) {    #{{{
     my $self   = shift;
     my $client = Hessian::Client->new(
         {
@@ -80,7 +79,86 @@ sub test_reply_int_mOx80000000 : Test(1) {    #{{{
     );
     my $function = "replyLong_m0x80000000";
     my $result = $client->$function();
-    is( $result, -0x80000000);
+    is( $result->{reply_data}, -0x80000000);
+}    #}}}
+
+sub test_reply_long_mOx80000001 : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = Hessian::Client->new(
+        {
+            version => 2,
+            service => $test_service
+        }
+    );
+    my $function = "replyLong_m0x80000001";
+    my $result = $client->$function();
+    is( $result->{reply_data}, -0x80000001 );
+}    #}}}
+
+
+sub test_reply_long_Ox10 : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = Hessian::Client->new(
+        {
+            version => 2,
+            service => $test_service
+        }
+    );
+    my $function = "replyLong_0x10";
+    my $result = $client->$function();
+    is( $result->{reply_data}, 0x10 );
+}    #}}}
+
+sub test_reply_double_0_0 : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = Hessian::Client->new(
+        {
+            version => 2,
+            service => $test_service
+        }
+    );
+    my $function = "replyDouble_0_0";
+    my $result = $client->$function();
+    is( $result->{reply_data}, 0.0);
+}    #}}}
+
+sub test_reply_double_m0_001 : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = Hessian::Client->new(
+        {
+            version => 2,
+            service => $test_service
+        }
+    );
+    my $function = "replyDouble_m0_001";
+    my $result = $client->$function();
+    is( $result->{reply_data},-0.001 );
+}    #}}}
+
+sub test_reply_double_127_0 : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = Hessian::Client->new(
+        {
+            version => 2,
+            service => $test_service
+        }
+    );
+    my $function = "replyDouble_127_0";
+    my $result = $client->$function();
+    is( $result->{reply_data}, 127);
+}    #}}}
+
+sub test_reply_double_3_14159 : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = Hessian::Client->new(
+        {
+            version => 2,
+            service => $test_service
+        }
+    );
+    my $function = "replyDouble_3_14159";
+    my $result = $client->$function();
+    is( $result->{reply_data}, 3.14159  );
 }    #}}}
 
 sub test_reply_int_m17 : Test(1) {    #{{{

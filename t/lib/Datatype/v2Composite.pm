@@ -203,6 +203,18 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     is( $example_car->color(), 'green', "Correct color from class." );
 }    #}}}
 
+sub test_reply_long_mOx80000000 : Test(1) {    #{{{
+    my $self   = shift;
+    my $hessian_data = "\x59\x80\x00\x00\x00";
+    $self->{deserializer}->input_string($hessian_data);
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+      is( 
+     $datastructure, -0x80000000 ,
+     "Parsed correct long."
+      );
+}    #}}}
+
 sub class_instance_generator {    #{{{
     my ( $self, $object_definition ) = @_;
     $self->{deserializer}->input_string($object_definition);
