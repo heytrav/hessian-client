@@ -5,7 +5,7 @@ use Moose::Role;
 use integer;
 use Math::Int64 qw/int64_to_number int64_to_net int64 net_to_int64/;
 use Math::BigInt;
-use Math::BigFloat;
+use Data::Str2Num  qw/str2float/;
 use POSIX qw/floor ceil/;
 use Switch;
 
@@ -123,9 +123,13 @@ sub _read_compact_double {    #{{{
 sub  _read_quadruple_octet_double { #{{{
     my $octets = shift;
     $octets =~ s/\x5f//;
-    my @chars = unpack 'C*', $octets."\x00\x00\x00\x00";
-    my $double = unpack 'd', pack 'C*', reverse @chars;
-    print "Got double $double\n";
+    my @chars = unpack 'C*', $octets;
+    my @hex_octets = 
+    map { sprintf "%#02x", $_} @chars;
+    my $hex_string = join "" => @hex_octets;
+
+    my $double;
+     $double = str2float($hex_string);
     return $double;
 } #}}}
 
