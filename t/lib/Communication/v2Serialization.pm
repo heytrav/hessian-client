@@ -181,15 +181,32 @@ sub t025_serialize_call : Test(3) {    #{{{
     );
 }    #}}}
 
-sub t027_serialize_enveloped_message {    #{{{
+sub t027_serialize_enveloped_message : Test(1) {    #{{{
     my $self          = shift;
+    my $client = Hessian::Translator->new( version => 2 );
+    Hessian::Translator::V2->meta()->apply($client);
+    Hessian::Serializer->meta()->apply($client);
     my $datastructure = {
         envelope => {
             packet =>
               { call => { method => 'hello', arguments => ['hello, world'] } },
-            meta => []
+            meta => [],
+            headers => [],
+            footers => []
+
         }
     };
+    my $hessian_data;
+    lives_ok { 
+     $hessian_data = $client->serialize_message($datastructure);
+    print "Got hessian data: $hessian_data\n";
+        
+        } "No problem serializing envelope.";
+        $client->input_string($hessian_data);
+        my $data = $client->process_message();
+        print "Got data:\n".Dump($data)."\n";
+        
+
 
     # A datastructure to be serialized should look something like this
     #    my $datastructure = [

@@ -128,32 +128,30 @@ sub write_hessian_message {    #{{{
 
 sub  write_hessian_envelope { #{{{
     my ($self, $envelope) = @_;
-        my $meta = 'Identity';
+        my $meta = 'Header';
     $meta = delete $envelope->{meta} if exists $envelope->{meta};
     my $headers         = delete $envelope->{headers};
     my $footers         = delete $envelope->{footers};
     my $envelope_string = "E";
-    my $envelope_meta   = $self->write_hessian_string( [$meta] );
-    $envelope_meta =~ s/S/m/;
-    $envelope_string .= $envelope_meta;
+#    my $envelope_meta   = $self->write_hessian_string( [$meta] );
+#    $envelope_meta =~ s/S/m/;
+#    $envelope_string .= $envelope_meta;
     my $header_count = $self->write_integer( scalar @{$headers} );
     my $footer_count = $self->write_integer( scalar @{$footers} );
 
     my $serialized_message = $self->write_hessian_message($envelope);
-    my $max_packet_size    = $self->max_packet_size() - 4;
+    my $max_packet_size    =  15; #$self->max_packet_size() - 4;
     my @packets = $serialized_message =~ /([\x00-\xff]{1,$max_packet_size})/g;
-    my @packaged_packets;
-    @packaged_packets = map { "p\x02\x00" . $_ . "z" } @packets
-      if scalar @packets > 1;
-    my @body_chunks;
-    foreach my $packet (@packaged_packets) {
-        push @body_chunks, $self->write_binary($packet);
-    }
+    my $packaged_packets = $self->write_packet({packets => \@packets });
+#    my @body_chunks;
+#    foreach my $packet (@packaged_packets) {
+#        push @body_chunks, $self->write_binary($packet);
+#    }
 
-    my @wrapped_body = map { $header_count . $_ . $footer_count } @body_chunks;
-
+    my @wrapped_body = map { $header_count . $_ . $footer_count } 
+        @{$packaged_packets}; 
     $envelope_string .= join "" => @wrapped_body;
-    $envelope_string .= 'z';
+    $envelope_string .= $self->end_of_datastructure_symbol();
     return $envelope_string;
             
 } #}}}
