@@ -121,9 +121,12 @@ sub _read_compact_double {    #{{{
 }    #}}}
 
 sub  _read_quadruple_octet_double { #{{{
-    my $double = shift;
-    $double =~ s/\x5f//;
-    return _read_full_double("\x00\x00\x00\x00".$double);
+    my $octets = shift;
+    $octets =~ s/\x5f//;
+    my @chars = unpack 'C*', $octets."\x00\x00\x00\x00";
+    my $double = unpack 'd', pack 'C*', reverse @chars;
+    print "Got double $double\n";
+    return $double;
 } #}}}
 
 sub _read_full_double {    #{{{
