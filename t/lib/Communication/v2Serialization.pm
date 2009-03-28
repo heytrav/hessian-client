@@ -8,9 +8,8 @@ use base 'Communication';
 
 use Test::More;
 use Test::Deep;
+use Test::Exception;
 use DateTime;
-use DateTime::Format::Strptime;
-use DateTime::Format::Epoch;
 use URI;
 use Hessian::Translator;
 use Hessian::Serializer;
@@ -18,6 +17,7 @@ use Hessian::Translator::V2;
 use SomeType;
 use YAML;
 use Data::Dumper;
+use Hessian::Client;
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
@@ -54,6 +54,7 @@ sub t011_serialize_integer : Test(2) {    #{{{
 
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
+    local $TODO = "Test results vary depending on platform.";
     my $client = Hessian::Translator->new( version => 2 );
     $client->serializer();
     my $hessian_string = $client->serialize_chunk(12.25);
@@ -70,11 +71,11 @@ sub t017_serialize_array : Test(2) {    #{{{
     $client->serializer();
     my $datastructure = [ 0, 'foobar' ];
     my $hessian_data = $client->serialize_chunk($datastructure);
-    like( $hessian_data, qr/V\x90S\x00\x06foobarz/,
+    like( $hessian_data, qr/\x57\x90S\x00\x06foobarZ/,
         "Interpreted a perl array." );
     $client->input_string($hessian_data);
     my $processed_datastructure = $client->deserialize_message();
-    cmp_deeply( $datastructure, $processed_datastructure,
+    cmp_deeply( $processed_datastructure, $datastructure,
         "Mapped a simple array back to itself." );
 
 }    #}}}
@@ -123,21 +124,18 @@ sub t022_serialize_object : Test(1) {    #{{{
     Hessian::Translator::V2->meta()->apply($client);
     Hessian::Serializer->meta()->apply($client);
     my $hessian_output = $client->serialize_chunk($some_obj);
-    binmode( STDOUT, 'utf8' );
+
     my ($hessian_obj) = $hessian_output =~ /(O.*)/s;
 
     # Re-parse hessian to create object:
-    $client->input_string($hessian_output);
+    $client->input_string($hessian_obj);
     my $processed_obj = $client->deserialize_message();
-    $processed_obj = $client->deserialize_message();
     cmp_deeply( $processed_obj, $some_obj, "Processed object as expected." );
 }    #}}}
 
 sub t023_serialize_date : Test(2) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 2 );
-    Hessian::Translator::V2->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
     $client->serializer();
     my $date = DateTime->new(
         year      => 1998,
@@ -145,23 +143,19 @@ sub t023_serialize_date : Test(2) {    #{{{
         day       => 8,
         hour      => 9,
         minute    => 51,
-        second    => 31,
         time_zone => 'UTC'
     );
-
     my $hessian_date = $client->serialize_chunk($date);
-    like(
-        $hessian_date,
-        qr/d\x00\x00\x00\xd0\x4b\x92\x84\xb8/,
-        "Processed a hessian date."
-    );
     $client->input_string($hessian_date);
     my $processed_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_time );
-
+    my $hessian_compact_date = "\x4b\x00\xe3\x83\x8f";
+    $client->input_string($hessian_compact_date);
+    my $processed_compact_time = $client->deserialize_message();
+    $self->compare_date( $date, $processed_compact_time );
 }    #}}}
 
-sub t025_serialize_call : Test(4) {    #{{{
+sub t025_serialize_call : Test(3) {    #{{{
     my $self = shift;
     my $client = Hessian::Translator->new( version => 2 );
     Hessian::Translator::V2->meta()->apply($client);
@@ -176,76 +170,50 @@ sub t025_serialize_call : Test(4) {    #{{{
     my $hessian_data = $client->serialize_message($datastructure);
     like(
         $hessian_data,
-        qr/c\x02\x00m\x00\x04add2\x92\x93z/,
+        qr/H\x02\x00CS\x00\x04add2\x92\x92\x93/,
         "Received expected string for hessian call."
     );
     $client->input_string($hessian_data);
     my $processed_data = $client->process_message();
     cmp_deeply(
         $processed_data->{call},
-#        $processed_data->[0]->{call},
         $datastructure->{call},
         "Received same structure as call."
-    );
-
-    my $datastructure2 = {
-        call => {
-            method    => 'hello',
-            arguments => ['hello, world']
-        }
-    };
-    my $hessian_data2 = $client->serialize_message($datastructure2);
-    like(
-        $hessian_data2,
-        qr/c\x02\x00m\x00\x05helloS\x00\x0chello, worldz/,
-        "Created a hessian call."
     );
 }    #}}}
 
 sub t027_serialize_enveloped_message : Test(2) {    #{{{
-    my $self          = shift;
-    my $datastructure = {
-        envelope => {
-            call => {
-                method    => 'hello',
-                arguments => ['hello, world']
-            },
-            meta    => 'Identity',
-            headers => [],
-            footers => []
-        }
-    };
+    my $self = shift;
     my $client = Hessian::Translator->new( version => 2 );
     Hessian::Translator::V2->meta()->apply($client);
     Hessian::Serializer->meta()->apply($client);
-
-    my $hessian_data = $client->serialize_message($datastructure);
-    $client->input_string($hessian_data);
-    my $processed_data = $client->process_message()->{envelope}->{packet};
-    if ($processed_data) {
-        my $reverse_datastructure = $processed_data;
-        cmp_deeply(
-            $reverse_datastructure,
-            superhashof( $datastructure->{envelope} ),
-            "Successfully mapped an enveloped datastructure back to itself."
-        );
-    }
-    my $text           = "Lorem ipsum dolor sit amet, consectetur adipisicing";
-    my $datastructure2 = {
+    my $datastructure = {
         envelope => {
-            data    => $text,
-            meta    => 'Identity',
+            packet =>
+              { call => { method => 'hello', arguments => ['hello, world'] } },
+            meta    => [],
             headers => [],
             footers => []
+
         }
     };
-    $hessian_data = $client->serialize_message($datastructure2);
-    $client->input_string($hessian_data);
-    my $processed_message =
-      $client->process_message()->{envelope}->{packet};
-    if ($processed_message) {
-        is( $text, $processed_message, "Received expected message." );
+    my $hessian_data;
+    lives_ok {
+        $hessian_data = $client->serialize_message($datastructure);
+
     }
+    "No problem serializing envelope.";
+    $client->input_string($hessian_data);
+    my $data   = $client->process_message();
+    my $packet = $data->{envelope}->{packet};
+    if ($packet) {
+        cmp_deeply(
+       $packet,
+       $datastructure->{envelope}->{packet},
+       "Deserialized call back to itself."
+        );
+    }
+
 
 }    #}}}
 

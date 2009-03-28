@@ -52,9 +52,9 @@ sub read_typed_list_element {    #{{{
 }    #}}}
 
 sub read_list_type {    #{{{
-    my $self         = shift;
+    my $self        = shift;
     my $type_length = $self->read_from_inputhandle(1);
-    my $type = $self->read_string_handle_chunk($type_length);
+    my $type        = $self->read_string_handle_chunk($type_length);
     return $type;
 }    #}}}
 
@@ -75,7 +75,7 @@ sub store_fetch_type {    #{{{
 
 sub store_class_definition {    #{{{
     my ( $self, $class_type ) = @_;
-    my $length = $self->read_from_inputhandle(1);
+    my $length           = $self->read_from_inputhandle(1);
     my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 
@@ -92,9 +92,25 @@ sub store_class_definition {    #{{{
     return $class_definition;
 }    #}}}
 
+sub read_hessian_chunk {    #{{{
+    my ( $self, $args ) = @_;
+    my ( $first_bit, $element );
+    my $end_symbol = $self->end_of_datastructure_symbol();
+    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
+        $first_bit = $args->{first_bit};
+    }
+    else {
+        $first_bit = $self->read_from_inputhandle(1);
+    }
+    EndOfInput::X->throw( 
+        error => 'Reached end of datastructure.' 
+    )  if $first_bit =~ /$end_symbol/i;
+    return $self->read_simple_datastructure($first_bit);
+}    #}}}
+
 sub fetch_class_for_data {    #{{{
-    my $self         = shift;
-    my $length = $self->read_from_inputhandle(1);
+    my $self                    = shift;
+    my $length                  = $self->read_from_inputhandle(1);
     my $class_definition_number = $self->read_integer_handle_chunk($length);
     return $self->instantiate_class($class_definition_number);
 
@@ -104,22 +120,22 @@ sub instantiate_class {    #{{{
     my ( $self, $index ) = @_;
     my $class_definitions = $self->class_definitions;
     my $class_definition  = $self->class_definitions()->[$index];
-    my $datastructure     = $self->reference_list()->[-1];
     my $class_type        = $class_definition->{type};
+    return unless $class_type;
     return $self->assemble_class(
         {
             class_def => $class_definition,
-            data      => $datastructure,
             type      => $class_type
         }
     );
 }    #}}}
 
 sub assemble_class {    #{{{
-    my ( $self, $args ) = @_;
-    my ( $class_definition, $datastructure, $class_type ) =
-      @{$args}{qw/class_def data type/};
+    my ( $self,             $args )       = @_;
+    my ( $class_definition, $class_type ) = @{$args}{qw/class_def type/};
+    my $datastructure = $self->reference_list()->[-1] ;
     my $simple_obj = bless $datastructure, $class_type;
+    $self->reference_list()->[-1] = $simple_obj;
     {
         ## no critic
         no strict 'refs';
@@ -140,7 +156,7 @@ sub read_list_length {    #{{{
 
     my $array_length;
     if ( $first_bit =~ /[\x56\x58]/ ) {    # read array length
-    my $length = $self->read_from_inputhandle(1);
+        my $length = $self->read_from_inputhandle(1);
         $array_length = $self->read_integer_handle_chunk($length);
     }
     elsif ( $first_bit =~ /[\x70-\x77]/ ) {
@@ -157,21 +173,6 @@ sub read_list_length {    #{{{
     return $array_length;
 }    #}}}
 
-sub read_hessian_chunk {    #{{{
-    my ( $self, $args ) = @_;
-    my ( $first_bit, $element );
-    if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
-        $first_bit = $args->{first_bit};
-    }
-    else {
-        $first_bit = $self->read_from_inputhandle(1);
-    }
-    EndOfInput::X->throw( 
-        error => 'Reached end of datastructure.' 
-    )  if $first_bit =~ /z/i;
-    return $self->read_simple_datastructure($first_bit);
-}    #}}}
-
 sub write_hessian_chunk {    #{{{
     my ( $self, $element ) = @_;
     my $hessian_element;
@@ -181,7 +182,7 @@ sub write_hessian_chunk {    #{{{
             $hessian_element = $self->write_scalar_element($element);
         }
         case /DateTime/ {
-            $hessian_element = $self->write_hessian_date($element);
+            $hessian_element = $self->write_date($element);
         }
         else {
             my $reference_list = $self->reference_list();
@@ -200,7 +201,7 @@ sub write_hessian_chunk {    #{{{
                   $self->write_referenced_data($referenced_index);
             }
             else {
-                push @{$self->reference_list() }, $element;
+                push @{ $self->reference_list() }, $element;
                 $hessian_element = $self->write_composite_element($element);
             }
         }
@@ -262,75 +263,9 @@ sub read_composite_datastructure {    #{{{
     return $self->read_composite_data($first_bit);
 }    #}}}
 
-sub read_untyped_list {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $array_length;
-    my $datastructure = $self->reference_list()->[-1];
-    my $index         = 0;
-    if ( $first_bit eq 'l' ) {
-        $array_length = $self->read_list_length( $first_bit, );
-    }
-    else {
-        my $param = { first_bit => $first_bit };
-        my $first_element = $self->read_hessian_chunk($param);
-        push @{$datastructure}, $first_element;
-        $index++;
-    }
-  LISTLOOP:
-    {
-        last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element;
-        eval { $element = $self->read_hessian_chunk(); };
-        last LISTLOOP
-          if Exception::Class->caught('EndOfInput::X');
-
-        push @{$datastructure}, $element;
-        $index++;
-        redo LISTLOOP;
-    }
-    return $datastructure;
-}    #}}}
-
-sub read_typed_list {    #{{{
-    my ( $self, $first_bit ) = @_;
-    my $v1_type      = $self->read_v1_type($first_bit);
-    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
-    return $self->read_untyped_list($next_bit) unless defined $entity_type;
-
-    my $type = $self->store_fetch_type($entity_type);
-    my $array_length;
-    my $datastructure = $self->reference_list()->[-1];
-    my $index         = 0;
-    $next_bit = $self->read_from_inputhandle(1) unless $next_bit;
-    if ( $next_bit eq 'l' ) {
-        $array_length = $self->read_list_length($next_bit);
-    }
-    elsif (  $next_bit =~/\x6e/) {
-        $array_length = $self->read_from_inputhandle(1);
-    }
-    elsif (  $first_bit !~ /v/) {
-        
-         my $element = $self->read_typed_list_element( $type, 
-         {first_bit => $next_bit }); 
-        push @{$datastructure}, $element;
-        $index++;
-    }
-  LISTLOOP:
-    {
-        #  last LISTLOOP if ( $array_length and ( $index == $array_length ) );
-        my $element;
-        eval { $element = $self->read_typed_list_element($type); };
-        last LISTLOOP if Exception::Class->caught('EndOfInput::X');
-        push @{$datastructure}, $element;
-        $index++;
-        redo LISTLOOP;
-    }
-    return $datastructure;
-}    #}}}
-
 sub read_map_handle {    #{{{
-    my $self         = shift;
-    my $v1_type      = $self->read_v1_type();
+    my $self    = shift;
+    my $v1_type = $self->read_v1_type();
     my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
     my $type;
     $type = $self->store_fetch_type($entity_type) if $entity_type;
@@ -344,7 +279,8 @@ sub read_map_handle {    #{{{
   MAPLOOP:
     {
         eval { $key = $self->read_hessian_chunk(); } unless $key;
-        last MAPLOOP if Exception::Class->caught('EndOfInput::X');
+        last MAPLOOP if Exception::Class->caught('EndOfInput::X') or
+        Exception::Class->caught('MessageIncomplete::X');
         my $value = $self->read_hessian_chunk();
         push @key_value_pairs, $key => $value;
         undef $key;
@@ -368,7 +304,7 @@ sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
     my ( $type, $first_bit, $array_length );
     if ( $list_bit and $list_bit =~ /\x76/ ) {    # v
-        $type = $self->read_from_inputhandle(1);
+        $type         = $self->read_from_inputhandle(1);
         $array_length = $self->read_from_inputhandle(1);
     }
     else {
@@ -383,8 +319,8 @@ sub read_v1_type {    #{{{
 }    #}}}
 
 sub read_remote_object {    #{{{
-    my $self         = shift;
-    my $remote_type  = $self->read_v1_type()->{type};
+    my $self        = shift;
+    my $remote_type = $self->read_v1_type()->{type};
     $remote_type =~ s/\./::/g;
     my $class_definition = {
         type   => $remote_type,
@@ -468,6 +404,10 @@ Reads a complex datastructure (ARRAY, HASH or object) from the Hessian stream.
 =head2 write_map
 
 =head2 write_scalar_element
+
+=head2 write_hessian_date
+
+Writes a L<DateTime|DateTime> object into the outgoing Hessian message. 
 
 
 =head2 read_map_handle

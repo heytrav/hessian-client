@@ -5,7 +5,7 @@ use Module::Build;
 my $builder = Module::Build->new(
     module_name          => 'Hessian::Client',
     license              => 'perl',
-    dist_author          => 'William Travis Holton <cromulent2000-eisley@yahoo.de>',
+    dist_author          => 'William Travis Holton <wtholton@cromulent2000-eisley@yahoo.de>',
     dist_version_from    => 'lib/Hessian/Client.pm',
     recursive_test_files => 1,
     'create_makefile_pl' => 'passthrough',

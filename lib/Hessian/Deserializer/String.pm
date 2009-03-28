@@ -7,26 +7,26 @@ use Switch;
 
 sub read_string_handle_chunk  {    #{{{
     my ($self, $first_bit) = @_;
-    my $input_handle = $self->input_handle();
     my ( $string, $data, $length );
     switch ($first_bit) {
         case /[\x00-\x1f]/ {
             $length = unpack "n", "\x00" . $first_bit;
         }
         case /[\x30-\x33]/ {
-#            read $input_handle, $data, 1;
             $data = $self->read_from_inputhandle(1);
-            $length = unpack "n", $first_bit . $data;
+            my $first_part = $first_bit - 0x30;
+            my $string_length = $first_part . $data;
+
+            $length = unpack "n", "\x00".$data;
         }
         case /[\x52-\x53\x73]/ {
-#            read $input_handle, $data, 2;
             $data = $self->read_from_inputhandle(2);
             $length = unpack "n", $data;
         }
     }
  
 #    binmode( $input_handle, 'utf8' );
-    read $input_handle, $string, $length;
+    $string = $self->read_from_inputhandle($length);
     return $string;
 }    #}}}
 

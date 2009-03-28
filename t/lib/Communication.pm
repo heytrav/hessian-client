@@ -3,7 +3,6 @@ package Communication;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.0.1');
 use base 'Test::Class';
 
 use Test::More;
