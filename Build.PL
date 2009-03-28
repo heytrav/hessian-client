@@ -32,6 +32,7 @@ my $builder = Module::Build->new(
         'DateTime::Format::Strptime'    => 0,
         'DateTime::Format::Epoch'       => 0,
         'DateTime::Format::Epoch::Unix' => 0,
+        'Data::Str2Num' => 0,
 
     },
     add_to_cleanup => ['Hessian-*'],

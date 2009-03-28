@@ -1,6 +1,11 @@
 Revision history for Hessian::Client
 
 
+
+0.1.6 Thu Mar 27 2009
+        Revised Hessian version 2 serialization/deserialization to conform to
+        http://hessian.caucho.com/doc/hessian-ws.html.  
+
 0.1.6 Thu Mar 16 2009
         Added logic to check the length to read from the handle against the
         remaining length of the string.  If the remaining string is too short,
