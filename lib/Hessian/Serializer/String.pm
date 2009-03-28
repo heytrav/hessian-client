@@ -42,7 +42,6 @@ sub  write_packet { #{{{
     return $message;
 } #}}}
 
-
 sub hessianify_chunks {    #{{{
     my ($self, $prefixes, @chunks ) = @_;
     my $last_chunk = pop @chunks;
@@ -74,14 +73,17 @@ Hessian::Serializer::String - Role for serialization of strings into hessian.
 
 =head1 INTERFACE
 
-=head2   hessianify_chunks
+=head2 hessianify_chunks
 
 
-=head2   write_chunk
+=head2 write_chunk
 
 
-=head2   write_string
+=head2 write_string
 
 
-=head2   write_xml
+=head2 write_xml
 
+=head2 write_packet
+
+Enclose a datastructure in packets for chunked transmission.

@@ -7,7 +7,6 @@ use Switch;
 
 sub read_string_handle_chunk  {    #{{{
     my ($self, $first_bit) = @_;
-#    my $input_handle = $self->input_handle();
     my ( $string, $data, $length );
     switch ($first_bit) {
         case /[\x00-\x1f]/ {

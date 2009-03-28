@@ -232,7 +232,6 @@ sub reply_date_1 : Test(1) {    #{{{
     );
     my $result      = $client->replyDate_1();
     my $result_date = $result->{reply_data};
-    print "Got date $result_date\n";
     is( DateTime->compare( $result_date, $date ), 0 );
 
 }    #}}}
@@ -251,7 +250,6 @@ sub reply_date_2 : Test(1) {    #{{{
     my $client      = get_client();
     my $result      = $client->replyDate_2();
     my $result_date = $result->{reply_data};
-    print "Got date $result_date\n";
     is( DateTime->compare( $result_date, $date ), 0 );
 
 }    #}}}
@@ -264,7 +262,6 @@ sub reply_untyped_fixed_list_7 : Test(1) {    #{{{
         $result = $client->replyUntypedFixedList_7();
     }
     "No problems communicating with service.";
-    print "result: " . Dump($result) . "\n";
 
 }    #}}}
 

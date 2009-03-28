@@ -49,20 +49,16 @@ sub read_envelope {    #{{{
         }
 
       PACKETCHUNKS: {
-            $first_bit = $self->read_from_inputhandle(1);
-            my $length = unpack "C*", $first_bit;
-            $packet_size =
-                $first_bit =~ /[\x70-\x7f]/
-              ? $length - 0x70
-              : $length - 0x80;
-            my $packet_string;
-            $packet_string = $self->read_from_inputhandle($packet_size);
-            $packet_body .= $packet_string;
-            last PACKETCHUNKS if $first_bit =~ /[\x80-\x8f]/;
-            redo PACKETCHUNKS;
-        }
 
-        $first_bit    = $self->read_from_inputhandle(1);
+            $first_bit = $self->read_from_inputhandle(1);
+            if ( $first_bit =~ /[\x70-\x7f\x80-\x8f\x4f\x50]/ ) {
+                my $packet_string = $self->read_packet_chunk($first_bit);
+                $packet_body .= $packet_string;
+                
+                $first_bit    = $self->read_from_inputhandle(1);
+            }
+        } # PACKETCHUNKS
+
         $footer_count = $self->read_integer_handle_chunk( $first_bit, );
         foreach ( 1 .. $footer_count ) {
             push @footers, $self->read_header_or_footer();
@@ -87,6 +83,33 @@ sub read_header_or_footer {    #{{{
     return $header;
 }    #}}}
 
+sub read_packet_chunk {    #{{{
+    my ( $self, $first_bit ) = @_;
+
+    my ($packet_string);
+    switch ($first_bit) {
+        case /[\x70-\x7f]/ {
+            my $length = unpack "C*", $first_bit;
+            my $packet_size = $length - 0x70;
+            $packet_string = $self->read_from_inputhandle($packet_size);
+
+        }
+        case /[\x80-\x8f]/ {
+            my $length = unpack "C*", $first_bit;
+            my $packet_size = $length - 0x80;
+            $packet_string = $self->read_from_inputhandle($packet_size);
+        }
+        case /[\x4f\x50]/ {
+           print "Reading packet chunk\n"; 
+            $packet_string = $self->read_string_handle_chunk('S');
+
+        }
+        return $packet_string;
+    }
+
+    return $packet_string;
+}    #}}}
+
 sub read_packet {    #{{{
     my ( $self, $packet_string ) = @_;
     return FIXED NONVOID {
@@ -95,7 +118,20 @@ sub read_packet {    #{{{
 }    #}}}
 
 sub write_hessian_packet {    #{{{
-    my ( $self, $packets ) = @_;
+    my ( $self, $packet ) = @_;
+    my $max_packet_size = 15;    #$self->max_packet_size() - 4;
+    my $serialized_packet = $self->write_hessian_message($packet);
+    my @chunks = 
+    $serialized_packet =~ /([\x00-\xff]{1,$max_packet_size})/g;
+    my @packets;
+    foreach my $chunk (@chunks) {
+        my $packaged_string = $self->write_hessian_string([ $chunk ]);
+        $packaged_string =~ s/S/P/;
+        push @packets, $packaged_string;
+    }
+    return \@packets;
+
+    
 }    #}}}
 
 sub write_hessian_message {    #{{{
@@ -103,7 +139,7 @@ sub write_hessian_message {    #{{{
 
     my $hessian_message;
     if ( ( ref $hessian_data ) eq 'HASH'
-        and any { exists $hessian_data->{$_} } qw/call envelope packet/ )
+        and any { exists $hessian_data->{$_} } qw/call envelope packet data/ )
     {
         my @keys          = keys %{$hessian_data};
         my $datastructure = $hessian_data->{ $keys[0] };
@@ -118,6 +154,9 @@ sub write_hessian_message {    #{{{
             case /packet/ {
                 $hessian_message = $self->write_hessian_packet($datastructure);
             }
+            case /data/ { 
+                $hessian_message = $self->write_hessian_chunk($hessian_data);
+            }
         }
     }
     else {
@@ -126,36 +165,27 @@ sub write_hessian_message {    #{{{
     return $hessian_message;
 }    #}}}
 
-sub  write_hessian_envelope { #{{{
-    my ($self, $envelope) = @_;
-        my $meta = 'Header';
-    $meta = delete $envelope->{meta} if exists $envelope->{meta};
+sub write_hessian_envelope {    #{{{
+    my ( $self, $envelope ) = @_;
+    my $meta = 'Header';
     my $headers         = delete $envelope->{headers};
     my $footers         = delete $envelope->{footers};
     my $envelope_string = "E";
-#    my $envelope_meta   = $self->write_hessian_string( [$meta] );
-#    $envelope_meta =~ s/S/m/;
-#    $envelope_string .= $envelope_meta;
+
+        my $envelope_meta   = $self->write_hessian_string( [$meta] );
+        $envelope_string .= $envelope_meta;
     my $header_count = $self->write_integer( scalar @{$headers} );
     my $footer_count = $self->write_integer( scalar @{$footers} );
 
     my $serialized_message = $self->write_hessian_message($envelope);
-    my $max_packet_size    =  15; #$self->max_packet_size() - 4;
-    my @packets = $serialized_message =~ /([\x00-\xff]{1,$max_packet_size})/g;
-    my $packaged_packets = $self->write_packet({packets => \@packets });
-#    my @body_chunks;
-#    foreach my $packet (@packaged_packets) {
-#        push @body_chunks, $self->write_binary($packet);
-#    }
 
-    my @wrapped_body = map { $header_count . $_ . $footer_count } 
-        @{$packaged_packets}; 
+    my @wrapped_body =
+      map { $header_count . $_ . $footer_count } @{$serialized_message};
     $envelope_string .= join "" => @wrapped_body;
     $envelope_string .= $self->end_of_datastructure_symbol();
     return $envelope_string;
-            
-} #}}}
 
+}    #}}}
 
 "one, but we're not the same";
 
@@ -213,4 +243,7 @@ Writes a datastructure as a hessian message.
 
 Write a subset of hessian data out as a packet.
 
+=head2 read_packet_chunk
+
+=head2 write_hessian_envelope
 

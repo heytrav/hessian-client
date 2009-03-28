@@ -16,6 +16,7 @@ use Hessian::Serializer;
 use Hessian::Translator::V2;
 use SomeType;
 use YAML;
+use Data::Dumper;
 use Hessian::Client;
 
 sub t007_compose_serializer : Test(2) {    #{{{
@@ -148,7 +149,7 @@ sub t023_serialize_date : Test(2) {    #{{{
     $client->input_string($hessian_date);
     my $processed_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_time );
-    my $hessian_compact_date ="\x4b\x00\xe3\x83\x8f";
+    my $hessian_compact_date = "\x4b\x00\xe3\x83\x8f";
     $client->input_string($hessian_compact_date);
     my $processed_compact_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_compact_time );
@@ -181,8 +182,8 @@ sub t025_serialize_call : Test(3) {    #{{{
     );
 }    #}}}
 
-sub t027_serialize_enveloped_message : Test(1) {    #{{{
-    my $self          = shift;
+sub t027_serialize_enveloped_message : Test(2) {    #{{{
+    my $self = shift;
     my $client = Hessian::Translator->new( version => 2 );
     Hessian::Translator::V2->meta()->apply($client);
     Hessian::Serializer->meta()->apply($client);
@@ -190,42 +191,31 @@ sub t027_serialize_enveloped_message : Test(1) {    #{{{
         envelope => {
             packet =>
               { call => { method => 'hello', arguments => ['hello, world'] } },
-            meta => [],
+            meta    => [],
             headers => [],
             footers => []
 
         }
     };
     my $hessian_data;
-    lives_ok { 
-     $hessian_data = $client->serialize_message($datastructure);
-    print "Got hessian data: $hessian_data\n";
-        
-        } "No problem serializing envelope.";
-        $client->input_string($hessian_data);
-        my $data = $client->process_message();
-        print "Got data:\n".Dump($data)."\n";
-        
+    lives_ok {
+        $hessian_data = $client->serialize_message($datastructure);
 
+    }
+    "No problem serializing envelope.";
+    $client->input_string($hessian_data);
+    my $data   = $client->process_message();
+    my $packet = $data->{envelope}->{packet};
+    if ($packet) {
+        cmp_deeply(
+       $packet,
+       $datastructure->{envelope}->{packet},
+       "Deserialized call back to itself."
+        );
+    }
 
-    # A datastructure to be serialized should look something like this
-    #    my $datastructure = [
-    #        {
-    #            headers => [],
-    #            packets => [
-    #                {
-    #                    call => {
-    #                        method    => 'hello',
-    #                        arguments => ['hello, world']
-    #                    }
-    #                }
-    #            ],
-    #            footers => []
-    #        },
-    #    ];
 
 }    #}}}
-
 
 "one, but we're not the same";
 
