@@ -20,7 +20,7 @@ sub read_typed_list_element {    #{{{
         $first_bit = $self->read_from_inputhandle(1);
     }
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
-      if $first_bit =~ /z/i;
+      if $first_bit eq $self->end_of_datastructure_symbol();
     my $map_type = 'map';
     switch ($type) {
         case /boolean/ {
@@ -104,7 +104,7 @@ sub read_hessian_chunk {    #{{{
     }
     EndOfInput::X->throw( 
         error => 'Reached end of datastructure.' 
-    )  if $first_bit =~ /$end_symbol/i;
+    )  if $first_bit eq $self->end_of_datastructure_symbol() ;
     return $self->read_simple_datastructure($first_bit);
 }    #}}}
 

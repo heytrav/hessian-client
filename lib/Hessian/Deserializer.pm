@@ -57,6 +57,7 @@ sub deserialize_message {    #{{{
            $self->read_message_chunk();
     };
     if ( my $e = $@ ) {
+        print "Got exception ".$e."\n";
         return if Exception::Class->caught('EndOfInput::X');
         $e->rethrow()
           if $e->isa('Hessian::Exception')

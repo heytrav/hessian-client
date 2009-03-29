@@ -3,7 +3,7 @@ package Hessian::Client;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.1.8');
+use version; our $VERSION = qv('0.1.9');
 
 use LWP::UserAgent;
 use HTTP::Request;
@@ -104,7 +104,8 @@ found in several languages including Java, Python, Ruby, Erlang and PHP. For som
 reason, till now there has been no implementation in Perl.
 
 For a more detailed introduction into the Hessian protocol, see the main
-project documentation at http://www.caucho.com/resin-3.1/doc/hessian.xtp.
+project documentation at http://www.caucho.com/resin-3.1/doc/hessian.xtp and
+http://hessian.caucho.com/doc/hessian-ws.html.
 
 Hessian::Client implements basic RPC for Hessian. Although currently only
 tested with version 1, communication with version 2.0 servers should also

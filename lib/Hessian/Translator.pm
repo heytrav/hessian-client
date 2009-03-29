@@ -95,7 +95,7 @@ sub read_from_inputhandle {    #{{{
           . "read length: $read_length\nremaining: $remaining_length\n"
           . "string: "
           . $self->{input_string} . ".\n";
-          print $message;
+#          print $message;
 
         #        seek $input_handle, $original_pos, 0;
         # Throw an exception that will be caught by the caller

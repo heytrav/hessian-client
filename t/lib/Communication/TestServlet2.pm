@@ -174,7 +174,7 @@ sub test_reply_int_m17 : Test(1) {    #{{{
     is( $result->{reply_data}, -17 );
 }    #}}}
 
-sub t030_reply_object_16 : Test(1) {    #{{{
+sub reply_object_16 : Test(1) {    #{{{
     my $self           = shift;
     my $hessian_client = Hessian::Client->new(
         {
@@ -186,8 +186,17 @@ sub t030_reply_object_16 : Test(1) {    #{{{
     cmp_deeply(
         $result,
         { hessian_version => '2.0', reply_data => array_each( ignore() ) },
-        "Received expected header from service."
+        "Received expected datastructure."
     );
+}    #}}}
+
+sub reply_object_2b : Test(1) {    #{{{
+    my $self   = shift;
+    my $client = get_client();
+    my $result = $client->replyObject_2b();
+    my $array  = $result->{reply_data};
+    cmp_deeply( $array->[0], $array->[1],
+        "Received a two element array of the same object." );
 }    #}}}
 
 sub reply_date_0 : Test(1) {    #{{{
