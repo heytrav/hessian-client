@@ -17,7 +17,8 @@ use Class::Std;
 
     sub BUILD {    #{{{
         my ( $self, $id, $args ) = @_;
-        my $hessian = Hessian::Translator->new( version => $args->{version} );
+        my $hessian = Hessian::Translator->new( version =>
+        $self->get_version() );
         $self->set_translator($hessian);
     }    #}}}
 

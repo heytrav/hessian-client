@@ -5,7 +5,6 @@ use Moose::Role;
 use integer;
 use Math::Int64 qw/int64_to_number int64_to_net int64 net_to_int64/;
 use Math::BigInt;
-use Data::Str2Num  qw/str2float/;
 use POSIX qw/floor ceil/;
 use Switch;
 
