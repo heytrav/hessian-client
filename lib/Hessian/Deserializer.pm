@@ -14,11 +14,13 @@ with qw/
 has 'input_handle' => (    #{{{
     is      => 'rw',
     isa     => 'GlobRef',
+    clearer => 'clear_input_handle',
     lazy    => 1,
     default => sub {
         my $self = shift;
         my $input_handle;
-        my $input_string = $self->{input_string};
+#        my $input_string = $self->{input_string};
+        my $input_string = $self->input_string();
         if ($input_string) {
             open $input_handle, "<", \$input_string
               or InputOutput::X->throw(
@@ -34,7 +36,8 @@ after 'input_string' => sub {    #{{{
     # Get rid of the input file handle if user has given us a new string to
     # process. input handle should then re-initialize itself the next time it
     # is called.
-    delete $self->{input_handle} if $self->{input_handle};
+    $self->clear_input_handle();
+#    delete $self->{input_handle} if $self->{input_handle};
 };    #}}}
 
 before qw/deserialize_data deserialize_message/ => sub {    #{{{

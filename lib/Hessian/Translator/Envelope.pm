@@ -13,8 +13,8 @@ sub read_message_chunk {    #{{{
     my $self = shift;
     my ($first_bit);
     $first_bit = $self->read_from_inputhandle(1);
-    EndOfInput->throw( error => "Encountered end of datastructure." )
-      if $first_bit =~ /z/i;
+    EndOfInput::X->throw( error => "Encountered end of datastructure." )
+      if $first_bit eq $self->end_of_datastructure_symbol();
     my $datastructure = $self->read_message_chunk_data($first_bit);
     return $datastructure;
 }    #}}}
