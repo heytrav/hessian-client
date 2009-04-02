@@ -128,7 +128,7 @@ sub  _read_quadruple_octet_double { #{{{
     my $hex_string = join "" => @hex_octets;
 
     my $double;
-     $double = str2float($hex_string);
+#     $double = str2float($hex_string);
     return $double;
 } #}}}
 
