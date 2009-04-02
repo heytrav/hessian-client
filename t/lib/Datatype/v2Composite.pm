@@ -209,6 +209,7 @@ sub test_reply_long_mOx80000000 : Test(1) {    #{{{
     $self->{deserializer}->input_string($hessian_data);
     my $datastructure = $self->{deserializer}
       ->deserialize_data();
+      print "got datastructure ".$datastructure."\n";
       is( 
      $datastructure, -0x80000000 ,
      "Parsed correct long."
