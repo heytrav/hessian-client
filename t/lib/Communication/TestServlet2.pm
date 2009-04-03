@@ -72,7 +72,6 @@ sub test_reply_int_mx800 : Test(1) {    #{{{
 
 sub test_reply_long_mOx80000000 : Test(1) {    #{{{
     my $self   = shift;
-    local $TODO = "Platform dependent, may not pass.";
     my $client = Hessian::Client->new(
         {
             version => 2,
@@ -80,8 +79,9 @@ sub test_reply_long_mOx80000000 : Test(1) {    #{{{
         }
     );
     my $function = "replyLong_m0x80000000";
+    throws_ok {
     my $result   = $client->$function();
-    is( $result->{reply_data}, -0x80000000 );
+    }'Implementation::X', "Warn that 32 bit longs are not supported.";
 }    #}}}
 
 sub test_reply_long_mOx80000001 : Test(1) {    #{{{
@@ -125,7 +125,6 @@ sub test_reply_double_0_0 : Test(1) {    #{{{
 
 sub test_reply_double_m0_001 : Test(1) {    #{{{
     my $self = shift;
-    local $TODO = "Haven't worked out 32 bit doubles yet.";
     my $client = Hessian::Client->new(
         {
             version => 2,
@@ -133,8 +132,9 @@ sub test_reply_double_m0_001 : Test(1) {    #{{{
         }
     );
     my $function = "replyDouble_m0_001";
+    throws_ok {
     my $result   = $client->$function();
-    is( $result->{reply_data}, -0.001 );
+    }'Implementation::X', 'Warn that 32 bit doubles are not supported.';
 }    #}}}
 
 sub test_reply_double_127_0 : Test(1) {    #{{{
@@ -152,7 +152,6 @@ sub test_reply_double_127_0 : Test(1) {    #{{{
 
 sub test_reply_double_3_14159 : Test(1) {    #{{{
     my $self   = shift;
-    local $TODO = "Platform dependent. May not pass.";
     my $client = Hessian::Client->new(
         {
             version => 2,

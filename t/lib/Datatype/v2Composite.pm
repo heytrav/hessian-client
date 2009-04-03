@@ -8,6 +8,7 @@ use base 'Datatype::Composite';
 
 use Test::More;
 use Test::Deep;
+use Test::Exception;
 use YAML;
 use Hessian::Translator;
 use Hessian::Serializer;
@@ -203,18 +204,97 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     is( $example_car->color(), 'green', "Correct color from class." );
 }    #}}}
 
-sub test_reply_long_mOx80000000 : Test(1) {    #{{{
-    my $self   = shift;
-    my $hessian_data = "\x59\x80\x00\x00\x00";
+sub  test_int_m0x80000000 : Test(1) { #{{{
+    my $self = shift;
+    my $hessian_data = "I\x80\x00\x00\x00";
     $self->{deserializer}->input_string($hessian_data);
     my $datastructure = $self->{deserializer}
       ->deserialize_data();
-      print "got datastructure ".$datastructure."\n";
       is( 
-     $datastructure, -0x80000000 ,
-     "Parsed correct long."
+     $datastructure, -0x80000000  ,
+     "Parsed correct int."
+      );
+} #}}}
+
+sub  test_double_3_14159 : Test(1) { #{{{
+    my $self = shift;
+        my $hessian_data = "D\x40\x09\x21\xf9\xf0\x1b\x86\x6e";
+    $self->{deserializer}->input_string($hessian_data);
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+      is( 
+     $datastructure, 3.14159  ,
+     "Parsed correct double."
+      );
+} #}}}
+
+sub test_double_65_536 : Test(1) {    #{{{
+    my $self   = shift;
+    my $hessian_data = "\x5f\x00\x01\x00\x00";
+    $self->{deserializer}->input_string($hessian_data);
+    throws_ok {
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+    } 'Implementation::X', "Warn that 32 bit doubles are not supported.";
+}    #}}}
+
+sub test_double_m32768_0 : Test(1) {    #{{{
+    my $self   = shift;
+    my $hessian_data = "\x5e\x80\x00" ;
+    $self->{deserializer}->input_string($hessian_data);
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+      is( 
+     $datastructure, -32768.0  ,
+     "Parsed correct double."
       );
 }    #}}}
+
+sub test_double_0_001 : Test(1) {    #{{{
+    my $self   = shift;
+    my $hessian_data = "\x5f\x00\x00\x00\x01" ;
+    $self->{deserializer}->input_string($hessian_data);
+    throws_ok {
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+    }'Implementation::X', "Warn that 32 bit doubles are not supported.";
+}    #}}}
+
+
+sub test_long_mOx80000000 : Test(1) {    #{{{
+    my $self   = shift;
+    my $hessian_data = "\x59\x80\x00\x00\x00";
+    $self->{deserializer}->input_string($hessian_data);
+    throws_ok {
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+    } 'Implementation::X', "Warn that 32 bit longs are not supported.";
+}    #}}}
+
+
+sub  test_long_64_bit_0x80000000 : Test(1) { #{{{
+    my $self = shift;
+    my $hessian_data = "L\x00\x00\x00\x00\x80\x00\x00\x00";
+    $self->{deserializer}->input_string($hessian_data);
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+      is( 
+     $datastructure, 0x80000000   ,
+     "Parsed correct long."
+      );
+} #}}}
+
+sub  test_long_64_bit_m0x80000000 : Test(1) { #{{{
+    my $self = shift;
+    my $hessian_data = "L\xff\xff\xff\xff\x7f\xff\xff\xff";
+    $self->{deserializer}->input_string($hessian_data);
+    my $datastructure = $self->{deserializer}
+      ->deserialize_data();
+      is( 
+     $datastructure, -0x80000001   ,
+     "Parsed correct long."
+      );
+} #}}}
 
 sub class_instance_generator {    #{{{
     my ( $self, $object_definition ) = @_;
