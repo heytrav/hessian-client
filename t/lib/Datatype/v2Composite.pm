@@ -12,6 +12,7 @@ use Test::Exception;
 use YAML;
 use Hessian::Translator;
 use Hessian::Serializer;
+use Config;
 
 sub t004_initialize_hessian_obj : Test(4) {    #{{{
     my $self = shift;
@@ -206,14 +207,17 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
 
 sub  test_int_m0x80000000 : Test(1) { #{{{
     my $self = shift;
+#    local $TODO = "Integer calculation depends on platform.";
     my $hessian_data = "I\x80\x00\x00\x00";
     $self->{deserializer}->input_string($hessian_data);
+    my $byte_order = $Config{byteorder};
     my $datastructure = $self->{deserializer}
       ->deserialize_data();
       is( 
      $datastructure, -0x80000000  ,
-     "Parsed correct int."
-      );
+     "Parsed correct int. Byteorder = $byte_order"
+      ) or $self->FAIL_ALL("Unable to process integer."
+      ."  Byteorder = $byte_order");
 } #}}}
 
 sub  test_double_3_14159 : Test(1) { #{{{

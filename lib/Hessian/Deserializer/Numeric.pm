@@ -2,7 +2,6 @@ package  Hessian::Deserializer::Numeric;
 
 use Moose::Role;
 
-use integer;
 use Math::Int64 qw/int64_to_number int64_to_net int64 net_to_int64/;
 use Math::BigInt lib   => 'GMP';
 use Math::BigFloat lib => 'GMP';
@@ -27,7 +26,7 @@ sub read_integer {    #{{{
         $octet_count == 1 ? _read_single_octet( $chars[0], 0x90 )
       : $octet_count == 2 ? _read_double_octet( \@chars, 0xc8 )
       : $octet_count == 3 ? _read_triple_octet( \@chars, 0xd4 )
-      :                     _read_quadruple_octet( \@chars );
+      :                    _read_quadruple_octet( \@chars );
     return $result;
 }    #}}}
 
@@ -72,17 +71,23 @@ sub _read_single_octet {    #{{{
 
 sub _read_double_octet {    #{{{
     my ( $bytes, $octet_shift ) = @_;
-    my $integer = ( ( $bytes->[0] - $octet_shift ) << 8 ) + $bytes->[1];
-    return $integer;
+    {
+        use integer;
+        my $integer = ( ( $bytes->[0] - $octet_shift ) << 8 ) + $bytes->[1];
+        return $integer;
+    }
 }    #}}}
 
 sub _read_triple_octet {    #{{{
     my ( $bytes, $octet_shift ) = @_;
-    my $integer =
-      ( ( $bytes->[0] - $octet_shift ) << 16 ) +
-      ( $bytes->[1] << 8 ) +
-      $bytes->[2];
-    return $integer;
+    {
+        use integer;
+        my $integer =
+          ( ( $bytes->[0] - $octet_shift ) << 16 ) +
+          ( $bytes->[1] << 8 ) +
+          $bytes->[2];
+        return $integer;
+    }
 }    #}}}
 
 sub _read_quadruple_long_octet {    #{{{
@@ -105,14 +110,17 @@ sub _read_quadruple_long_octet {    #{{{
 
 sub _read_quadruple_octet {    #{{{
     my $bytes = shift;
+    {
+        use integer;
 
-    my $shift_val = 0;
-    my $sum;
-    foreach my $byte ( reverse @{$bytes} ) {
-        $sum += $byte << $shift_val;
-        $shift_val += 8;
+        my $shift_val = 0;
+        my $sum;
+        foreach my $byte ( reverse @{$bytes} ) {
+            $sum += $byte << $shift_val;
+            $shift_val += 8;
+        }
+        return $sum;
     }
-    return $sum;
 }    #}}}
 
 sub _read_full_long {    #{{{

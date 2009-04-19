@@ -3,7 +3,7 @@ package Hessian::Client;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.1.12');
+use version; our $VERSION = qv('0.1.13');
 
 use LWP::UserAgent;
 use HTTP::Request;
