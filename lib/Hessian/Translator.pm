@@ -6,8 +6,10 @@ use version; our $VERSION = qv('0.0.2');
 use Module::Load;
 use YAML;
 use List::MoreUtils qw/any/;
+use Config;
 
 use Hessian::Exception;
+has 'is_big_endian'  => (is => 'ro', isa => 'Bool', default => 0);
 has 'original_position' => ( is => 'rw', isa => 'Int', default => 0 );
 has 'class_definitions' => ( is => 'rw', default => sub { [] } );
 has 'type_list'         => ( is => 'rw', default => sub { [] } );
@@ -130,6 +132,8 @@ sub BUILD {    #{{{
         Hessian::Serializer->meta()->apply($self);
     }
     $self->version();
+    my $byteorder = $Config{byteorder};
+    $self->is_big_endian(1) if  $byteorder =~ /4321/;
 
 }    #}}}
 

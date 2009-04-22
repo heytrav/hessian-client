@@ -21,12 +21,13 @@ sub read_integer {    #{{{
     my ( $self, $hessian_data ) = @_;
     ( my $raw_octets = $hessian_data ) =~ s/^I(.*)/$1/;
     my @chars = unpack 'C*', $raw_octets;
+    my @depends_on_endian = $self->is_big_endian() ? @chars : reverse @chars;
     my $octet_count = scalar @chars;
     my $result =
         $octet_count == 1 ? _read_single_octet( $chars[0], 0x90 )
       : $octet_count == 2 ? _read_double_octet( \@chars, 0xc8 )
       : $octet_count == 3 ? _read_triple_octet( \@chars, 0xd4 )
-      :                    _read_quadruple_octet( \@chars );
+      :                    _read_quadruple_octet( \@depends_on_endian );
     return $result;
 }    #}}}
 
@@ -57,7 +58,7 @@ sub read_double {    #{{{
       : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
       : $octet =~ /\x5f/                      ? Implementation::X->throw(
         error => "32 bit doubles not currently supported." )
-      : _read_full_double($octet);
+      : _read_full_double($self,$octet);
 
     #_read_quadruple_octet_double($octet)
     return $double_value;
@@ -110,6 +111,11 @@ sub _read_quadruple_long_octet {    #{{{
 
 sub _read_quadruple_octet {    #{{{
     my $bytes = shift;
+    return unpack "l", pack "C*",  @{$bytes};
+}    #}}}
+
+sub _read_quadruple_float_octet {    #{{{
+    my $bytes = shift;
     {
         use integer;
 
@@ -134,7 +140,7 @@ sub _read_compact_double {    #{{{
     my @chars = unpack 'c*', $compact_octet;
     shift @chars;
     my $chars_size = scalar @chars;
-    my $float      = _read_quadruple_octet( \@chars );
+    my $float      = _read_quadruple_float_octet( \@chars );
     return $float;
 }    #}}}
 
@@ -154,10 +160,11 @@ sub _read_quadruple_octet_double {    #{{{
 }    #}}}
 
 sub _read_full_double {    #{{{
-    my $double = shift;
+    my ($self, $double) = @_;
     ( my $octets = $double ) =~ s/(?:D ) (.*) /$1/x;
     my @chars = unpack 'C*', $octets;
-    my $double_value = unpack 'F', pack 'C*', reverse @chars;
+    my @double_chars = $self->is_big_endian() ? @chars : reverse @chars;
+    my $double_value = unpack 'F', pack 'C*',  @double_chars;
     return $double_value;
 }    #}}}
 
