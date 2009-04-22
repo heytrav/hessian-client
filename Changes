@@ -1,6 +1,9 @@
 Revision history for Hessian::Client
 
 
+0.1.15 Wed Apr 22 2009
+        Experimenting with a technique to deal with endian problem.
+
 0.1.14 Sun Apr 19 2009
         Trying out a new way to get the proper integer out on 64 bit int
         machines
