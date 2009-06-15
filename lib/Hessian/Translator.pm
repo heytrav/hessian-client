@@ -9,16 +9,19 @@ use List::MoreUtils qw/any/;
 use Config;
 
 use Hessian::Exception;
-has 'is_big_endian'  => (is => 'ro', isa => 'Bool', default => 0);
-has 'original_position' => ( is => 'rw', isa => 'Int', default => 0 );
+has 'is_big_endian'     => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'original_position' => ( is => 'rw', isa => 'Int',  default => 0 );
 has 'class_definitions' => ( is => 'rw', default => sub { [] } );
 has 'type_list'         => ( is => 'rw', default => sub { [] } );
 has 'reference_list'    => ( is => 'rw', default => sub { [] } );
-has 'input_string'      => ( is => 'rw', isa     => 'Str' );
-has 'version'           => ( is => 'ro', isa     => 'Int' );
+has 'input_string' => (    #{{{
+    is      => 'rw',
+    isa     => 'Str',
+);                         #}}}
+has 'version'     => ( is => 'ro', isa => 'Int' );
 has 'binary_mode' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'chunked'     => ( is => 'ro', isa => 'Bool', default => 0 );
-has 'serializer'  => (
+has 'serializer' => (
     is  => 'rw',
     isa => 'Bool',
 );
@@ -97,7 +100,8 @@ sub read_from_inputhandle {    #{{{
           . "read length: $read_length\nremaining: $remaining_length\n"
           . "string: "
           . $self->{input_string} . ".\n";
-#          print $message;
+
+        #          print $message;
 
         #        seek $input_handle, $original_pos, 0;
         # Throw an exception that will be caught by the caller
@@ -133,7 +137,7 @@ sub BUILD {    #{{{
     }
     $self->version();
     my $byteorder = $Config{byteorder};
-    $self->is_big_endian(1) if  $byteorder =~ /4321/;
+    $self->is_big_endian(1) if $byteorder =~ /4321/;
 
 }    #}}}
 

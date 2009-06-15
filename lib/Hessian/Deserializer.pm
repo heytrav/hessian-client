@@ -16,10 +16,9 @@ has 'input_handle' => (    #{{{
     isa     => 'GlobRef',
     clearer => 'clear_input_handle',
     lazy    => 1,
-    default => sub {
+    default => sub {#{{{
         my $self = shift;
         my $input_handle;
-#        my $input_string = $self->{input_string};
         my $input_string = $self->input_string();
         if ($input_string) {
             open $input_handle, "<", \$input_string
@@ -27,7 +26,7 @@ has 'input_handle' => (    #{{{
                 error => "Unable to read from string input." );
             return $input_handle;
         }
-    }
+    }#}}}
 );    #}}}
 
 after 'input_string' => sub {    #{{{
@@ -37,7 +36,6 @@ after 'input_string' => sub {    #{{{
     # process. input handle should then re-initialize itself the next time it
     # is called.
     $self->clear_input_handle();
-#    delete $self->{input_handle} if $self->{input_handle};
 };    #}}}
 
 before qw/deserialize_data deserialize_message/ => sub {    #{{{
