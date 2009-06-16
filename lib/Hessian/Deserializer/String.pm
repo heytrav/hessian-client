@@ -1,7 +1,6 @@
 package  Hessian::Deserializer::String;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 use Switch;
 

@@ -1,7 +1,6 @@
 package Hessian::Translator::V2;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 use Switch;
 use YAML;

@@ -1,7 +1,6 @@
 package  Hessian::Serializer;
 
 use Moose::Role;
-use version; our $VERSION = qv('0.0.1');
 
 with qw/
   Hessian::Serializer::Numeric
