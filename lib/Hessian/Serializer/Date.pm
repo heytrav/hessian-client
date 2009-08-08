@@ -22,9 +22,6 @@ sub write_date  {    #{{{
     );
     my $epoch_time   = $formatter->format_datetime($datetime);
     my $time = $self->write_long($epoch_time);
-#      $epoch_time <= 4_294_967_295
-#      ? $self->write_integer($epoch_time)
-#      : $self->write_long($epoch_time);
     if ($self->version() == 1) {
         $time =~ s/L/d/;
     }
