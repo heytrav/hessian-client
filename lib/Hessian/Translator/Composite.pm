@@ -9,8 +9,10 @@ use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 use Contextual::Return;
+use Smart::Comments;
 
 sub read_typed_list_element {    #{{{
+    ### read_typed_list_element
     my ( $self, $type, $args ) = @_;
     my ( $element, $first_bit );
     if ( $args->{first_bit} ) {
@@ -52,6 +54,7 @@ sub read_typed_list_element {    #{{{
 }    #}}}
 
 sub read_list_type {    #{{{
+    ### read_list_type
     my $self        = shift;
     my $type_length = $self->read_from_inputhandle(1);
     my $type        = $self->read_string_handle_chunk($type_length);
@@ -59,6 +62,7 @@ sub read_list_type {    #{{{
 }    #}}}
 
 sub store_fetch_type {    #{{{
+    ### store_fetch_type
     my ( $self, $entity_type ) = @_;
     my $type;
     if ( $entity_type =~ /^([^\x00-\x0f].*)/ ) {
@@ -74,12 +78,13 @@ sub store_fetch_type {    #{{{
 }    #}}}
 
 sub store_class_definition {    #{{{
+    ### store_class_definition
     my ( $self, $class_type ) = @_;
     my $length           = $self->read_from_inputhandle(1);
     my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 
-    foreach my $field_index ( 1 .. $number_of_fields ) {
+    foreach my $field_index ( 1 .. $number_of_fields ) { 
 
         # using the wrong function here, but who cares?
         my $field = $self->read_hessian_chunk();
@@ -93,6 +98,7 @@ sub store_class_definition {    #{{{
 }    #}}}
 
 sub read_hessian_chunk {    #{{{
+    ### read_hessian_chunk
     my ( $self, $args ) = @_;
     my ( $first_bit, $element );
 #    my $end_symbol = $self->end_of_datastructure_symbol();
@@ -109,6 +115,7 @@ sub read_hessian_chunk {    #{{{
 }    #}}}
 
 sub fetch_class_for_data {    #{{{
+    ### fetch_class_for_data
     my $self                    = shift;
     my $length                  = $self->read_from_inputhandle(1);
     my $class_definition_number = $self->read_integer_handle_chunk($length);
@@ -117,6 +124,7 @@ sub fetch_class_for_data {    #{{{
 }    #}}}
 
 sub instantiate_class {    #{{{
+    ### instantiate_class
     my ( $self, $index ) = @_;
     my $class_definitions = $self->class_definitions;
     my $class_definition  = $self->class_definitions()->[$index];
@@ -131,6 +139,7 @@ sub instantiate_class {    #{{{
 }    #}}}
 
 sub assemble_class {    #{{{
+    ### assemble_class
     my ( $self,             $args )       = @_;
     my ( $class_definition, $class_type ) = @{$args}{qw/class_def type/};
     my $datastructure = $self->reference_list()->[-1] ;
@@ -152,6 +161,7 @@ sub assemble_class {    #{{{
 }    #}}}
 
 sub read_list_length {    #{{{
+    ### read_list_length
     my ( $self, $first_bit ) = @_;
 
     my $array_length;
@@ -170,10 +180,12 @@ sub read_list_length {    #{{{
     elsif ( $first_bit =~ /\x6c/ ) {
         $array_length = $self->read_integer_handle_chunk('I');
     }
+    ### found array length: $array_length
     return $array_length;
 }    #}}}
 
 sub write_hessian_chunk {    #{{{
+    ### write_hessian_chunk
     my ( $self, $element ) = @_;
     my $hessian_element;
     my $element_type = ref $element ? ref $element : \$element;
@@ -210,6 +222,7 @@ sub write_hessian_chunk {    #{{{
 }    #}}}
 
 sub write_composite_element {    #{{{
+    ### write_composite_element
     my ( $self, $datastructure ) = @_;
     my $element_type =
       ref $datastructure ? ref $datastructure : \$datastructure;
