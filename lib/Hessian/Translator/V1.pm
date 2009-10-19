@@ -7,6 +7,8 @@ use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 
+use Smart::Comments;
+
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 's' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
 has 'end_of_datastructure_symbol' => (is => 'ro', isa => 'Str', default => 'z');
@@ -239,7 +241,8 @@ sub read_untyped_list {    #{{{
     return $datastructure;
 }    #}}}
 
-sub read_simple_datastructure {    #{{{
+sub read_simple_datastructure {    #{{{  
+    ### read_simple_datastructure 
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my $element;
@@ -288,6 +291,7 @@ sub read_simple_datastructure {    #{{{
 }    #}}}
 
 sub read_list_type {    #{{{
+    ### read_list_type
     my $self         = shift;
     my $input_handle = $self->input_handle();
     my $type_length;
@@ -298,6 +302,7 @@ sub read_list_type {    #{{{
 }    #}}}
 
 sub read_rpc {    #{{{
+    ### read_rpc
     my $self         = shift;
     my $input_handle = $self->input_handle();
     my $call_data    = {};
@@ -337,9 +342,10 @@ sub read_rpc {    #{{{
 }    #}}}
 
 sub write_hessian_hash {    #{{{
+    ### write_hessian_hash
     my ( $self, $datastructure ) = @_;
     my $anonymous_map_string = "M";    # start an anonymous hash
-    foreach my $key ( keys %{$datastructure} ) {
+    foreach my $key ( keys %{$datastructure} ) { ### writing hash... done 
         my $hessian_key   = $self->write_scalar_element($key);
         my $value         = $datastructure->{$key};
         my $hessian_value = $self->write_hessian_chunk($value);
@@ -350,9 +356,10 @@ sub write_hessian_hash {    #{{{
 }    #}}}
 
 sub write_hessian_array {    #{{{
+    ### write_hessian_array
     my ( $self, $datastructure ) = @_;
     my $anonymous_array_string = "V";
-    foreach my $element ( @{$datastructure} ) {
+    foreach my $element ( @{$datastructure} ) { ### writing array... done
         my $hessian_element = $self->write_hessian_chunk($element);
         $anonymous_array_string .= $hessian_element;
     }
@@ -361,6 +368,7 @@ sub write_hessian_array {    #{{{
 }    #}}}
 
 sub write_hessian_string {    #{{{
+    ### write_hessian_string
     my ( $self, $chunks ) = @_;
     return $self->write_string( { chunks => $chunks } );
 
@@ -373,6 +381,7 @@ sub write_hessian_string {    #{{{
 #}    #}}}
 
 sub write_hessian_call {    #{{{
+    ### write_hessian_call
     my ( $self, $datastructure ) = @_;
     my $hessian_call   = "c\x01\x00";
     my $method         = $datastructure->{method};
@@ -380,7 +389,7 @@ sub write_hessian_call {    #{{{
     $hessian_method =~ s/^S/m/;
     $hessian_call .= $hessian_method;
     my $arguments = $datastructure->{arguments};
-    foreach my $argument ( @{$arguments} ) {
+    foreach my $argument ( @{$arguments} ) { ### writing call... done
         my $hessian_arg = $self->write_hessian_chunk($argument);
         $hessian_call .= $hessian_arg;
     }
@@ -389,6 +398,7 @@ sub write_hessian_call {    #{{{
 }    #}}}
 
 sub write_object { #{{{
+    ### write_object
     my ($self , $datastructure) = @_;
     my $type = ref $datastructure;
     my $hessian_string = "\x4d";
@@ -396,7 +406,7 @@ sub write_object { #{{{
     $hessian_type =~ s/^S/t/;
     $hessian_string .= $hessian_type;
     my @fields = keys %{$datastructure};
-    foreach my $field (@fields) {
+    foreach my $field (@fields) { ### object fields... done
         my $hessian_field = $self->write_scalar_element($field);
         my $value = $datastructure->{$field};
         my $hessian_value = $self->write_hessian_chunk($value);
@@ -408,6 +418,7 @@ sub write_object { #{{{
 } #}}}
 
 sub write_referenced_data  { #{{{
+    ### write_referenced_data
     my ( $self, $index) = @_;
     my $hessian_string = "R";
     # Bypass write integer for now
@@ -417,6 +428,7 @@ sub write_referenced_data  { #{{{
 } #}}}
 
 sub serialize_message {    #{{{
+    ### serialize_message
     my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);
     return $result;

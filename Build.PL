@@ -3,9 +3,10 @@ use warnings;
 use Module::Build;
 
 my $builder = Module::Build->new(
-    module_name          => 'Hessian::Client',
-    license              => 'perl',
-    dist_author          => 'William Travis Holton <wtholton@cromulent2000-eisley@yahoo.de>',
+    module_name => 'Hessian::Client',
+    license     => 'perl',
+    dist_author =>
+      'William Travis Holton <wtholton@cromulent2000-eisley@yahoo.de>',
     dist_version_from    => 'lib/Hessian/Client.pm',
     recursive_test_files => 1,
     'create_makefile_pl' => 'passthrough',
@@ -22,6 +23,7 @@ my $builder = Module::Build->new(
         'Exception::Class'              => 0,
         'Math::Int64'                   => 0,
         'Math::BigInt'                  => 0,
+        'Math::BigInt::GMP'             => '>=1.24',
         'Switch'                        => 0,
         'YAML'                          => 0,
         'Module::Load'                  => 0,

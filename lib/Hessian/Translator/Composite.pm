@@ -67,7 +67,7 @@ sub store_fetch_type {    #{{{
     }
     else {
         my $integer = unpack 'C*', $entity_type;
-        $type = $self->type_list()->[$integer];
+        $type = $self->type_list()->[$integer] if $integer;
 
     }
     return $type;
@@ -95,7 +95,7 @@ sub store_class_definition {    #{{{
 sub read_hessian_chunk {    #{{{
     my ( $self, $args ) = @_;
     my ( $first_bit, $element );
-    my $end_symbol = $self->end_of_datastructure_symbol();
+#    my $end_symbol = $self->end_of_datastructure_symbol();
     if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
         $first_bit = $args->{first_bit};
     }

@@ -1,7 +1,6 @@
 package Hessian::Translator;
 
 use Moose;
-use version; our $VERSION = qv('0.0.2');
 
 use Module::Load;
 use YAML;
@@ -9,14 +8,20 @@ use List::MoreUtils qw/any/;
 use Config;
 
 use Hessian::Exception;
+
 has 'is_big_endian'     => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'original_position' => ( is => 'rw', isa => 'Int',  default => 0 );
 has 'class_definitions' => ( is => 'rw', default => sub { [] } );
-has 'type_list'         => ( is => 'rw', default => sub { [] } );
-has 'reference_list'    => ( is => 'rw', default => sub { [] } );
-has 'input_string' => (    #{{{
+has 'type_list' => (    #{{{
     is      => 'rw',
-    isa     => 'Str',
+    isa     => 'ArrayRef',
+    lazy    => 1,
+    default => sub { [] }
+);                      #}}}
+has 'reference_list' => ( is => 'rw', default => sub { [] } );
+has 'input_string' => (    #{{{
+    is  => 'rw',
+    isa => 'Str',
 );                         #}}}
 has 'version'     => ( is => 'ro', isa => 'Int' );
 has 'binary_mode' => ( is => 'ro', isa => 'Bool', default => 0 );
@@ -29,7 +34,7 @@ has 'in_interior' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 before 'input_string' => sub {    #{{{
     my $self = shift;
-    if ( !$self->does('Hessian::Deserializer') ) {
+    if (  not $self->does('Hessian::Deserializer') ) {
         load 'Hessian::Deserializer';
         Hessian::Deserializer->meta()->apply($self);
     }
