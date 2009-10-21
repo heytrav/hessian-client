@@ -31,6 +31,8 @@ sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
     my $client = $self->{client};
     Hessian::Serializer->meta()->apply($client);
+    Hessian::Translator::V1->meta()->apply($client);
+
     ok(
         $client->does('Hessian::Serializer'),
         "Serializer role has been composed."
@@ -76,9 +78,7 @@ sub t015_serialize_float : Test(1) {    #{{{
 
 sub t017_serialize_array : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
     my $datastructure = [ 0, 'foobar' ];
     my $hessian_data = $client->serialize_chunk($datastructure);
     like( $hessian_data, qr/V\x90S\x00\x06foobarz/,
@@ -92,9 +92,7 @@ sub t017_serialize_array : Test(2) {    #{{{
 
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
     my $datastructure = { 1 => 'fee', 16 => 'fie', 256 => 'foe' };
 
     my $hessian_data = $client->serialize_chunk($datastructure);
@@ -112,9 +110,7 @@ sub t021_serialize_object : Test(1) {    #{{{
         model   => 'Beetle',
         mileage => 65536
     );
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
     my $hessian_output = $client->serialize_chunk($some_obj);
     # Re-parse hessian to create object:
     $client->input_string($hessian_output);
@@ -126,11 +122,9 @@ sub t021_serialize_object : Test(1) {    #{{{
     cmp_deeply( $processed_obj, $processed_data, "Compared datastructures." );
 }    #}}}
 
-sub t021_serialize_mixed : Test(1) {    #{{{
+sub t022_serialize_mixed : Test(1) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
     my $datastructure = [
         qw/hello goodbye/,
         {
@@ -148,9 +142,7 @@ sub t021_serialize_mixed : Test(1) {    #{{{
 
 sub t023_serialize_date : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
     $client->serializer();
     my $date = DateTime->new(
         year      => 1998,
@@ -172,9 +164,7 @@ sub t023_serialize_date : Test(2) {    #{{{
 
 sub t025_serialize_call : Test(3) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
     can_ok( $client, 'serialize_message' );
     my $datastructure = {
         call => {
