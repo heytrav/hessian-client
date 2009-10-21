@@ -166,8 +166,6 @@ sub t023_serialize_date : Test(2) {    #{{{
 sub t025_serialize_call : Test(3) {    #{{{
     my $self = shift;
     my $client = $self->{client};
-#    Hessian::Translator::V2->meta()->apply($client);
-#    Hessian::Serializer->meta()->apply($client);
     can_ok( $client, 'serialize_message' );
     my $datastructure = {
         call => {
@@ -193,8 +191,6 @@ sub t025_serialize_call : Test(3) {    #{{{
 sub t027_serialize_enveloped_message : Test(2) {    #{{{
     my $self = shift;
     my $client = $self->{client};
-#    Hessian::Translator::V2->meta()->apply($client);
-#    Hessian::Serializer->meta()->apply($client);
     my $datastructure = {
         envelope => {
             packet =>

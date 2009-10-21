@@ -24,14 +24,13 @@ sub t005_initialize_client : Test(1) {    #{{{
         !$client->does('Hessian::Serializer'),
         "Serializer role has not been composed."
     );
+    $self->{client} = $client;
 }    #}}}
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
+    my $client = $self->{client};
     Hessian::Serializer->meta()->apply($client);
-
-    #    $client->service( URI->new('http://localhost:8080') );
     ok(
         $client->does('Hessian::Serializer'),
         "Serializer role has been composed."
@@ -42,9 +41,7 @@ sub t007_compose_serializer : Test(2) {    #{{{
 
 sub t009_serialize_string : Test(1) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Translator::V1->meta()->apply($client);
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
 
     #    $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk("hello");
@@ -53,8 +50,7 @@ sub t009_serialize_string : Test(1) {    #{{{
 
 sub t011_serialize_integer : Test(2) {    #{{{
     my $self = shift;
-    my $client = Hessian::Translator->new( version => 1 );
-    Hessian::Serializer->meta()->apply($client);
+    my $client = $self->{client};
 
     #    $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk(-256);
@@ -68,10 +64,8 @@ sub t011_serialize_integer : Test(2) {    #{{{
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
     local $TODO = "Test results vary depending on platform.";
-    my $client = Hessian::Translator->new( version => 1 );
+    my $client = $self->{client};
 
-    #    $client->service( URI->new('http://localhost:8080') );
-    Hessian::Serializer->meta()->apply($client);
     my $hessian_string = $client->serialize_chunk(12.25);
     like(
         $hessian_string,
