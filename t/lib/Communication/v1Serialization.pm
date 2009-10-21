@@ -3,7 +3,6 @@ package  Communication::v1Serialization;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.0.1');
 use base 'Communication';
 
 use YAML;
@@ -17,6 +16,15 @@ use Hessian::Serializer;
 use Hessian::Translator::V1;
 use Hessian::Client;
 use SomeType;
+
+sub t005_initialize_client : Test(1) {    #{{{
+    my $self = shift;
+    my $client = Hessian::Translator->new( version => 1 );
+    ok(
+        !$client->does('Hessian::Serializer'),
+        "Serializer role has not been composed."
+    );
+}    #}}}
 
 sub t007_compose_serializer : Test(2) {    #{{{
     my $self = shift;

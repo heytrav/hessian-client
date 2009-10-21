@@ -24,7 +24,6 @@ sub prep01_check_webservice : Test(startup) {    #{{{
         }
     );
     eval {
-
         my $result = $client->methodNull();
     };
     if ( my $e = $@ ) {
