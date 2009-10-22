@@ -7,5 +7,5 @@ use lib qw{ ./t/lib };
 
 $ENV{TEST_METHOD} = 't005.*|t007.*|t025.*';
 
-use Communication::v1Serialization;
-Communication::v1Serialization->runtests();
+use Test::Hessian::V1::Serializer;
+Test::Hessian::V1::Serializer->runtests();
