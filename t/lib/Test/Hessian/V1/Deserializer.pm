@@ -10,9 +10,10 @@ use Test::Deep;
 use YAML;
 use Hessian::Translator;
 
-sub t004_initialize_hessian_obj : Test(4) {    #{{{
+sub t007_initialize_hessian_obj : Test(4) {    #{{{
     my $self = shift;
-    my $hessian_obj = Hessian::Translator->new( version => 1 );
+    
+    my $hessian_obj = $self->{client};
     ok(
         !$hessian_obj->does('Hessian::Deserializer'),
         "Have not yet composed the Deserialization logic."
@@ -48,13 +49,12 @@ sub t008_initialize_hessian_obj : Test(2) {    #{{{
         "Hessian version 1 methods have been composed."
     );
 
-    $self->{deserializer} = $hessian_obj;
 }    #}}}
 
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "Vt\x00\x04[intl\x00\x00\x00\x02\x90\x91z";
-    my $hessian_obj  = $self->{deserializer};
+    my $hessian_obj  = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
@@ -63,7 +63,7 @@ sub t010_read_fixed_length_typed : Test(1) {    #{{{
 sub t012_read_fixed_length_anonymous : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "Vl\x00\x00\x00\x02I\x00\x00\x00\x00I\x00\x00\x00\x01z";
-    my $hessian_obj  = $self->{deserializer};
+    my $hessian_obj  = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
@@ -72,7 +72,7 @@ sub t012_read_fixed_length_anonymous : Test(1) {    #{{{
 sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "v\x00\x02\x90\x91z";
-    my $hessian_obj  = $self->{deserializer};
+    my $hessian_obj  = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     print "Got data:\n".Dump($datastructure)."\n";
@@ -82,7 +82,7 @@ sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
 sub t015_read_typed_map : Test(3) {    #{{{
     my $self         = shift;
     my $hessian_data = "\x4dt\x00\x08SomeType\x05color\x0aaquamarine" . "\x05model\x06Beetle\x07mileageI\x00\x01\x00\x00z";
-    my $hessian_obj = $self->{deserializer};
+    my $hessian_obj = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     isa_ok( $datastructure, 'SomeType',
@@ -98,7 +98,7 @@ sub t016_read_referenced_datastructure : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "Mt\x00\x0aLinkedListS\x00"
       . "\x04headI\x00\x00\x00\x01S\x00\x04tailR\x00\x00\x00\x04z";
-    my $hessian_obj = $self->{deserializer};
+    my $hessian_obj = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
 
@@ -110,7 +110,7 @@ sub t017_sparse_array_map : Test(2) {    #{{{
     my $self         = shift;
     my $hessian_data = "MI\x00\x00\x00\x01S\x00\x03fee"
       . "I\x00\x00\x00\x10S\x00\x03fieI\x00\x00\x01\x00S\x00\x03foez";
-    my $hessian_obj = $self->{deserializer};
+    my $hessian_obj = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     isa_ok( $datastructure, 'HASH', 'Datastructure returned by deserializer' );
@@ -125,7 +125,7 @@ sub t017_sparse_array_map : Test(2) {    #{{{
 sub t019_object_definition : Test(2) {    #{{{
     my $self         = shift;
     my $hessian_data = "O\x9bexample.Car\x92\x05color\x05model";
-    my $hessian_obj  = $self->{deserializer};
+    my $hessian_obj  = $self->{client};
     $hessian_obj->input_string($hessian_data);
     $hessian_obj->deserialize_data();
 
@@ -140,7 +140,7 @@ sub t021_remote_object_reference : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "rt\x00\x0ctest.TestObjS\x00\x24"
       . "http://slytherin/ejbhome?id=69Xm8-zW";
-    my $hessian_obj = $self->{deserializer};
+    my $hessian_obj = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
 

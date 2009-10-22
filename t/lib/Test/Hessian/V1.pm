@@ -9,6 +9,7 @@ use YAML;
 use Test::More;
 use Test::Deep;
 use Test::Exception;
+use Hessian::Translator::V1;
 
 sub prep001_version : Test(startup) {    #{{{
     my $self = shift;
