@@ -9,6 +9,7 @@ use Test::More;
 use Test::Deep;
 use YAML;
 use Hessian::Translator;
+use Smart::Comments;
 
 sub t007_initialize_hessian_obj : Test(4) {    #{{{
     my $self = shift;
@@ -71,11 +72,12 @@ sub t012_read_fixed_length_anonymous : Test(1) {    #{{{
 
 sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
     my $self         = shift;
+    return "Can't find reference to this in version 1.02 specs.";
     my $hessian_data = "v\x00\x02\x90\x91z";
     my $hessian_obj  = $self->{client};
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
-    print "Got data:\n".Dump($datastructure)."\n";
+    ### Got data: "\n".Dump($datastructure)."\n"
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
 }    #}}}
 

@@ -6,6 +6,7 @@ use Module::Load;
 use YAML;
 use List::MoreUtils qw/any/;
 use Config;
+use Smart::Comments;
 
 use Hessian::Exception;
 
@@ -85,6 +86,8 @@ after 'version' => sub {    #{{{
 
 sub read_from_inputhandle {    #{{{
     my ( $self, $read_length ) = @_;
+    ### Reading from input handle: $read_length;
+
     my $input_handle = $self->input_handle();
     binmode( $input_handle, 'bytes' );
     my $original_pos            = $self->original_position();

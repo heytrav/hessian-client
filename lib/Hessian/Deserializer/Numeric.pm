@@ -8,6 +8,7 @@ use Math::BigFloat lib => 'GMP';
 use Hessian::Exception;
 use POSIX qw/floor ceil/;
 use Switch;
+use Smart::Comments;
 
 sub read_boolean {    #{{{
     my ( $self, $hessian_value ) = @_;

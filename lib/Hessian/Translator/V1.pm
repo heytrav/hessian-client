@@ -57,6 +57,7 @@ sub read_message_chunk_data {    #{{{
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
+    ### read_composite_data
     my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     switch ($first_bit) {
@@ -84,6 +85,7 @@ sub read_composite_data {    #{{{
 
 sub read_typed_list {    #{{{
     my ( $self, $first_bit ) = @_;
+    ### read_typed_list
     my $input_handle = $self->input_handle();
     my $v1_type      = $self->read_v1_type($first_bit);
     my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
@@ -114,6 +116,7 @@ sub read_typed_list {    #{{{
 
 sub read_remote_object {    #{{{
     my $self         = shift;
+    ### read_remote_object
     my $input_handle = $self->input_handle();
     my $remote_type  = $self->read_v1_type()->{type};
     $remote_type =~ s/\./::/g;
@@ -121,6 +124,7 @@ sub read_remote_object {    #{{{
         type   => $remote_type,
         fields => ['remote_url']
     };
+    ### class definition: Dump($class_definition)
     return $self->assemble_class(
         {
             type      => $remote_type,
@@ -132,6 +136,7 @@ sub read_remote_object {    #{{{
 
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
+    ### read_v1_type
     my ( $type, $first_bit, $array_length );
     my $input_handle = $self->input_handle();
     if ( $list_bit and $list_bit =~ /\x76/ ) {    # v
@@ -144,15 +149,14 @@ sub read_v1_type {    #{{{
             $type = $self->read_hessian_chunk( { first_bit => 'S' } );
         }
     }
-
-    #    print "Got type $type, first_bit $first_bit\n";
+    ### found type: $type
     return { type => $type, next_bit => $array_length } if $type;
     return { next_bit => $first_bit };
 }    #}}}
 
 sub read_class_handle {    #{{{
-
     my ( $self, $first_bit ) = @_;
+    ### read_class_handle
     my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
     switch ($first_bit) {
@@ -176,6 +180,7 @@ sub read_class_handle {    #{{{
 
 sub read_map_handle {    #{{{
     my $self         = shift;
+    ### read_map_handle
     my $input_handle = $self->input_handle();
     my $v1_type      = $self->read_v1_type();
     my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
@@ -213,6 +218,7 @@ sub read_map_handle {    #{{{
 
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
+    ### read_untyped_list
     my $input_handle = $self->input_handle();
     my $array_length;
     my $datastructure = $self->reference_list()->[-1];
@@ -242,8 +248,9 @@ sub read_untyped_list {    #{{{
 }    #}}}
 
 sub read_simple_datastructure {    #{{{  
-    ### read_simple_datastructure 
     my ( $self, $first_bit ) = @_;
+    ### read_simple_datastructure V1 translator 
+    ### first bit: $first_bit
     my $input_handle = $self->input_handle();
     my $element;
     switch ($first_bit) {

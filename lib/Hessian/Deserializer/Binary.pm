@@ -3,9 +3,11 @@ package  Hessian::Deserializer::Binary;
 use Moose::Role;
 
 use Switch;
+use Smart::Comments;
 
 sub read_binary_handle_chunk  {    #{{{
     my ( $self, $first_bit ) = @_;
+    ### read_binary_handle_chunk
     my $input_handle = $self->input_handle();
     my ($data, $length );
     switch ($first_bit) {
@@ -19,7 +21,6 @@ sub read_binary_handle_chunk  {    #{{{
             $length -= 0x20;
         }
     }
-#    read $input_handle, $binary, $length;
     my $binary = $self->read_from_inputhandle($length);
     return $binary;
 }    #}}}

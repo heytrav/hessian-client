@@ -331,22 +331,25 @@ sub read_v1_type {    #{{{
     return { next_bit => $first_bit };
 }    #}}}
 
-sub read_remote_object {    #{{{
-    my $self        = shift;
-    my $remote_type = $self->read_v1_type()->{type};
-    $remote_type =~ s/\./::/g;
-    my $class_definition = {
-        type   => $remote_type,
-        fields => ['remote_url']
-    };
-    return $self->assemble_class(
-        {
-            type      => $remote_type,
-            data      => {},
-            class_def => $class_definition
-        }
-    );
-}    #}}}
+#sub read_remote_object {    #{{{
+#    my $self        = shift;
+#    ### read_remote_object
+#    my $remote_type = $self->read_v1_type()->{type};
+#    $remote_type =~ s/\./::/g;
+#    my $class_definition = {
+#        type   => $remote_type,
+#        fields => ['remote_url']
+#    };
+
+#    ### class definition: Dump($class_definition)
+#    return $self->assemble_class(
+#        {
+#            type      => $remote_type,
+#            data      => {},
+#            class_def => $class_definition
+#        }
+#    );
+#}    #}}}
 
 "one, but we're not the same";
 

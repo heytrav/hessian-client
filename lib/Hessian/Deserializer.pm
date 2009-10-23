@@ -2,6 +2,7 @@ package Hessian::Deserializer;
 
 use Moose::Role;
 use YAML;
+use Smart::Comments;
 
 with qw/
   Hessian::Deserializer::Numeric
