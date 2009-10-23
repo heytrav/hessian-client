@@ -5,5 +5,5 @@ use warnings;
 
 use lib qw{ ./t/lib };
 
-use Communication::TestServlet2;
-Communication::TestServlet2->runtests();
+use Test::Hessian::Service::V2;
+Test::Hessian::Service::V2->runtests();
