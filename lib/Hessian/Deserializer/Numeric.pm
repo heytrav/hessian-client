@@ -50,12 +50,15 @@ sub read_long {    #{{{
 
 sub read_double {    #{{{
     my ( $self, $octet ) = @_;
+    ( my $raw_octets = $octet ) =~ s/^(?:\x5f)(.*)/$1/;
+    my @chars       = unpack 'C*', $raw_octets;
     my $double_value =
         $octet =~ /\x{5b}/                    ? 0.0
       : $octet =~ /\x{5c}/                    ? 1.0
       : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
-      : $octet =~ /\x5f/                      ? Implementation::X->throw(
-        error => "32 bit doubles not currently supported." )
+      : $octet =~ /\x5f/                      ?  
+      _read_quadruple_float_octet(\@chars) / 1000
+#      Implementation::X->throw( error => "32 bit doubles not currently supported." )
       : _read_full_double( $self, $octet );
 
     #_read_quadruple_octet_double($octet)
@@ -91,7 +94,6 @@ sub _read_triple_octet {    #{{{
 
 sub _read_quadruple_long_octet {    #{{{
     my $bytes = shift;
-
     my $integer = unpack "N", $bytes;
     $integer -= 2**32 if $integer >= 2**31;
     return $integer;
@@ -109,7 +111,7 @@ sub _read_quadruple_float_octet {    #{{{
 
         my $shift_val = 0;
         my $sum;
-        foreach my $byte ( reverse @{$bytes} ) {
+        foreach my $byte ( reverse @{ $bytes } ) {
             $sum += $byte << $shift_val;
             $shift_val += 8;
         }

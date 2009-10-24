@@ -221,13 +221,9 @@ sub t060_test_double_65_536 : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "\x5f\x00\x01\x00\x00";
     $self->{client}->input_string($hessian_data);
-#    throws_ok {
-        my $datastructure = $self->{client}->deserialize_data();
-#    }
-#    'Implementation::X', "Warn that 32 bit doubles are not supported.";
+    my $datastructure = $self->{client}->deserialize_data();
 
-    
-
+    is( $datastructure, 65.536, 'Correct value for 32 bit double' );
 
 }    #}}}
 
@@ -243,10 +239,8 @@ sub t070_test_double_0_001 : Test(1) {    #{{{
     my $self         = shift;
     my $hessian_data = "\x5f\x00\x00\x00\x01";
     $self->{client}->input_string($hessian_data);
-#    throws_ok {
-        my $datastructure = $self->{client}->deserialize_data();
-#    }
-#    'Implementation::X', "Warn that 32 bit doubles are not supported.";
+    my $datastructure = $self->{client}->deserialize_data();
+    is( $datastructure, 0.001, 'Correct value for 32 bit double' );
 }    #}}}
 
 sub t075_test_long_mOx80000000 : Test(1) {    #{{{
@@ -254,7 +248,7 @@ sub t075_test_long_mOx80000000 : Test(1) {    #{{{
     my $hessian_data = "\x59\x80\x00\x00\x00";
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
-    is($datastructure, -0x80000000, "Parsed 32 bit long.");
+    is( $datastructure, -0x80000000, "Parsed 32 bit long." );
 }    #}}}
 
 sub t080_test_long_64_bit_0x80000000 : Test(1) {    #{{{
