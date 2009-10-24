@@ -11,6 +11,29 @@ use Hessian::Simple;
 use Contextual::Return;
 use Smart::Comments;
 
+sub assemble_class {    #{{{
+    ### assemble_class
+    my ( $self,             $args )       = @_;
+    my ( $class_definition, $class_type ) = @{$args}{qw/class_def type/};
+    my $datastructure = pop @{$self->reference_list()} || $args->{data};
+    my $simple_obj = bless $datastructure, $class_type;
+    push @{$self->reference_list()}, $simple_obj;
+#    $self->reference_list()->[-1] = $simple_obj;
+    {
+        ## no critic
+        no strict 'refs';
+        push @{ $class_type . '::ISA' }, 'Hessian::Simple';
+        ## use critic
+    }
+    foreach my $field ( @{ $class_definition->{fields} } ) {
+        $simple_obj->meta()->add_attribute( $field, is => 'rw' );
+        my $value = $self->deserialize_data();
+        $simple_obj->$field($value);
+    }
+    return $simple_obj;
+
+}    #}}}
+
 sub read_typed_list_element {    #{{{
     ### read_typed_list_element
     my ( $self, $type, $args ) = @_;
@@ -138,27 +161,6 @@ sub instantiate_class {    #{{{
     );
 }    #}}}
 
-sub assemble_class {    #{{{
-    ### assemble_class
-    my ( $self,             $args )       = @_;
-    my ( $class_definition, $class_type ) = @{$args}{qw/class_def type/};
-    my $datastructure = $self->reference_list()->[-1] ;
-    my $simple_obj = bless $datastructure, $class_type;
-    $self->reference_list()->[-1] = $simple_obj;
-    {
-        ## no critic
-        no strict 'refs';
-        push @{ $class_type . '::ISA' }, 'Hessian::Simple';
-        ## use critic
-    }
-    foreach my $field ( @{ $class_definition->{fields} } ) {
-        $simple_obj->meta()->add_attribute( $field, is => 'rw' );
-        my $value = $self->deserialize_data();
-        $simple_obj->$field($value);
-    }
-    return $simple_obj;
-
-}    #}}}
 
 sub read_list_length {    #{{{
     ### read_list_length
