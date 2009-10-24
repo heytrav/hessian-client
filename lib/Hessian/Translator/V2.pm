@@ -27,21 +27,21 @@ sub read_message_chunk_data {    #{{{
                 $datastructure = { hessian_version => $hessian_version };
             }
         }
-        case /\x43/ {                    # Hessian Remote Procedure Call
-            if ( $self->in_interior() ) {
+#        case /\x43/ {                    # Hessian Remote Procedure Call
+#            if ( $self->in_interior() ) {
 
-                my $params = { first_bit => $first_bit };
-                $datastructure = $self->deserialize_data($params);
-            }
-            else {
+#                my $params = { first_bit => $first_bit };
+#                $datastructure = $self->deserialize_data($params);
+#            }
+#            else {
 
-          # call will need to be dispatched to object designated in some kind of
-          # service descriptor
-                my $rpc_data = $self->read_rpc();
-                $datastructure = { call => $rpc_data };
+#          # call will need to be dispatched to object designated in some kind of
+#          # service descriptor
+#                my $rpc_data = $self->read_rpc();
+#                $datastructure = { call => $rpc_data };
 
-            }
-        }
+#            }
+#        }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
         }

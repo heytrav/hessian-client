@@ -161,7 +161,6 @@ sub instantiate_class {    #{{{
     );
 }    #}}}
 
-
 sub read_list_length {    #{{{
     ### read_list_length
     my ( $self, $first_bit ) = @_;
