@@ -138,7 +138,7 @@ sub t019_object_definition : Test(2) {    #{{{
     is( $object->model(), 'civic', 'Correclty accessed object model' );
 }    #}}}
 
-sub t021_remote_object_reference : Test(1) {    #{{{
+sub t021_remote_object_reference : Test(2) {    #{{{
     my $self         = shift;
     my $hessian_data = "rt\x00\x0ctest.TestObjS\x00\x24"
       . "http://slytherin/ejbhome?id=69Xm8-zW";
@@ -146,7 +146,10 @@ sub t021_remote_object_reference : Test(1) {    #{{{
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
 
-    can_ok( $datastructure, qw/remote_url/ );
+    can_ok( $datastructure, qw/remote_url/ ) 
+        or $self->FAIL_ALL('Could not build object for test.TestObj');
+    my $string = $datastructure->remote_url();
+    is($string, "http://slytherin/ejbhome?id=69Xm8-zW");
 }    #}}}
 
 "one, but we're not the same";
