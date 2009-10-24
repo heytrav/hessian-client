@@ -8,7 +8,8 @@ use Math::BigFloat lib => 'GMP';
 use Hessian::Exception;
 use POSIX qw/floor ceil/;
 use Switch;
-use Smart::Comments;
+#use Smart::Comments;
+use YAML;
 
 sub read_boolean {    #{{{
     my ( $self, $hessian_value ) = @_;
@@ -52,6 +53,7 @@ sub read_double {    #{{{
     my ( $self, $octet ) = @_;
     ( my $raw_octets = $octet ) =~ s/^(?:\x5f)(.*)/$1/;
     my @chars       = unpack 'C*', $raw_octets;
+    ### bytes: Dump(\@chars)
     my $double_value =
         $octet =~ /\x{5b}/                    ? 0.0
       : $octet =~ /\x{5c}/                    ? 1.0
@@ -115,6 +117,7 @@ sub _read_quadruple_float_octet {    #{{{
             $sum += $byte << $shift_val;
             $shift_val += 8;
         }
+        $sum -= 2**32 if $sum >= 2**31;
         return $sum;
     }
 }    #}}}

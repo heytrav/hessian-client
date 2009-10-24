@@ -12,6 +12,8 @@ use Test::Exception;
 use Hessian::Client;
 use YAML;
 use DateTime;
+use DateTime::Format::Strptime;
+#use Smart::Comments;
 
 my $test_service = 'http://hessian.caucho.com/test/test2';
 
@@ -79,9 +81,8 @@ sub test_reply_long_mOx80000000 : Test(1) {    #{{{
         }
     );
     my $function = "replyLong_m0x80000000";
-    throws_ok {
     my $result   = $client->$function();
-    }'Implementation::X', "Warn that 32 bit longs are not supported.";
+    is( $result->{reply_data}, -0x80000000, 'Parsed correct long from server' );
 }    #}}}
 
 sub test_reply_long_mOx80000001 : Test(1) {    #{{{
@@ -124,7 +125,7 @@ sub test_reply_double_0_0 : Test(1) {    #{{{
 }    #}}}
 
 sub test_reply_double_m0_001 : Test(1) {    #{{{
-    my $self = shift;
+    my $self   = shift;
     my $client = Hessian::Client->new(
         {
             version => 2,
@@ -132,9 +133,8 @@ sub test_reply_double_m0_001 : Test(1) {    #{{{
         }
     );
     my $function = "replyDouble_m0_001";
-    throws_ok {
     my $result   = $client->$function();
-    }'Implementation::X', 'Warn that 32 bit doubles are not supported.';
+    is( $result->{reply_data}, -0.001, 'Parsed correct double from server.' );
 }    #}}}
 
 sub test_reply_double_127_0 : Test(1) {    #{{{
@@ -242,7 +242,10 @@ sub reply_date_1 : Test(1) {    #{{{
     );
     my $result      = $client->replyDate_1();
     my $result_date = $result->{reply_data};
+    my $formatter   = DateTime::Format::Strptime->new( pattern => '%FT%T%z' );
     is( DateTime->compare( $result_date, $date ), 0 );
+    my $result_date_iso = $formatter->format_datetime($result_date);
+    ### datetime: $result_date_iso
 
 }    #}}}
 
@@ -260,7 +263,10 @@ sub reply_date_2 : Test(1) {    #{{{
     my $client      = get_client();
     my $result      = $client->replyDate_2();
     my $result_date = $result->{reply_data};
+    my $formatter   = DateTime::Format::Strptime->new( pattern => '%FT%T%z' );
     is( DateTime->compare( $result_date, $date ), 0 );
+    my $result_date_iso = $formatter->format_datetime($result_date);
+    ### datetime: $result_date_iso
 
 }    #}}}
 

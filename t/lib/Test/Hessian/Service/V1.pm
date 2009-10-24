@@ -78,9 +78,9 @@ sub test_reply_long_mOx80000000 : Test(1) {    #{{{
         }
     );
     my $function = "replyLong_m0x80000000";
-    throws_ok {
     my $result   = $client->$function();
-    }'Implementation::X', "Warn that 32 bit longs are not supported.";
+    is($result->{reply_data}, -0x80000000, 'Parsed result from server');
+
 }    #}}}
 
 sub test_reply_long_mOx80000001 : Test(1) {    #{{{
@@ -131,9 +131,8 @@ sub test_reply_double_m0_001 : Test(1) {    #{{{
         }
     );
     my $function = "replyDouble_m0_001";
-    throws_ok {
     my $result   = $client->$function();
-    }'Implementation::X', 'Warn that 32 bit doubles are not supported.';
+    is($result->{reply_data}, -0.001, 'Parsed result from server.');
 }    #}}}
 
 sub test_reply_double_127_0 : Test(1) {    #{{{
