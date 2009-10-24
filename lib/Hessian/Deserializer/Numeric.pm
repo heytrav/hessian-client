@@ -28,13 +28,13 @@ sub read_integer {    #{{{
         $octet_count == 1 ? _read_single_octet( $chars[0], 0x90 )
       : $octet_count == 2 ? _read_double_octet( \@chars, 0xc8 )
       : $octet_count == 3 ? _read_triple_octet( \@chars, 0xd4 )
-      :                    _read_quadruple_octet( \@depends_on_endian );
+      :                     _read_quadruple_octet( \@depends_on_endian );
     return $result;
 }    #}}}
 
 sub read_long {    #{{{
     my ( $self, $hessian_data ) = @_;
-    ( my $raw_octets = $hessian_data ) =~ s/^(?:L|\x77)(.*)/$1/;
+    ( my $raw_octets = $hessian_data ) =~ s/^(?:L|\x77|\x59)(.*)/$1/;
     my @chars       = unpack 'C*', $raw_octets;
     my $array_size  = scalar @chars;
     my $octet_count = scalar @chars;
@@ -42,10 +42,7 @@ sub read_long {    #{{{
         $octet_count == 1 ? _read_single_octet( $chars[0], 0xe0 )
       : $octet_count == 2 ? _read_double_octet( \@chars, 0xf8 )
       : $octet_count == 3 ? _read_triple_octet( \@chars, 0x3c )
-      : $octet_count == 4 ? Implementation::X->throw(
-        error => "32 bit longs
-      not currently supported."
-      )
+      : $octet_count == 4 ? _read_quadruple_long_octet( $raw_octets)
       : _read_full_long($raw_octets);    #\@chars );
                                          #_read_quadruple_octet( \@chars,
     return $result;
@@ -59,7 +56,7 @@ sub read_double {    #{{{
       : $octet =~ /(?: \x{5d} | \x{5e} ) .*/x ? _read_compact_double($octet)
       : $octet =~ /\x5f/                      ? Implementation::X->throw(
         error => "32 bit doubles not currently supported." )
-      : _read_full_double($self,$octet);
+      : _read_full_double( $self, $octet );
 
     #_read_quadruple_octet_double($octet)
     return $double_value;
@@ -93,26 +90,16 @@ sub _read_triple_octet {    #{{{
 }    #}}}
 
 sub _read_quadruple_long_octet {    #{{{
-    my ( $bytes, $octet_shift ) = @_;
-    my $big_int   = Math::BigInt->new();
-    my $shift_val = 0;
-    my $index     = 0;
-    foreach my $byte ( reverse @{$bytes} ) {
+    my $bytes = shift;
 
-        #        $index++;
-        my $shift_byte = Math::BigInt->new($byte);
-
-        #        $shift_byte->bsub($octet_shift) if $index == 4;
-        $shift_byte->blsft($shift_val);
-        $big_int->badd($shift_byte);
-        $shift_val += 8;
-    }
-    return $big_int->bstr();
+    my $integer = unpack "N", $bytes;
+    $integer -= 2**32 if $integer >= 2**31;
+    return $integer;
 }    #}}}
 
 sub _read_quadruple_octet {    #{{{
     my $bytes = shift;
-    return unpack "l", pack "C*",  @{$bytes};
+    return unpack "l", pack "C*", @{$bytes};
 }    #}}}
 
 sub _read_quadruple_float_octet {    #{{{
@@ -161,11 +148,11 @@ sub _read_quadruple_octet_double {    #{{{
 }    #}}}
 
 sub _read_full_double {    #{{{
-    my ($self, $double) = @_;
+    my ( $self, $double ) = @_;
     ( my $octets = $double ) =~ s/(?:D ) (.*) /$1/x;
     my @chars = unpack 'C*', $octets;
     my @double_chars = $self->is_big_endian() ? @chars : reverse @chars;
-    my $double_value = unpack 'F', pack 'C*',  @double_chars;
+    my $double_value = unpack 'F', pack 'C*', @double_chars;
     return $double_value;
 }    #}}}
 
