@@ -184,7 +184,7 @@ sub read_map_handle {    #{{{
     {
         my $key;
         eval { $key = $self->read_hessian_chunk(); };
-        last if $key eq '';
+        last if not $key or $key eq '';
         last MAPLOOP
           if ( Exception::Class->caught('EndOfInput::X')
             or Exception::Class->caught('MessageIncomplete::X') );
@@ -322,7 +322,17 @@ sub write_hessian_string {    #{{{
 sub write_object {    #{{{
     my ( $self, $datastructure ) = @_;
     my $type              = ref $datastructure;
+    my @fields = keys %{$datastructure};
     my @class_definitions = @{ $self->class_definitions() };
+    {
+        ## no critic
+        no strict 'refs';
+        push @{ $type . '::ISA' }, 'Hessian::Simple';
+        ## use critic
+    }
+    foreach my $field (@fields) {
+        $datastructure->meta()->add_attribute($field, is => 'rw');
+    }
     my ( $hessian_string, $class_already_stored );
     my $index = 0;
     foreach my $class_def (@class_definitions) {
@@ -333,7 +343,6 @@ sub write_object {    #{{{
         }
         $index++;
     }
-    my @fields = keys %{$datastructure};
     if ( not $class_already_stored ) {
         my $hessian_type = $self->write_scalar_element($type);
         $hessian_string = "C" . $hessian_type;
@@ -350,9 +359,10 @@ sub write_object {    #{{{
     $hessian_string .= 'O';
     $hessian_string .= ( $self->write_scalar_element($index) );
     foreach my $field (@fields) {
-#        my $value = $datastructure->$field();
-        my $value = $datastructure->{$field};
+        my $value = $datastructure->$field();
+#        my $value = $datastructure->{$field};
         $hessian_string .= ( $self->write_scalar_element($value) );
+        ### hessian_string: $hessian_string
     }
     return $hessian_string;
 }    #}}}
