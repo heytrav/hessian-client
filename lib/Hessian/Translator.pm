@@ -97,6 +97,7 @@ sub read_from_inputhandle {    #{{{
       $current_position;
 
     my $remaining_length = length $remaining_string_buffer;
+    ### remaining: $remaining_length
     my $result;
     if ( $read_length > $remaining_length ) {
 

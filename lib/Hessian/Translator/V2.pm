@@ -16,7 +16,7 @@ sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $datastructure;
     switch ($first_bit) {
-        case /\x48/ {            # TOP with version
+        case /\x48/ {            # TOP with version#{{{
             $self->in_interior(0);
             if ( $self->chunked() ) {    # use as hashmap if chunked
                 my $params = { first_bit => $first_bit };
@@ -26,22 +26,22 @@ sub read_message_chunk_data {    #{{{
                 my $hessian_version = $self->read_version();
                 $datastructure = { hessian_version => $hessian_version };
             }
-        }
-        case /\x43/ {                    # Hessian Remote Procedure Call
-            if ( $self->in_interior() ) {
+        }#}}}
+#        case /\x43/ {                    # Hessian Remote Procedure Call
+#            if ( $self->in_interior() ) {
 
-                my $params = { first_bit => $first_bit };
-                $datastructure = $self->deserialize_data($params);
-            }
-            else {
+#                my $params = { first_bit => $first_bit };
+#                $datastructure = $self->deserialize_data($params);
+#            }
+#            else {
 
-          # call will need to be dispatched to object designated in some kind of
-          # service descriptor
-                my $rpc_data = $self->read_rpc();
-                $datastructure = { call => $rpc_data };
+#          # call will need to be dispatched to object designated in some kind of
+#          # service descriptor
+#                my $rpc_data = $self->read_rpc();
+#                $datastructure = { call => $rpc_data };
 
-            }
-        }
+#            }
+#        }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
         }
@@ -184,6 +184,7 @@ sub read_map_handle {    #{{{
     {
         my $key;
         eval { $key = $self->read_hessian_chunk(); };
+        last if $key eq '';
         last MAPLOOP
           if ( Exception::Class->caught('EndOfInput::X')
             or Exception::Class->caught('MessageIncomplete::X') );
@@ -349,7 +350,8 @@ sub write_object {    #{{{
     $hessian_string .= 'O';
     $hessian_string .= ( $self->write_scalar_element($index) );
     foreach my $field (@fields) {
-        my $value = $datastructure->$field();
+#        my $value = $datastructure->$field();
+        my $value = $datastructure->{$field};
         $hessian_string .= ( $self->write_scalar_element($value) );
     }
     return $hessian_string;
