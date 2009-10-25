@@ -9,7 +9,7 @@ use Test::More;
 use Test::Deep;
 use YAML;
 use Hessian::Translator;
-use Smart::Comments;
+#use Smart::Comments;
 
 sub t007_initialize_hessian_obj : Test(4) {    #{{{
     my $self = shift;

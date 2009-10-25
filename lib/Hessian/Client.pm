@@ -3,7 +3,7 @@ package Hessian::Client;
 use strict;
 use warnings;
 
-use version; our $VERSION = qv('0.1.15');
+use version; our $VERSION = qv('0.2.0');
 
 use LWP::UserAgent;
 use HTTP::Request;
@@ -111,6 +111,14 @@ Hessian::Client implements basic RPC for Hessian. Although currently only
 tested with version 1, communication with version 2.0 servers should also
 work. I am currently looking for publicly available or otherwise accesible
 Hessian services for testing.
+
+
+I probably should note that although the package was submitted under the name
+L<Hessian::Client>, the real work is actually done in
+L<Hessian::Translator|Hessian::Translator> and its associated subclasses and
+roles.  In fact, I will most likely change the package name to
+C<Hessian::Translator> and submit this as a separate module at
+some point in the near future.  
 
 
 =head1 INTERFACE

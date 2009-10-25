@@ -123,7 +123,8 @@ sub t022_serialize_object : Test(1) {    #{{{
     my $client = $self->{client};
     my $hessian_output = $client->serialize_chunk($some_obj);
 
-    my ($hessian_obj) = $hessian_output =~ /(O.*)/s;
+#    my ($hessian_obj) = $hessian_output =~ /(O.*)/s;
+    my $hessian_obj = $hessian_output;
 
     # Re-parse hessian to create object:
     $client->input_string($hessian_obj);

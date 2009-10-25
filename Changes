@@ -1,5 +1,14 @@
 Revision history for Hessian::Client
 
+0.2.0  Sun Oct 25 2009
+        Actually implemented handling of 32 bit longs (up till now this had
+        just thrown an exception).  This was made possible by a helpful post
+        that I stumbled upon in an forum (vielen Dank 'hp', whoever you are).  I
+        also had to make a small work around for object serialization that was
+        causing objects not to be serialized properly.  The "work around" is
+        to instead serialize them as "typed maps". I hope to eventually come
+        back to proper objects instead eventually. Who knows when I'll get
+        back around to work on this again though. 
 
 0.1.15 Sat Aug 08 2009
         Edited the README so that it is at least relevant.

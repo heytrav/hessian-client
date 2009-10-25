@@ -2,7 +2,7 @@ package Hessian::Deserializer;
 
 use Moose::Role;
 use YAML;
-use Smart::Comments;
+##use Smart::Comments;
 
 with qw/
   Hessian::Deserializer::Numeric
@@ -75,7 +75,7 @@ sub next_token {    #{{{
 sub process_message {    #{{{
     my $self = shift;
     my $tokens;
-    while ( my $token = $self->next_token() ) {
+    while ( my $token = $self->deserialize_message()) { #next_token() ) {
         if ( ( ref $token ) eq 'HASH' ) {
             my @token_keys = keys %{$token};
             @{$tokens}{@token_keys} = @{$token}{@token_keys};

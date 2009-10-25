@@ -6,7 +6,7 @@ use Module::Load;
 use YAML;
 use List::MoreUtils qw/any/;
 use Config;
-use Smart::Comments;
+#use Smart::Comments;
 
 use Hessian::Exception;
 
@@ -173,8 +173,9 @@ Hessian::Translator - Base class for Hessian serialization/deserialization.
 
 =head1 DESCRIPTION
 
-B<Hessian::Translator> is made to act as the base class (or whatever this is
-called in Moose terminology) for serialization/deserialization methods.  
+B<Hessian::Translator> and associated subclasses and roles provides
+serialization/deserialization of data and Perl datastructures into Hessian
+protocol.  
 
 On its own, this class really only provides some of the more basic functions
 required for Hessian processing such as the I<type list> for datatypes, the
@@ -186,11 +187,15 @@ is possibly to specialize the object for either Hessian 1.0 or Hessian 2.0
 processing and to selectively include methods for serialization and or
 deserialization.  
 
+
+
 =head1 INTERFACE
+
 
 =head2 BUILD
 
-Not to be called directly.  
+Not to be called directly.  Pod::Coverage complains if I don't have it in here
+though.
 
 
 =head2 new
@@ -255,7 +260,11 @@ the current object.
 
 =head2 read_from_inputhandle
 
+Reads a specified number of bytes from an input stream.
+
 =head2 set_current_position
+
+Set/reset the current position in an input stream.
 
 
 =head1 DEPENDENCIES

@@ -9,7 +9,7 @@ use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 use Contextual::Return;
-use Smart::Comments;
+#use Smart::Comments;
 
 sub assemble_class {    #{{{
     ### assemble_class

@@ -13,7 +13,7 @@ use Hessian::Client;
 use YAML;
 use DateTime;
 use DateTime::Format::Strptime;
-#use Smart::Comments;
+##use Smart::Comments;
 
 my $test_service = 'http://hessian.caucho.com/test/test2';
 
