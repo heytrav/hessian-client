@@ -1,0 +1,10 @@
+Build
+MANIFEST
+MANIFEST.bak
+_build
+blib
+cover_db
+output.xml
+*.swp
+META.yml
+*.tar.gz
