@@ -7,7 +7,7 @@ use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 
-use Smart::Comments;
+#use Smart::Comments;
 
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 's' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
@@ -358,7 +358,7 @@ sub write_hessian_hash {    #{{{
         my $hessian_value = $self->write_hessian_chunk($value);
         $anonymous_map_string .= $hessian_key . $hessian_value;
     }
-    $anonymous_map_string .= "z";
+    $anonymous_map_string .= $self->end_of_datastructure_symbol();
     return $anonymous_map_string;
 }    #}}}
 

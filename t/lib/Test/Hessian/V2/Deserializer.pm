@@ -12,7 +12,7 @@ use YAML;
 use Hessian::Translator;
 use Hessian::Serializer;
 use Config;
-use Smart::Comments;
+#use Smart::Comments;
 
 sub t004_initialize_hessian_obj : Test(4) {    #{{{
     my $self = shift;

@@ -9,16 +9,17 @@ use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 use Contextual::Return;
-use Smart::Comments;
+#use Smart::Comments;
 
 sub assemble_class {    #{{{
     ### assemble_class
     my ( $self,             $args )       = @_;
     my ( $class_definition, $class_type ) = @{$args}{qw/class_def type/};
-    my $datastructure = pop @{$self->reference_list()} || $args->{data};
+    my $datastructure = pop @{ $self->reference_list() } || $args->{data};
     my $simple_obj = bless $datastructure, $class_type;
-    push @{$self->reference_list()}, $simple_obj;
-#    $self->reference_list()->[-1] = $simple_obj;
+    push @{ $self->reference_list() }, $simple_obj;
+
+    #    $self->reference_list()->[-1] = $simple_obj;
     {
         ## no critic
         no strict 'refs';
@@ -107,7 +108,7 @@ sub store_class_definition {    #{{{
     my $number_of_fields = $self->read_integer_handle_chunk($length);
     my @field_list;
 
-    foreach my $field_index ( 1 .. $number_of_fields ) { 
+    foreach my $field_index ( 1 .. $number_of_fields ) {
 
         # using the wrong function here, but who cares?
         my $field = $self->read_hessian_chunk();
@@ -124,16 +125,16 @@ sub read_hessian_chunk {    #{{{
     ### read_hessian_chunk
     my ( $self, $args ) = @_;
     my ( $first_bit, $element );
-#    my $end_symbol = $self->end_of_datastructure_symbol();
+
+    #    my $end_symbol = $self->end_of_datastructure_symbol();
     if ( 'HASH' eq ( ref $args ) and $args->{first_bit} ) {
         $first_bit = $args->{first_bit};
     }
     else {
         $first_bit = $self->read_from_inputhandle(1);
     }
-    EndOfInput::X->throw( 
-        error => 'Reached end of datastructure.' 
-    )  if $first_bit eq $self->end_of_datastructure_symbol() ;
+    EndOfInput::X->throw( error => 'Reached end of datastructure.' )
+      if $first_bit eq $self->end_of_datastructure_symbol();
     return $self->read_simple_datastructure($first_bit);
 }    #}}}
 
@@ -227,6 +228,7 @@ sub write_composite_element {    #{{{
     my ( $self, $datastructure ) = @_;
     my $element_type =
       ref $datastructure ? ref $datastructure : \$datastructure;
+    ### element type: $element_type
     my $hessian_string;
     switch ($element_type) {
         case /HASH/ {
@@ -277,42 +279,43 @@ sub read_composite_datastructure {    #{{{
     return $self->read_composite_data($first_bit);
 }    #}}}
 
-sub read_map_handle {    #{{{
-    my $self    = shift;
-    my $v1_type = $self->read_v1_type();
-    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
-    my $type;
-    $type = $self->store_fetch_type($entity_type) if $entity_type;
-    my $key;
-    if ($next_bit) {
-        $key = $self->read_hessian_chunk( { first_bit => $next_bit } );
-    }
+#sub read_map_handle {    #{{{
+#    my $self    = shift;
+#    my $v1_type = $self->read_v1_type();
+#    my ( $entity_type, $next_bit ) = @{$v1_type}{qw/type next_bit/};
+#    my $type;
+#    $type = $self->store_fetch_type($entity_type) if $entity_type;
+#    my $key;
+#    if ($next_bit) {
+#        $key = $self->read_hessian_chunk( { first_bit => $next_bit } );
+#    }
 
-    # For now only accept integers or strings as keys
-    my @key_value_pairs;
-  MAPLOOP:
-    {
-        eval { $key = $self->read_hessian_chunk(); } unless $key;
-        last MAPLOOP if Exception::Class->caught('EndOfInput::X') or
-        Exception::Class->caught('MessageIncomplete::X');
-        my $value = $self->read_hessian_chunk();
-        push @key_value_pairs, $key => $value;
-        undef $key;
-        redo MAPLOOP;
-    }
+#    # For now only accept integers or strings as keys
+#    my @key_value_pairs;
+#  MAPLOOP:
+#    {
+#        eval { $key = $self->read_hessian_chunk(); } unless $key;
+#        last MAPLOOP
+#          if Exception::Class->caught('EndOfInput::X')
+#              or Exception::Class->caught('MessageIncomplete::X');
+#        my $value = $self->read_hessian_chunk();
+#        push @key_value_pairs, $key => $value;
+#        undef $key;
+#        redo MAPLOOP;
+#    }
 
-    # should throw an exception if @key_value_pairs has an odd number of
-    # elements
+#    # should throw an exception if @key_value_pairs has an odd number of
+#    # elements
 
-    my $datastructure = $self->reference_list()->[-1];
-    my $hash          = {@key_value_pairs};
-    foreach my $key ( keys %{$hash} ) {
-        $datastructure->{$key} = $hash->{$key};
-    }
-    my $map = defined $type ? bless $datastructure => $type : $datastructure;
-    return $map;
+#    my $datastructure = $self->reference_list()->[-1];
+#    my $hash          = {@key_value_pairs};
+#    foreach my $key ( keys %{$hash} ) {
+#        $datastructure->{$key} = $hash->{$key};
+#    }
+#    my $map = defined $type ? bless $datastructure => $type : $datastructure;
+#    return $map;
 
-}    #}}}
+#}    #}}}
 
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;

@@ -3,7 +3,7 @@ package  Hessian::Deserializer::Binary;
 use Moose::Role;
 
 use Switch;
-use Smart::Comments;
+##use Smart::Comments;
 
 sub read_binary_handle_chunk  {    #{{{
     my ( $self, $first_bit ) = @_;

@@ -6,6 +6,7 @@ use Switch;
 use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
+#use Smart::Comments;
 
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 'R' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
@@ -15,33 +16,37 @@ has 'end_of_datastructure_symbol' =>
 sub read_message_chunk_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my $datastructure;
+    ### message chunk data
+    ### first bit: $first_bit
     switch ($first_bit) {
-        case /\x48/ {            # TOP with version
+        case /\x48/ {            # TOP with version#{{{
             $self->in_interior(0);
             if ( $self->chunked() ) {    # use as hashmap if chunked
                 my $params = { first_bit => $first_bit };
                 $datastructure = $self->deserialize_data($params);
             }
             else {
+                ### reading version
                 my $hessian_version = $self->read_version();
                 $datastructure = { hessian_version => $hessian_version };
             }
-        }
-#        case /\x43/ {                    # Hessian Remote Procedure Call
-#            if ( $self->in_interior() ) {
+        }    #}}}
 
-#                my $params = { first_bit => $first_bit };
-#                $datastructure = $self->deserialize_data($params);
-#            }
-#            else {
+       #        case /\x43/ {                    # Hessian Remote Procedure Call
+       #            if ( $self->in_interior() ) {
+
+        #                my $params = { first_bit => $first_bit };
+        #                $datastructure = $self->deserialize_data($params);
+        #            }
+        #            else {
 
 #          # call will need to be dispatched to object designated in some kind of
 #          # service descriptor
 #                my $rpc_data = $self->read_rpc();
 #                $datastructure = { call => $rpc_data };
 
-#            }
-#        }
+        #            }
+        #        }
         case /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
         }
@@ -184,6 +189,7 @@ sub read_map_handle {    #{{{
     {
         my $key;
         eval { $key = $self->read_hessian_chunk(); };
+        last if not $key or $key eq '';
         last MAPLOOP
           if ( Exception::Class->caught('EndOfInput::X')
             or Exception::Class->caught('MessageIncomplete::X') );
@@ -205,7 +211,7 @@ sub read_map_handle {    #{{{
 
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
-    my $array_length = $self->read_list_length( $first_bit, );
+    my $array_length  = $self->read_list_length( $first_bit, );
     my $datastructure = [];
     my $index         = 0;
   LISTLOOP:
@@ -220,7 +226,7 @@ sub read_untyped_list {    #{{{
                 last LISTLOOP;
             }
         }
-        if (defined $element) {
+        if ( defined $element ) {
             push @{$datastructure}, $element;
             $index++;
 
@@ -297,8 +303,24 @@ sub write_hessian_hash {    #{{{
         my $hessian_value = $self->write_hessian_chunk($value);
         $anonymous_map_string .= $hessian_key . $hessian_value;
     }
-    $anonymous_map_string .= "Z";
+    $anonymous_map_string .= $self->end_of_datastructure_symbol();
     return $anonymous_map_string;
+}    #}}}
+
+sub write_typed_map {    #{{{
+    my ( $self, $datastructure ) = @_;
+    my $type             = ref $datastructure;
+    my $hessian_type     = $self->write_scalar_element($type);
+    my $typed_map_string = 'M' . $hessian_type;
+
+    foreach my $key ( keys %{$datastructure} ) {
+        my $hessian_key   = $self->write_scalar_element($key);
+        my $value         = $datastructure->{$key};
+        my $hessian_value = $self->write_hessian_chunk($value);
+        $typed_map_string .= $hessian_key . $hessian_value;
+    }
+    $typed_map_string .= $self->end_of_datastructure_symbol();
+    return $typed_map_string;
 }    #}}}
 
 sub write_hessian_array {    #{{{
@@ -320,39 +342,52 @@ sub write_hessian_string {    #{{{
 
 sub write_object {    #{{{
     my ( $self, $datastructure ) = @_;
-    my $type              = ref $datastructure;
-    my @class_definitions = @{ $self->class_definitions() };
-    my ( $hessian_string, $class_already_stored );
-    my $index = 0;
-    foreach my $class_def (@class_definitions) {
-        my $defined_type = $class_def->{type};
-        if ( $defined_type eq $type ) {
-            $class_already_stored = 1;
-            last;
-        }
-        $index++;
-    }
-    my @fields = keys %{$datastructure};
-    if ( not $class_already_stored ) {
-        my $hessian_type = $self->write_scalar_element($type);
-        $hessian_string = "C" . $hessian_type;
-        my $num_of_fields = scalar @fields;
-        $hessian_string .= ( $self->write_scalar_element($num_of_fields) );
-        foreach my $field (@fields) {
-            my $hessian_field = $self->write_scalar_element($field);
-            $hessian_string .= $hessian_field;
-        }
-        my $store_definition = { type => $type, fields => \@fields };
-        push @{ $self->class_definitions() }, $store_definition;
-        $index = ( scalar @{ $self->class_definitions } ) - 1;
-    }
-    $hessian_string .= 'O';
-    $hessian_string .= ( $self->write_scalar_element($index) );
-    foreach my $field (@fields) {
-        my $value = $datastructure->$field();
-        $hessian_string .= ( $self->write_scalar_element($value) );
-    }
-    return $hessian_string;
+    return $self->write_typed_map($datastructure);
+#    my $type              = ref $datastructure;
+#    my @fields            = keys %{$datastructure};
+#    my @class_definitions = @{ $self->class_definitions() };
+#    {
+#        ## no critic
+#        no strict 'refs';
+#        push @{ $type . '::ISA' }, 'Hessian::Simple';
+#        ## use critic
+#    }
+#    foreach my $field (@fields) {
+#        $datastructure->meta()->add_attribute( $field, is => 'rw' );
+#    }
+#    my ( $hessian_string, $class_already_stored );
+#    my $index = 0;
+#    foreach my $class_def (@class_definitions) {
+#        my $defined_type = $class_def->{type};
+#        if ( $defined_type eq $type ) {
+#            $class_already_stored = 1;
+#            last;
+#        }
+#        $index++;
+#    }
+#    if ( not $class_already_stored ) {
+#        my $hessian_type = $self->write_scalar_element($type);
+#        $hessian_string = "C" . $hessian_type;
+#        my $num_of_fields = scalar @fields;
+#        $hessian_string .= ( $self->write_scalar_element($num_of_fields) );
+#        foreach my $field (@fields) {
+#            my $hessian_field = $self->write_scalar_element($field);
+#            $hessian_string .= $hessian_field;
+#        }
+#        my $store_definition = { type => $type, fields => \@fields };
+#        push @{ $self->class_definitions() }, $store_definition;
+#        $index = ( scalar @{ $self->class_definitions } ) - 1;
+#    }
+#    $hessian_string .= 'O';
+#    $hessian_string .= ( $self->write_scalar_element($index) );
+#    foreach my $field (@fields) {
+#        my $value = $datastructure->$field();
+
+#        #        my $value = $datastructure->{$field};
+#        $hessian_string .= ( $self->write_scalar_element($value) );
+#        ### hessian_string: $hessian_string
+#    }
+#    return $hessian_string;
 }    #}}}
 
 sub write_referenced_data {    #{{{
@@ -384,7 +419,10 @@ sub write_hessian_call {    #{{{
 sub serialize_message {    #{{{
     my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);
-    return "H\x02\x00" . $result;
+    ### result: $result
+    return $result if $self->chunked();
+    my $message = "H\x02\x00" . $result;
+    return $message;
 }    #}}}
 
 "one, but we're not the same";
@@ -488,6 +526,11 @@ Serialize a datastructure into a Hessian 2.0 message.
 =head2 write_hessian_call
 
 Writes out a Hessian 2 specific remote procedure call
+
+=head2 write_typed_map
+
+Work around for L<write_object|Hessian::Translator::V2/write_object> for
+serializing I<typed> hash references  and objects until I find a better way to distinguish between the two.
 
 =head2 write_object
 

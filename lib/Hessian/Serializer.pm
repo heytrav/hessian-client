@@ -16,13 +16,13 @@ sub serialize_chunk {    #{{{
     return $result;
 }    #}}}
 
-sub serialize_message {    #{{{
-    my ( $self, $datastructure ) = @_;
-    my $message;
-    $message = "H\x02\x00" if $self->version() == 2;
-    $message .= $self->write_hessian_message($datastructure);
-    return  $message;
-}    #}}}
+#sub serialize_message {    #{{{
+#    my ( $self, $datastructure ) = @_;
+#    my $message;
+#    $message = "H\x02\x00" if $self->version() == 2;
+#    $message .= $self->write_hessian_message($datastructure);
+#    return  $message;
+#}    #}}}
 
 "one, but we're not the same";
 

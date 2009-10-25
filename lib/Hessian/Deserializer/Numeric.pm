@@ -8,7 +8,7 @@ use Math::BigFloat lib => 'GMP';
 use Hessian::Exception;
 use POSIX qw/floor ceil/;
 use Switch;
-#use Smart::Comments;
+###use Smart::Comments;
 use YAML;
 
 sub read_boolean {    #{{{
