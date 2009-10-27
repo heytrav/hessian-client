@@ -10,7 +10,7 @@ use Config;
 
 use Hessian::Exception;
 
-has 'is_big_endian'     => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'is_big_endian'     => ( is => 'rw', isa => 'Bool', default => 0 );
 has 'original_position' => ( is => 'rw', isa => 'Int',  default => 0 );
 has 'class_definitions' => ( is => 'rw', default => sub { [] } );
 has 'type_list' => (    #{{{

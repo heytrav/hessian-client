@@ -4,6 +4,8 @@
 ,v$
 \B\.svn\b
 \B\.cvsignore$
+\.orig
+\.BACKUP
 
 # Avoid Makemaker generated and utility files.
 \bMakefile$
