@@ -2,6 +2,11 @@ package Hessian::Translator;
 
 use Moose;
 
+## no critic
+our $VERSION = '1.00';
+eval $VERSION;
+## use critic
+
 use Module::Load;
 use YAML;
 use List::MoreUtils qw/any/;

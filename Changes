@@ -1,4 +1,11 @@
-Revision history for Hessian::Client
+Revision history for Hessian::Translator
+
+
+1.00  Tue Mar 2 2010
+        Changing the main class to Hessian::Translator since it is really the
+        heart of it all.  While I'm at it, I also need to change the version
+        number from the "dotted integer" to the "real number" style.
+              
 
 0.2.0  Sun Oct 25 2009
         Actually implemented handling of 32 bit longs (up till now this had
