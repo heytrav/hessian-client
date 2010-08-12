@@ -3,7 +3,7 @@ package Hessian::Translator;
 use Moose;
 
 ## no critic
-our $VERSION = '1.02';
+our $VERSION = '1.02_001';
 eval $VERSION;
 ## use critic
 
