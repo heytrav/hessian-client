@@ -18,7 +18,7 @@ sub read_message_chunk_data {    #{{{
     my $input_handle = $self->input_handle();
     my $datastructure;
     given ($first_bit) {
-        when /\x63/ {            # version 1 call
+        when (/\x63/) {            # version 1 call
             my $hessian_version = $self->read_version();
             my $rpc_data        = $self->read_rpc();
             $datastructure = {
@@ -27,7 +27,7 @@ sub read_message_chunk_data {    #{{{
             };
 
         }
-        when /\x66/ {            # version 1 fault
+        when (/\x66/) {            # version 1 fault
             my @tokens;
             eval {
                 while ( my $token = $self->deserialize_data() )
@@ -41,12 +41,12 @@ sub read_message_chunk_data {    #{{{
                 $exception_name->throw( error => $exception_description );
             }
         }
-        when /\x72/ {    # version 1 reply
+        when (/\x72/) {    # version 1 reply
             my $hessian_version = $self->read_version();
             $datastructure =
               { hessian_version => $hessian_version, state => 'reply' };
         }
-        else {
+        default {
             my $param = { first_bit => $first_bit };
             $datastructure = $self->deserialize_data($param);
         }
@@ -61,19 +61,19 @@ sub read_composite_data {    #{{{
     my $input_handle = $self->input_handle();
     my ( $datastructure, $save_reference );
     given ($first_bit) {
-        when /\x72/ {
+        when (/\x72/ ){
             $datastructure = $self->read_remote_object();
         }
-        when /[\x56\x76]/ {    # typed lists
+        when (/[\x56\x76]/) {    # typed lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_typed_list($first_bit);
         }
-        when /\x4d/ {          # typed map
+        when (/\x4d/) {          # typed map
             push @{ $self->reference_list() }, {
             };
             $datastructure = $self->read_map_handle();
         }
-        when /[\x4f\x6f]/ {    # object definition or reference
+        when (/[\x4f\x6f]/) {    # object definition or reference
             push @{ $self->reference_list() }, {
             };
             $datastructure = $self->read_class_handle( $first_bit, );
@@ -160,7 +160,7 @@ sub read_class_handle {    #{{{
     my $input_handle = $self->input_handle();
     my ( $save_reference, $datastructure );
     given ($first_bit) {
-        when /\x4f/ {      # Read class definition
+        when (/\x4f/) {      # Read class definition
             my $class_name_length = $self->read_hessian_chunk();
             my $class_type;
             read $input_handle, $class_type, $class_name_length;
@@ -169,7 +169,7 @@ sub read_class_handle {    #{{{
                                          # Get number of fields
             $datastructure = $self->store_class_definition($class_type);
         }
-        when /\x6f/ {    # The class definition is in the ref list
+        when (/\x6f/) {    # The class definition is in the ref list
             $save_reference = 1;
             $datastructure  = $self->fetch_class_for_data();
         }
@@ -254,41 +254,41 @@ sub read_simple_datastructure {    #{{{
     my $input_handle = $self->input_handle();
     my $element;
     given ($first_bit) {
-        when /\x00/ {
+        when (/\x00/) {
             $element = $self->read_hessian_chunk();
         }
-        when /\x4e/ {              # 'N' for NULL
+        when (/\x4e/) {              # 'N' for NULL
             $element = undef;
         }
-        when /[\x46\x54]/ {        # 'T'rue or 'F'alse
+        when (/[\x46\x54]/) {        # 'T'rue or 'F'alse
             $element = $self->read_boolean_handle_chunk($first_bit);
         }
-        when /[\x49\x80-\xaf\xc0-\xcf\xd0-\xd7]/ {
+        when (/[\x49\x80-\xaf\xc0-\xcf\xd0-\xd7]/) {
             $element = $self->read_integer_handle_chunk($first_bit);
         }
-        when /[\x4c\xd8-\xef\xf0-\xff\x38-\x3f]/ {
+        when (/[\x4c\xd8-\xef\xf0-\xff\x38-\x3f]/) {
             $element = $self->read_long_handle_chunk($first_bit);
         }
-        when /\x44/ {
+        when (/\x44/) {
             $element = $self->read_double_handle_chunk($first_bit);
         }
-        when /\x64/ {
+        when (/\x64/ ){
             $element = $self->read_date_handle_chunk($first_bit);
         }
-        when /[\x53\x58\x73\x78\x00-\x0f]/ {    #   for version 1: \x73
+        when (/[\x53\x58\x73\x78\x00-\x0f]/) {    #   for version 1: \x73
             $element = $self->read_string_handle_chunk($first_bit);
         }
-        when /[\x42\x62]/ {
+        when (/[\x42\x62]/) {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        when /[\x4d\x4f\x56\x6f\x72\x76]/ {     # recursive datastructure
+        when (/[\x4d\x4f\x56\x6f\x72\x76]/) {     # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
-        when /\x52/ {
+        when (/\x52/) {
             my $reference_id = $self->read_integer_handle_chunk('I');
             $element = $self->reference_list()->[$reference_id];
         }
-        when /[\x48\x6d]/ {                     # a header or method name
+        when (/[\x48\x6d]/) {                     # a header or method name
             $element = $self->read_string_handle_chunk('S');
         }
     }
@@ -324,16 +324,16 @@ sub read_rpc {    #{{{
         };
         last RPCSTRUCTURE if Exception::Class->caught('EndOfInput::X');
         given ($first_bit) {
-            when /\x6d/ {
+            when (/\x6d/) {
                 $in_header = 0;
                 $call_data->{method} = $element;
             }
-            when /\x48/ {
+            when (/\x48/) {
                 $in_header = 1;
                 push @{ $call_data->{headers} }, { header => $element };
             }
 
-            else {
+            default {
                 if ($in_header) {
                     push @{ $call_data->{headers}->[-1]->{elements} }, $element;
                 }

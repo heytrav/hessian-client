@@ -167,22 +167,22 @@ sub read_integer_handle_chunk {    #{{{
     my $input_handle = $self->input_handle();
     my ( $number, $data );
     given ($first_bit) {
-        when /\x49/ {
+        when (/\x49/) {
 
             #            read $input_handle, $data, 4;
             $data   = $self->read_from_inputhandle(4);
             $number = $self->read_integer($data);
         }
-        when /[\x80-\xbf]/ {
+        when (/[\x80-\xbf]/) {
             $number = $self->read_integer($first_bit);
         }
-        when /[\xc0-\xcf]/ {
+        when (/[\xc0-\xcf]/) {
 
             #            read $input_handle, $data, 1;
             $data   = $self->read_from_inputhandle(1);
             $number = $self->read_integer( $first_bit . $data );
         }
-        when /[\xd0-\xd7]/ {
+        when (/[\xd0-\xd7]/) {
 
             #            read $input_handle, $data, 2;
             $data   = $self->read_from_inputhandle(2);
@@ -199,27 +199,27 @@ sub read_long_handle_chunk {    #{{{
     my $input_handle = $self->input_handle();
     my ( $number, $data );
     given ($first_bit) {
-        when /[\xd8-\xef]/ {
+        when (/[\xd8-\xef]/) {
             $number = $self->read_long($first_bit);
         }
-        when /[\xf0-\xff]/ {
+        when (/[\xf0-\xff]/) {
 
             #            read $input_handle, $data, 1;
             $data   = $self->read_from_inputhandle(1);
             $number = $self->read_long( $first_bit . $data );
         }
-        when /[\x38-\x3f]/ {
+        when (/[\x38-\x3f]/) {
 
             #            read $input_handle, $data, 2;
             $data   = $self->read_from_inputhandle(2);
             $number = $self->read_long( $first_bit . $data );
         }
-        when /\x59/ {
+        when (/\x59/) {
             $data   = $self->read_from_inputhandle(4);
             $number = $self->read_long($data);
 
         }
-        when /\x4c/ {
+        when (/\x4c/) {
 
             #            read $input_handle, $data, 8;
             $data   = $self->read_from_inputhandle(8);
@@ -241,24 +241,24 @@ sub read_double_handle_chunk {    #{{{
         #        when /\x5e/ { read $input_handle, $data, 2; }
         #        when /\x5f/ {
         #            read $input_handle, $data, 4;
-        when /[\x5b-\x5c]/ { $data = $first_bit; }
-        when /\x5d/ {
+        when (/[\x5b-\x5c]/) { $data = $first_bit; }
+        when (/\x5d/) {
             $data = $first_bit . $self->read_from_inputhandle(1);
 
             #            read $input_handle, $data, 1;
         }
-        when /\x5e/ {
+        when (/\x5e/) {
 
             $data = $first_bit . $self->read_from_inputhandle(2);
 
             #            read $input_handle, $data, 2;
         }
-        when /\x5f/ {
+        when (/\x5f/) {
 
             #            read $input_handle, $data, 4;
             $data = $first_bit . $self->read_from_inputhandle(4);
         }
-        when /\x44/ {
+        when (/\x44/) {
             $first_bit = "";
 
             #            read $input_handle, $data, 8;

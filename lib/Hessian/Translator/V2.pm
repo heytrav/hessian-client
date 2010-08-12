@@ -20,7 +20,7 @@ sub read_message_chunk_data {    #{{{
     ### message chunk data
     ### first bit: $first_bit
     given ($first_bit) {
-        when /\x48/ {            # TOP with version#{{{
+        when (/\x48/) {            # TOP with version#{{{
             $self->in_interior(0);
             if ( $self->chunked() ) {    # use as hashmap if chunked
                 my $params = { first_bit => $first_bit };
@@ -48,22 +48,22 @@ sub read_message_chunk_data {    #{{{
 
         #            }
         #        }
-        when /\x45/ {    # Envelope
+        when (/\x45/) {    # Envelope
             $datastructure = $self->read_envelope();
         }
-        when /\x46/ {    # Fault
+        when (/\x46/) {    # Fault
             $self->in_interior(1);
             my $result                = $self->deserialize_data();
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
             $exception_name->throw( error => $exception_description );
         }
-        when /\x52/ {    # Reply
+        when (/\x52/) {    # Reply
             $self->in_interior(1);
             my $reply_data = $self->deserialize_data();
             $datastructure = { reply_data => $reply_data };
         }
-        else {
+        default {
             my $params = { first_bit => $first_bit };
             $datastructure = $self->deserialize_data($params);
         }
@@ -75,21 +75,21 @@ sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my ( $datastructure, $save_reference );
     given ($first_bit) {
-        when /[\x55\x56\x70-\x77]/ {    # typed lists
+        when (/[\x55\x56\x70-\x77]/) {    # typed lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_typed_list( $first_bit, );
         }
 
-        when /[\x57\x58\x78-\x7f]/ {    # untyped lists
+        when (/[\x57\x58\x78-\x7f]/ ){    # untyped lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_untyped_list( $first_bit, );
         }
-        when /\x48/ {
+        when (/\x48/) {
             push @{ $self->reference_list() }, {
             };
             $datastructure = $self->read_map_handle();
         }
-        when /\x4d/ {                   # typed map
+        when (/\x4d/) {                   # typed map
 
             push @{ $self->reference_list() }, {
             };
@@ -103,7 +103,7 @@ sub read_composite_data {    #{{{
             $datastructure = bless $map, $map_type;
 
         }
-        when /[\x43\x4f\x60-\x6f]/ {
+        when (/[\x43\x4f\x60-\x6f]/) {
             if ( $first_bit !~ /\x43/ ) {
                 push @{ $self->reference_list() }, {
                 };
@@ -154,7 +154,7 @@ sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
     my ( $save_reference, $datastructure );
     given ($first_bit) {
-        when /\x43/ {      # Read class definition
+        when (/\x43/) {      # Read class definition
             my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
@@ -164,11 +164,11 @@ sub read_class_handle {    #{{{
 
        #            $datastructure = $self->store_class_definition($class_type);
         }
-        when /\x4f/ {    # Read hessian data and create instance of class
+        when (/\x4f/) {    # Read hessian data and create instance of class
             $save_reference = 1;
             $datastructure  = $self->fetch_class_for_data();
         }
-        when /[\x60-\x6f]/ {    # The class definition is in the ref list
+        when (/[\x60-\x6f]/) {    # The class definition is in the ref list
             $save_reference = 1;
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
@@ -241,35 +241,35 @@ sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
     my $element;
     given ($first_bit) {
-        when /\x4e/ {              # 'N' for NULL
+        when (/\x4e/) {              # 'N' for NULL
             $element = undef;
         }
-        when /[\x46\x54]/ {        # 'T'rue or 'F'alse
+        when (/[\x46\x54]/ ){        # 'T'rue or 'F'alse
             $element = $self->read_boolean_handle_chunk($first_bit);
         }
-        when /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
+        when (/[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ ){
             $element = $self->read_integer_handle_chunk($first_bit);
         }
-        when /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
+        when (/[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/) {
             $element = $self->read_long_handle_chunk($first_bit);
         }
-        when /[\x44\x5b-\x5f]/ {
+        when (/[\x44\x5b-\x5f]/) {
             $element = $self->read_double_handle_chunk($first_bit);
         }
-        when /[\x4a\x4b]/ {
+        when (/[\x4a\x4b]/) {
             $element = $self->read_date_handle_chunk($first_bit);
         }
-        when /[\x52\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
+        when (/[\x52\x53\x00-\x1f\x30-\x33]/) {    #   for version 1: \x73
             $element = $self->read_string_handle_chunk($first_bit);
         }
-        when /[\x41\x42\x20-\x2f]/ {
+        when (/[\x41\x42\x20-\x2f]/) {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        when /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
+        when (/[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/)
         {                                        # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
-        when /\x51/ {
+        when (/\x51/) {
             my $reference_id = $self->read_hessian_chunk();
             $element = $self->reference_list()->[$reference_id];
 

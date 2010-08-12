@@ -9,17 +9,17 @@ sub read_string_handle_chunk  {    #{{{
     my ($self, $first_bit) = @_;
     my ( $string, $data, $length );
     given ($first_bit) {
-        when /[\x00-\x1f]/ {
+        when (/[\x00-\x1f]/) {
             $length = unpack "n", "\x00" . $first_bit;
         }
-        when /[\x30-\x33]/ {
+        when (/[\x30-\x33]/) {
             $data = $self->read_from_inputhandle(1);
             my $first_part = $first_bit - 0x30;
             my $string_length = $first_part . $data;
 
             $length = unpack "n", "\x00".$data;
         }
-        when /[\x52-\x53\x73]/ {
+        when (/[\x52-\x53\x73]/) {
             $data = $self->read_from_inputhandle(2);
             $length = unpack "n", $data;
         }

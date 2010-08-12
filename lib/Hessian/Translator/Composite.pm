@@ -50,28 +50,28 @@ sub read_typed_list_element {    #{{{
       if $first_bit eq $self->end_of_datastructure_symbol();
     my $map_type = 'map';
     given ($type) {
-        when /boolean/ {
+        when (/boolean/) {
             $element = $self->read_boolean_handle_chunk($first_bit);
         }
-        when /int/ {
+        when (/int/) {
             $element = $self->read_integer_handle_chunk($first_bit);
         }
-        when /long/ {
+        when (/long/) {
             $element = $self->read_long_handle_chunk($first_bit);
         }
-        when /double/ {
+        when (/double/) {
             $element = $self->read_double_handle_chunk($first_bit);
         }
-        when /date/ {
+        when (/date/) {
             $element = $self->read_date_handle_chunk($first_bit);
         }
-        when /string/ {
+        when (/string/) {
             $element = $self->read_string_handle_chunk($first_bit);
         }
-        when /binary/ {
+        when (/binary/) {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        when /list/ {
+        when (/list/) {
             $element = $self->read_composite_datastructure($first_bit);
         }
     }
@@ -193,13 +193,13 @@ sub write_hessian_chunk {    #{{{
     my $hessian_element;
     my $element_type = ref $element ? ref $element : \$element;
     given ("$element_type") {
-        when /SCALAR/ {
+        when (/SCALAR/) {
             $hessian_element = $self->write_scalar_element($element);
         }
-        when /DateTime/ {
+        when (/DateTime/) {
             $hessian_element = $self->write_date($element);
         }
-        else {
+        default {
             my $reference_list = $self->reference_list();
             my @list           = @{$reference_list};
             my ( $referenced_index, $found_reference );
@@ -232,13 +232,13 @@ sub write_composite_element {    #{{{
     ### element type: $element_type
     my $hessian_string;
     given ($element_type) {
-        when /HASH/ {
+        when (/HASH/) {
             $hessian_string = $self->write_hessian_hash($datastructure);
         }
-        when /ARRAY/ {
+        when (/ARRAY/) {
             $hessian_string = $self->write_hessian_array($datastructure);
         }
-        else {
+        default {
             $hessian_string = $self->write_object($datastructure);
         }
     }
@@ -250,13 +250,13 @@ sub write_scalar_element {    #{{{
 
     my $hessian_element;
     given ($element) {       # Integer or String
-        when /^-?[0-9]+$/ {
+        when (/^-?[0-9]+$/) {
             $hessian_element = $self->write_integer($element);
         }
-        when /^-?[0-9]*\.[0-9]+/ {
+        when (/^-?[0-9]*\.[0-9]+/) {
             $hessian_element = $self->write_double($element);
         }
-        when /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
+        when (/^[\x20-\x7e\xa1-\xff]+$/) {    # a string
             my @chunks = $element =~ /(.{1,66})/g;
             $hessian_element = $self->write_hessian_string( \@chunks );
         }

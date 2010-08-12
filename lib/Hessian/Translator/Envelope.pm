@@ -89,18 +89,18 @@ sub read_packet_chunk {    #{{{
 
     my ($packet_string);
     given ($first_bit) {
-        when /[\x70-\x7f]/ {
+        when (/[\x70-\x7f]/) {
             my $length = unpack "C*", $first_bit;
             my $packet_size = $length - 0x70;
             $packet_string = $self->read_from_inputhandle($packet_size);
 
         }
-        when /[\x80-\x8f]/ {
+        when (/[\x80-\x8f]/) {
             my $length = unpack "C*", $first_bit;
             my $packet_size = $length - 0x80;
             $packet_string = $self->read_from_inputhandle($packet_size);
         }
-        when /[\x4f\x50]/ {
+        when (/[\x4f\x50]/) {
            print "Reading packet chunk\n"; 
             $packet_string = $self->read_string_handle_chunk('S');
 
@@ -145,17 +145,17 @@ sub write_hessian_message {    #{{{
         my @keys          = keys %{$hessian_data};
         my $datastructure = $hessian_data->{ $keys[0] };
         given ( $keys[0] ) {
-            when /call/ {
+            when (/call/) {
                 $hessian_message = $self->write_hessian_call($datastructure);
             }
-            when /envelope/ {
+            when (/envelope/) {
                 $hessian_message =
                   $self->write_hessian_envelope($datastructure);
             }
-            when /packet/ {
+            when (/packet/) {
                 $hessian_message = $self->write_hessian_packet($datastructure);
             }
-            when /data/ { 
+            when (/data/) { 
                 $hessian_message = $self->write_hessian_chunk($hessian_data);
             }
         }
