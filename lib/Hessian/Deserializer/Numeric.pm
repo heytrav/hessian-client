@@ -7,8 +7,9 @@ use Math::BigInt lib   => 'GMP';
 use Math::BigFloat lib => 'GMP';
 use Hessian::Exception;
 use POSIX qw/floor ceil/;
-use Switch;
-###use Smart::Comments;
+#use Switch;
+#use Smart::Comments;
+use feature "switch";
 use YAML;
 
 sub read_boolean {    #{{{
@@ -165,23 +166,23 @@ sub read_integer_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $number, $data );
-    switch ($first_bit) {
-        case /\x49/ {
+    given ($first_bit) {
+        when /\x49/ {
 
             #            read $input_handle, $data, 4;
             $data   = $self->read_from_inputhandle(4);
             $number = $self->read_integer($data);
         }
-        case /[\x80-\xbf]/ {
+        when /[\x80-\xbf]/ {
             $number = $self->read_integer($first_bit);
         }
-        case /[\xc0-\xcf]/ {
+        when /[\xc0-\xcf]/ {
 
             #            read $input_handle, $data, 1;
             $data   = $self->read_from_inputhandle(1);
             $number = $self->read_integer( $first_bit . $data );
         }
-        case /[\xd0-\xd7]/ {
+        when /[\xd0-\xd7]/ {
 
             #            read $input_handle, $data, 2;
             $data   = $self->read_from_inputhandle(2);
@@ -197,28 +198,28 @@ sub read_long_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $number, $data );
-    switch ($first_bit) {
-        case /[\xd8-\xef]/ {
+    given ($first_bit) {
+        when /[\xd8-\xef]/ {
             $number = $self->read_long($first_bit);
         }
-        case /[\xf0-\xff]/ {
+        when /[\xf0-\xff]/ {
 
             #            read $input_handle, $data, 1;
             $data   = $self->read_from_inputhandle(1);
             $number = $self->read_long( $first_bit . $data );
         }
-        case /[\x38-\x3f]/ {
+        when /[\x38-\x3f]/ {
 
             #            read $input_handle, $data, 2;
             $data   = $self->read_from_inputhandle(2);
             $number = $self->read_long( $first_bit . $data );
         }
-        case /\x59/ {
+        when /\x59/ {
             $data   = $self->read_from_inputhandle(4);
             $number = $self->read_long($data);
 
         }
-        case /\x4c/ {
+        when /\x4c/ {
 
             #            read $input_handle, $data, 8;
             $data   = $self->read_from_inputhandle(8);
@@ -233,31 +234,31 @@ sub read_double_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
     my $input_handle = $self->input_handle();
     my ( $number, $data );
-    switch ($first_bit) {
+    given ($first_bit) {
 
-        #        case /[\x5b-\x5c]/ { $data = $first_bit; }
-        #        case /\x5d/ { read $input_handle, $data, 1; }
-        #        case /\x5e/ { read $input_handle, $data, 2; }
-        #        case /\x5f/ {
+        #        when /[\x5b-\x5c]/ { $data = $first_bit; }
+        #        when /\x5d/ { read $input_handle, $data, 1; }
+        #        when /\x5e/ { read $input_handle, $data, 2; }
+        #        when /\x5f/ {
         #            read $input_handle, $data, 4;
-        case /[\x5b-\x5c]/ { $data = $first_bit; }
-        case /\x5d/ {
+        when /[\x5b-\x5c]/ { $data = $first_bit; }
+        when /\x5d/ {
             $data = $first_bit . $self->read_from_inputhandle(1);
 
             #            read $input_handle, $data, 1;
         }
-        case /\x5e/ {
+        when /\x5e/ {
 
             $data = $first_bit . $self->read_from_inputhandle(2);
 
             #            read $input_handle, $data, 2;
         }
-        case /\x5f/ {
+        when /\x5f/ {
 
             #            read $input_handle, $data, 4;
             $data = $first_bit . $self->read_from_inputhandle(4);
         }
-        case /\x44/ {
+        when /\x44/ {
             $first_bit = "";
 
             #            read $input_handle, $data, 8;

@@ -2,7 +2,8 @@ package  Hessian::Deserializer::Binary;
 
 use Moose::Role;
 
-use Switch;
+#use Switch;
+use feature "switch";
 ##use Smart::Comments;
 
 sub read_binary_handle_chunk  {    #{{{
@@ -10,17 +11,19 @@ sub read_binary_handle_chunk  {    #{{{
     ### read_binary_handle_chunk
     my $input_handle = $self->input_handle();
     my ($data, $length );
-    switch ($first_bit) {
-        case /[\x42\x62]/ {
+    given ($first_bit) {
+        when /[\x42\x62]/ {
             read $input_handle, $data, 2;
             $length = unpack "n", $data;
         }
-        case /[\x20-\x2f]/ {
+        when /[\x20-\x2f]/ {
             my $raw_octet = "\x00" . $first_bit;
             $length = unpack 'n', $raw_octet;
             $length -= 0x20;
         }
     }
+
+
     my $binary = $self->read_from_inputhandle($length);
     return $binary;
 }    #}}}

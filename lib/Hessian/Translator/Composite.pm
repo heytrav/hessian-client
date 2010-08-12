@@ -4,11 +4,12 @@ use Moose::Role;
 
 with 'Hessian::Translator::Envelope';
 
-use Switch;
+#use Switch;
 use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 use Contextual::Return;
+use feature "switch";
 #use Smart::Comments;
 
 sub assemble_class {    #{{{
@@ -48,29 +49,29 @@ sub read_typed_list_element {    #{{{
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
       if $first_bit eq $self->end_of_datastructure_symbol();
     my $map_type = 'map';
-    switch ($type) {
-        case /boolean/ {
+    given ($type) {
+        when /boolean/ {
             $element = $self->read_boolean_handle_chunk($first_bit);
         }
-        case /int/ {
+        when /int/ {
             $element = $self->read_integer_handle_chunk($first_bit);
         }
-        case /long/ {
+        when /long/ {
             $element = $self->read_long_handle_chunk($first_bit);
         }
-        case /double/ {
+        when /double/ {
             $element = $self->read_double_handle_chunk($first_bit);
         }
-        case /date/ {
+        when /date/ {
             $element = $self->read_date_handle_chunk($first_bit);
         }
-        case /string/ {
+        when /string/ {
             $element = $self->read_string_handle_chunk($first_bit);
         }
-        case /binary/ {
+        when /binary/ {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        case /list/ {
+        when /list/ {
             $element = $self->read_composite_datastructure($first_bit);
         }
     }
@@ -191,11 +192,11 @@ sub write_hessian_chunk {    #{{{
     my ( $self, $element ) = @_;
     my $hessian_element;
     my $element_type = ref $element ? ref $element : \$element;
-    switch ("$element_type") {
-        case /SCALAR/ {
+    given ("$element_type") {
+        when /SCALAR/ {
             $hessian_element = $self->write_scalar_element($element);
         }
-        case /DateTime/ {
+        when /DateTime/ {
             $hessian_element = $self->write_date($element);
         }
         else {
@@ -230,11 +231,11 @@ sub write_composite_element {    #{{{
       ref $datastructure ? ref $datastructure : \$datastructure;
     ### element type: $element_type
     my $hessian_string;
-    switch ($element_type) {
-        case /HASH/ {
+    given ($element_type) {
+        when /HASH/ {
             $hessian_string = $self->write_hessian_hash($datastructure);
         }
-        case /ARRAY/ {
+        when /ARRAY/ {
             $hessian_string = $self->write_hessian_array($datastructure);
         }
         else {
@@ -248,14 +249,14 @@ sub write_scalar_element {    #{{{
     my ( $self, $element ) = @_;
 
     my $hessian_element;
-    switch ($element) {       # Integer or String
-        case /^-?[0-9]+$/ {
+    given ($element) {       # Integer or String
+        when /^-?[0-9]+$/ {
             $hessian_element = $self->write_integer($element);
         }
-        case /^-?[0-9]*\.[0-9]+/ {
+        when /^-?[0-9]*\.[0-9]+/ {
             $hessian_element = $self->write_double($element);
         }
-        case /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
+        when /^[\x20-\x7e\xa1-\xff]+$/ {    # a string
             my @chunks = $element =~ /(.{1,66})/g;
             $hessian_element = $self->write_hessian_string( \@chunks );
         }

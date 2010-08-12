@@ -6,7 +6,6 @@ use integer;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
 use Math::BigInt;
 use POSIX qw/floor ceil/;
-use Switch;
 
 sub write_integer {    #{{{
     my ( $self, $integer ) = @_;

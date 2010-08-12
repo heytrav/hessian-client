@@ -2,10 +2,11 @@ package Hessian::Translator::Envelope;
 
 use Moose::Role;
 
-use Switch;
+#use Switch;
 use YAML;
 use Contextual::Return;
 use List::MoreUtils qw/any/;
+use feature "switch";
 
 use Hessian::Exception;
 
@@ -87,19 +88,19 @@ sub read_packet_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
 
     my ($packet_string);
-    switch ($first_bit) {
-        case /[\x70-\x7f]/ {
+    given ($first_bit) {
+        when /[\x70-\x7f]/ {
             my $length = unpack "C*", $first_bit;
             my $packet_size = $length - 0x70;
             $packet_string = $self->read_from_inputhandle($packet_size);
 
         }
-        case /[\x80-\x8f]/ {
+        when /[\x80-\x8f]/ {
             my $length = unpack "C*", $first_bit;
             my $packet_size = $length - 0x80;
             $packet_string = $self->read_from_inputhandle($packet_size);
         }
-        case /[\x4f\x50]/ {
+        when /[\x4f\x50]/ {
            print "Reading packet chunk\n"; 
             $packet_string = $self->read_string_handle_chunk('S');
 
@@ -143,18 +144,18 @@ sub write_hessian_message {    #{{{
     {
         my @keys          = keys %{$hessian_data};
         my $datastructure = $hessian_data->{ $keys[0] };
-        switch ( $keys[0] ) {
-            case /call/ {
+        given ( $keys[0] ) {
+            when /call/ {
                 $hessian_message = $self->write_hessian_call($datastructure);
             }
-            case /envelope/ {
+            when /envelope/ {
                 $hessian_message =
                   $self->write_hessian_envelope($datastructure);
             }
-            case /packet/ {
+            when /packet/ {
                 $hessian_message = $self->write_hessian_packet($datastructure);
             }
-            case /data/ { 
+            when /data/ { 
                 $hessian_message = $self->write_hessian_chunk($hessian_data);
             }
         }

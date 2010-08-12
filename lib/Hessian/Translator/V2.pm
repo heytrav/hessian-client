@@ -2,11 +2,12 @@ package Hessian::Translator::V2;
 
 use Moose::Role;
 
-use Switch;
+#use Switch;
 use YAML;
 use Hessian::Exception;
 use Hessian::Simple;
 #use Smart::Comments;
+use feature "switch";
 
 has 'string_chunk_prefix'       => ( is => 'ro', isa => 'Str', default => 'R' );
 has 'string_final_chunk_prefix' => ( is => 'ro', isa => 'Str', default => 'S' );
@@ -18,8 +19,8 @@ sub read_message_chunk_data {    #{{{
     my $datastructure;
     ### message chunk data
     ### first bit: $first_bit
-    switch ($first_bit) {
-        case /\x48/ {            # TOP with version#{{{
+    given ($first_bit) {
+        when /\x48/ {            # TOP with version#{{{
             $self->in_interior(0);
             if ( $self->chunked() ) {    # use as hashmap if chunked
                 my $params = { first_bit => $first_bit };
@@ -32,7 +33,7 @@ sub read_message_chunk_data {    #{{{
             }
         }    #}}}
 
-       #        case /\x43/ {                    # Hessian Remote Procedure Call
+       #        when /\x43/ {                    # Hessian Remote Procedure Call
        #            if ( $self->in_interior() ) {
 
         #                my $params = { first_bit => $first_bit };
@@ -47,17 +48,17 @@ sub read_message_chunk_data {    #{{{
 
         #            }
         #        }
-        case /\x45/ {    # Envelope
+        when /\x45/ {    # Envelope
             $datastructure = $self->read_envelope();
         }
-        case /\x46/ {    # Fault
+        when /\x46/ {    # Fault
             $self->in_interior(1);
             my $result                = $self->deserialize_data();
             my $exception_name        = $result->{code};
             my $exception_description = $result->{message};
             $exception_name->throw( error => $exception_description );
         }
-        case /\x52/ {    # Reply
+        when /\x52/ {    # Reply
             $self->in_interior(1);
             my $reply_data = $self->deserialize_data();
             $datastructure = { reply_data => $reply_data };
@@ -73,22 +74,22 @@ sub read_message_chunk_data {    #{{{
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
     my ( $datastructure, $save_reference );
-    switch ($first_bit) {
-        case /[\x55\x56\x70-\x77]/ {    # typed lists
+    given ($first_bit) {
+        when /[\x55\x56\x70-\x77]/ {    # typed lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_typed_list( $first_bit, );
         }
 
-        case /[\x57\x58\x78-\x7f]/ {    # untyped lists
+        when /[\x57\x58\x78-\x7f]/ {    # untyped lists
             push @{ $self->reference_list() }, [];
             $datastructure = $self->read_untyped_list( $first_bit, );
         }
-        case /\x48/ {
+        when /\x48/ {
             push @{ $self->reference_list() }, {
             };
             $datastructure = $self->read_map_handle();
         }
-        case /\x4d/ {                   # typed map
+        when /\x4d/ {                   # typed map
 
             push @{ $self->reference_list() }, {
             };
@@ -102,7 +103,7 @@ sub read_composite_data {    #{{{
             $datastructure = bless $map, $map_type;
 
         }
-        case /[\x43\x4f\x60-\x6f]/ {
+        when /[\x43\x4f\x60-\x6f]/ {
             if ( $first_bit !~ /\x43/ ) {
                 push @{ $self->reference_list() }, {
                 };
@@ -152,8 +153,8 @@ sub read_typed_list {    #{{{
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
     my ( $save_reference, $datastructure );
-    switch ($first_bit) {
-        case /\x43/ {      # Read class definition
+    given ($first_bit) {
+        when /\x43/ {      # Read class definition
             my $class_type = $self->read_hessian_chunk();
             $class_type =~ s/\./::/g;    # get rid of java stuff
                                          # Get number of fields
@@ -163,11 +164,11 @@ sub read_class_handle {    #{{{
 
        #            $datastructure = $self->store_class_definition($class_type);
         }
-        case /\x4f/ {    # Read hessian data and create instance of class
+        when /\x4f/ {    # Read hessian data and create instance of class
             $save_reference = 1;
             $datastructure  = $self->fetch_class_for_data();
         }
-        case /[\x60-\x6f]/ {    # The class definition is in the ref list
+        when /[\x60-\x6f]/ {    # The class definition is in the ref list
             $save_reference = 1;
             my $hex_bit = unpack 'C*', $first_bit;
             my $class_definition_number = $hex_bit - 0x60;
@@ -239,36 +240,36 @@ sub read_untyped_list {    #{{{
 sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
     my $element;
-    switch ($first_bit) {
-        case /\x4e/ {              # 'N' for NULL
+    given ($first_bit) {
+        when /\x4e/ {              # 'N' for NULL
             $element = undef;
         }
-        case /[\x46\x54]/ {        # 'T'rue or 'F'alse
+        when /[\x46\x54]/ {        # 'T'rue or 'F'alse
             $element = $self->read_boolean_handle_chunk($first_bit);
         }
-        case /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
+        when /[\x49\x80-\xbf\xc0-\xcf\xd0-\xd7]/ {
             $element = $self->read_integer_handle_chunk($first_bit);
         }
-        case /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
+        when /[\x4c\x59\xd8-\xef\xf0-\xff\x38-\x3f]/ {
             $element = $self->read_long_handle_chunk($first_bit);
         }
-        case /[\x44\x5b-\x5f]/ {
+        when /[\x44\x5b-\x5f]/ {
             $element = $self->read_double_handle_chunk($first_bit);
         }
-        case /[\x4a\x4b]/ {
+        when /[\x4a\x4b]/ {
             $element = $self->read_date_handle_chunk($first_bit);
         }
-        case /[\x52\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
+        when /[\x52\x53\x00-\x1f\x30-\x33]/ {    #   for version 1: \x73
             $element = $self->read_string_handle_chunk($first_bit);
         }
-        case /[\x41\x42\x20-\x2f]/ {
+        when /[\x41\x42\x20-\x2f]/ {
             $element = $self->read_binary_handle_chunk($first_bit);
         }
-        case /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
+        when /[\x43\x4d\x4f\x48\x55-\x58\x60-\x6f\x70-\x7f]/
         {                                        # recursive datastructure
             $element = $self->read_composite_datastructure( $first_bit, );
         }
-        case /\x51/ {
+        when /\x51/ {
             my $reference_id = $self->read_hessian_chunk();
             $element = $self->reference_list()->[$reference_id];
 

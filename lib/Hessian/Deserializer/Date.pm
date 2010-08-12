@@ -2,12 +2,13 @@ package  Hessian::Deserializer::Date;
 
 use Moose::Role;
 
-use Switch;
+#use Switch;
 use YAML;
 use DateTime;
 use DateTime::Format::Epoch;
 use Math::BigInt;
 use integer;
+use feature "switch";
 
 sub read_date_handle_chunk {    #{{{
     my ( $self, $first_bit, ) = @_;
@@ -23,8 +24,8 @@ sub read_date_handle_chunk {    #{{{
         time_zone => 'UTC'
     );
     my $datetime;
-    switch ($first_bit) {
-        case /[\x4a\x64]/ {
+    given ($first_bit) {
+        when /[\x4a\x64]/ {
             $formatter = DateTime::Format::Epoch->new(
                 unit  => 'milliseconds',
                 type  => 'bigint',
@@ -33,7 +34,7 @@ sub read_date_handle_chunk {    #{{{
             $data     = $self->read_long_handle_chunk('L');
             $datetime = $formatter->parse_datetime($data);
         }
-        case /\x4b/ {
+        when /\x4b/ {
 
             my $raw_octets = $self->read_from_inputhandle(4);
             my @chars      = unpack 'C*', $raw_octets;
