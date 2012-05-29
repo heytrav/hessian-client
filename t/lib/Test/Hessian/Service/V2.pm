@@ -9,6 +9,7 @@ use Test::More;
 use Test::Deep;
 use Test::Exception;
 
+use Contextual::Return;
 use Hessian::Client;
 use YAML;
 use DateTime;
