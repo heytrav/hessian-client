@@ -4,7 +4,7 @@ use Moose::Role;
 
 with 'Hessian::Translator::Envelope';
 
-#use Switch;
+#
 use YAML;
 use Hessian::Exception;
 use Hessian::Simple;

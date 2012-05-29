@@ -2,7 +2,7 @@ package  Hessian::Deserializer::Binary;
 
 use Moose::Role;
 
-#use Switch;
+#
 use feature "switch";
 ##use Smart::Comments;
 

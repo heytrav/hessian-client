@@ -2,7 +2,7 @@ package Hessian::Translator::Envelope;
 
 use Moose::Role;
 
-#use Switch;
+#
 use YAML;
 use Contextual::Return;
 use List::MoreUtils qw/any/;

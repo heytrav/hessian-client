@@ -2,7 +2,7 @@ package Hessian::Translator::V2;
 
 use Moose::Role;
 
-#use Switch;
+#
 use YAML;
 use Hessian::Exception;
 use Hessian::Simple;

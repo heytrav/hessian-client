@@ -2,7 +2,7 @@ package  Hessian::Deserializer::String;
 
 use Moose::Role;
 
-#use Switch;
+#
 use feature "switch";
 
 sub read_string_handle_chunk  {    #{{{
