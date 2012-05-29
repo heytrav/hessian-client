@@ -4,7 +4,7 @@ use Moose::Role;
 
 use integer;
 use Math::Int64 qw/int64_to_net int64 net_to_int64/;
-use Math::BigInt;
+use Math::BigInt try => 'GMP';
 use POSIX qw/floor ceil/;
 
 sub write_integer {    #{{{

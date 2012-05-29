@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 use version; our $VERSION = qv('0.0.1');
-use Math::BigInt;
+use Math::BigInt try => 'GMP';
 use DateTime;
 use DateTime::Format::Epoch::Unix;
 use Time::TAI64 qw/:tai64n/;

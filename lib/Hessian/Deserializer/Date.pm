@@ -6,7 +6,7 @@ use Moose::Role;
 use YAML;
 use DateTime;
 use DateTime::Format::Epoch;
-use Math::BigInt;
+use Math::BigInt try => 'GMP';
 use integer;
 use feature "switch";
 

@@ -3,8 +3,8 @@ package  Hessian::Deserializer::Numeric;
 use Moose::Role;
 
 use Math::Int64 qw/int64_to_number int64_to_net int64 net_to_int64/;
-use Math::BigInt lib   => 'GMP';
-use Math::BigFloat lib => 'GMP';
+use Math::BigInt try   => 'GMP';
+use Math::BigFloat try => 'GMP';
 use Hessian::Exception;
 use POSIX qw/floor ceil/;
 #use Switch;
