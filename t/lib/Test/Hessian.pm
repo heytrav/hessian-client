@@ -6,6 +6,7 @@ use warnings;
 use base 'Test::Class';
 
 use Test::More;
+use Contextual::Return;
 use Hessian::Translator;
 
 __PACKAGE__->SKIP_CLASS(1);
