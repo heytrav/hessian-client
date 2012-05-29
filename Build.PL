@@ -22,7 +22,6 @@ my $builder = Module::Build->new(
         'Math::Int64'                   => 0,
         'Math::BigInt'                  => 0,
         'Math::BigInt::GMP'             => 1.24,
-        'Switch'                        => 0,
         'Smart::Comments'               => 0,
         'YAML'                          => 0,
         'Module::Load'                  => 0,
