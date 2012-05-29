@@ -5,6 +5,7 @@ use warnings;
 
 use LWP::UserAgent;
 use HTTP::Request;
+use Contextual::Return;
 use Hessian::Exception;
 use Hessian::Translator;
 use Class::Std;

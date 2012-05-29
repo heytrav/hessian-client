@@ -4,4 +4,4 @@ BEGIN {
     use_ok('Hessian::Client');
 }
 
-diag("Testing Hessian $Hessian::Client::VERSION");
+diag("Testing Hessian $Hessian::Translator::VERSION");
