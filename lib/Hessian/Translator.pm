@@ -1,4 +1,4 @@
-package Hessian::Translator 1.02002;
+package Hessian::Translator 1.03;
 
 use Moose;
 
