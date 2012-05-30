@@ -14,14 +14,12 @@ my $builder = Module::Build->new(
         'Test::Deep'                    => 0,
         'Perl::Critic'                  => 0,
         'Test::Perl::Critic'            => 0,
-        'version'                       => 0,
         'Contextual::Return'            => 0,
         'Moose'                         => 0,
         'Class::Std'                    => 0,
         'Exception::Class'              => 0,
         'Math::Int64'                   => 0,
         'Math::BigInt'                  => 0,
-        #'Math::BigInt::GMP'             => 1.24,
         'Smart::Comments'               => 0,
         'YAML'                          => 0,
         'Module::Load'                  => 0,
@@ -37,4 +35,6 @@ my $builder = Module::Build->new(
     add_to_cleanup => ['Hessian-*'],
 );
 
+my $network_available = $builder->y_n("Network connection available?",'n');
+$builder->notes(network_available => $network_available);
 $builder->create_build_script();
