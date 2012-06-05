@@ -1,4 +1,4 @@
-#!perl
+#!/usr/bin/env perl
 
 if (!require Test::Perl::Critic) {
     Test::More::plan(
