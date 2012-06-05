@@ -53,7 +53,6 @@ sub t011_serialize_integer : Test(2) {    #{{{
 
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
-    local $TODO = "Test results vary depending on platform.";
     my $client = $self->{client};
 
     my $hessian_string = $client->serialize_chunk(12.25);
