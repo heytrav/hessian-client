@@ -3,7 +3,7 @@ package Test::Hessian::V2::Deserializer;
 use strict;
 use warnings;
 
-use base 'Test::Hessian::V2';
+use parent 'Test::Hessian::V2';
 
 use Test::More;
 use Test::Deep;

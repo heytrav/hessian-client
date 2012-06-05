@@ -3,7 +3,7 @@ package  Test::Hessian::V1::Serializer;
 use strict;
 use warnings;
 
-use base 'Test::Hessian::V1';
+use parent 'Test::Hessian::V1';
 
 use YAML;
 use Test::More;

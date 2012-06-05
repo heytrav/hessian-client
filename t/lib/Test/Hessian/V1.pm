@@ -3,7 +3,7 @@ package  Test::Hessian::V1;
 use strict;
 use warnings;
 
-use base 'Test::Hessian';
+use parent 'Test::Hessian';
 
 use YAML;
 use Test::More;

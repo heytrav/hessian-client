@@ -3,7 +3,7 @@ package  Test::Hessian;
 use strict;
 use warnings;
 
-use base 'Test::Class';
+use parent 'Test::Class';
 
 use Test::More;
 use Contextual::Return;
