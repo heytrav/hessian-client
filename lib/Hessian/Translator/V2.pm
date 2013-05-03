@@ -31,7 +31,7 @@ sub read_message_chunk_data {    #{{{
                 my $hessian_version = $self->read_version();
                 $datastructure = { hessian_version => $hessian_version };
             }
-        }    #}}}
+        }
 
        #        when /\x43/ {                    # Hessian Remote Procedure Call
        #            if ( $self->in_interior() ) {
@@ -69,7 +69,7 @@ sub read_message_chunk_data {    #{{{
         }
     }
     return $datastructure;
-}    #}}}
+}
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -121,7 +121,7 @@ sub read_composite_data {    #{{{
     #      if $save_reference;
     return $datastructure;
 
-}    #}}}
+}
 
 sub read_typed_list {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -148,7 +148,7 @@ sub read_typed_list {    #{{{
         redo LISTLOOP;
     }
     return $datastructure;
-}    #}}}
+}
 
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -179,7 +179,7 @@ sub read_class_handle {    #{{{
     #    push @{ $self->reference_list() }, $datastructure
     #      if $save_reference;
     return $datastructure;
-}    #}}}
+}
 
 sub read_map_handle {    #{{{
     my $self = shift;
@@ -208,7 +208,7 @@ sub read_map_handle {    #{{{
     }
     return $datastructure;
 
-}    #}}}
+}
 
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -235,7 +235,7 @@ sub read_untyped_list {    #{{{
         redo LISTLOOP;
     }
     return $datastructure;
-}    #}}}
+}
 
 sub read_simple_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -277,7 +277,7 @@ sub read_simple_datastructure {    #{{{
     }
     return $element;
 
-}    #}}}
+}
 
 sub read_rpc {    #{{{
     my $self      = shift;
@@ -293,7 +293,7 @@ sub read_rpc {    #{{{
     $call_data->{arguments} = $call_args;
     return $call_data;
 
-}    #}}}
+}
 
 sub write_hessian_hash {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -306,7 +306,7 @@ sub write_hessian_hash {    #{{{
     }
     $anonymous_map_string .= $self->end_of_datastructure_symbol();
     return $anonymous_map_string;
-}    #}}}
+}
 
 sub write_typed_map {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -322,7 +322,7 @@ sub write_typed_map {    #{{{
     }
     $typed_map_string .= $self->end_of_datastructure_symbol();
     return $typed_map_string;
-}    #}}}
+}
 
 sub write_hessian_array {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -333,13 +333,13 @@ sub write_hessian_array {    #{{{
     }
     $anonymous_array_string .= "Z";
     return $anonymous_array_string;
-}    #}}}
+}
 
 sub write_hessian_string {    #{{{
     my ( $self, $chunks ) = @_;
     return $self->write_string( { chunks => $chunks } );
 
-}    #}}}
+}
 
 sub write_object {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -389,7 +389,7 @@ sub write_object {    #{{{
 #        ### hessian_string: $hessian_string
 #    }
 #    return $hessian_string;
-}    #}}}
+}
 
 sub write_referenced_data {    #{{{
     my ( $self, $index ) = @_;
@@ -397,7 +397,7 @@ sub write_referenced_data {    #{{{
     my $hessian_index  = $self->write_scalar_element($index);
     $hessian_string .= $hessian_index;
     return $hessian_string;
-}    #}}}
+}
 
 sub write_hessian_call {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -415,7 +415,7 @@ sub write_hessian_call {    #{{{
         $hessian_call .= $hessian_arg;
     }
     return $hessian_call;
-}    #}}}
+}
 
 sub serialize_message {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -424,7 +424,7 @@ sub serialize_message {    #{{{
     return $result if $self->chunked();
     my $message = "H\x02\x00" . $result;
     return $message;
-}    #}}}
+}
 
 "one, but we're not the same";
 

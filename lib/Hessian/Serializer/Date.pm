@@ -31,7 +31,7 @@ sub write_date  {    #{{{
 
     }
     return $time;
-}    #}}}
+}
 
 
 "one, but we're not the same";

@@ -53,7 +53,7 @@ sub read_message_chunk_data {    #{{{
     }
     return $datastructure;
 
-}    #}}}
+}
 
 sub read_composite_data {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -81,7 +81,7 @@ sub read_composite_data {    #{{{
     }
     return $datastructure;
 
-}    #}}}
+}
 
 sub read_typed_list {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -112,7 +112,7 @@ sub read_typed_list {    #{{{
         redo LISTLOOP;
     }
     return $datastructure;
-}    #}}}
+}
 
 sub read_remote_object {    #{{{
     my $self         = shift;
@@ -132,7 +132,7 @@ sub read_remote_object {    #{{{
             class_def => $class_definition
         }
     );
-}    #}}}
+}
 
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
@@ -152,7 +152,7 @@ sub read_v1_type {    #{{{
     ### found type: $type
     return { type => $type, next_bit => $array_length } if $type;
     return { next_bit => $first_bit };
-}    #}}}
+}
 
 sub read_class_handle {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -176,7 +176,7 @@ sub read_class_handle {    #{{{
     }
 
     return $datastructure;
-}    #}}}
+}
 
 sub read_map_handle {    #{{{
     my $self         = shift;
@@ -214,7 +214,7 @@ sub read_map_handle {    #{{{
     my $map = defined $type ? bless $datastructure => $type : $datastructure;
     return $map;
 
-}    #}}}
+}
 
 sub read_untyped_list {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -245,7 +245,7 @@ sub read_untyped_list {    #{{{
         redo LISTLOOP;
     }
     return $datastructure;
-}    #}}}
+}
 
 sub read_simple_datastructure {    #{{{  
     my ( $self, $first_bit ) = @_;
@@ -295,7 +295,7 @@ sub read_simple_datastructure {    #{{{
     binmode( $input_handle, 'bytes' );
     return $element;
 
-}    #}}}
+}
 
 sub read_list_type {    #{{{
     ### read_list_type
@@ -306,7 +306,7 @@ sub read_list_type {    #{{{
     my $type = $self->read_string_handle_chunk( $type_length, $input_handle );
     binmode( $input_handle, 'bytes' );
     return $type;
-}    #}}}
+}
 
 sub read_rpc {    #{{{
     ### read_rpc
@@ -346,7 +346,7 @@ sub read_rpc {    #{{{
     }
     $call_data->{arguments} = $call_args;
     return $call_data;
-}    #}}}
+}
 
 sub write_hessian_hash {    #{{{
     ### write_hessian_hash
@@ -360,7 +360,7 @@ sub write_hessian_hash {    #{{{
     }
     $anonymous_map_string .= $self->end_of_datastructure_symbol();
     return $anonymous_map_string;
-}    #}}}
+}
 
 sub write_hessian_array {    #{{{
     ### write_hessian_array
@@ -372,20 +372,20 @@ sub write_hessian_array {    #{{{
     }
     $anonymous_array_string .= "z";
     return $anonymous_array_string;
-}    #}}}
+}
 
 sub write_hessian_string {    #{{{
     ### write_hessian_string
     my ( $self, $chunks ) = @_;
     return $self->write_string( { chunks => $chunks } );
 
-}    #}}}
+}
 
 #sub write_hessian_date {    #{{{
 #    my ( $self, $datetime ) = @_;
 #    my $epoch = $datetime->epoch();
 #    return $self->write_date( $epoch, 'd' );
-#}    #}}}
+#}
 
 sub write_hessian_call {    #{{{
     ### write_hessian_call
@@ -402,7 +402,7 @@ sub write_hessian_call {    #{{{
     }
     $hessian_call .= "z";
     return $hessian_call;
-}    #}}}
+}
 
 sub write_object { #{{{
     ### write_object
@@ -422,7 +422,7 @@ sub write_object { #{{{
     $hessian_string .= "z";
     return $hessian_string;
 
-} #}}}
+}
 
 sub write_referenced_data  { #{{{
     ### write_referenced_data
@@ -432,14 +432,14 @@ sub write_referenced_data  { #{{{
     my $new_int = pack 'N', $index;
     $hessian_string .= $new_int;
     return $hessian_string;
-} #}}}
+}
 
 sub serialize_message {    #{{{
     ### serialize_message
     my ( $self, $datastructure ) = @_;
     my $result = $self->write_hessian_message($datastructure);
     return $result;
-}    #}}}
+}
 
 "one, but we're not the same";
 

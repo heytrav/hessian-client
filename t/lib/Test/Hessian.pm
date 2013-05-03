@@ -15,14 +15,14 @@ sub compare_date {    #{{{
     my ( $self, $original_date, $processed_time ) = @_;
     my $cmp = DateTime->compare( $original_date, $processed_time );
     is( $cmp, 0, "Hessian date as expected." );
-}    #}}}
+}
 
 sub prep005_initialize_client : Test(startup) {    #{{{
     my $self = shift;
     my $version = $self->{version};
     my $client = Hessian::Translator->new( version => $version );
     $self->{client} = $client;
-}    #}}}
+}
 
 
 "one, but we're not the same";

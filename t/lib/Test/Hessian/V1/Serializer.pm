@@ -27,7 +27,7 @@ sub t007_compose_serializer : Test(2) {    #{{{
     );
 
     can_ok( $client, qw/serialize_chunk/, );
-}    #}}}
+}
 
 sub t009_serialize_string : Test(1) {    #{{{
     my $self = shift;
@@ -36,7 +36,7 @@ sub t009_serialize_string : Test(1) {    #{{{
     #    $client->service( URI->new('http://localhost:8080') );
     my $hessian_string = $client->serialize_chunk("hello");
     like( $hessian_string, qr/S\x{00}\x{05}hello/, "Created Hessian string." );
-}    #}}}
+}
 
 sub t011_serialize_integer : Test(2) {    #{{{
     my $self = shift;
@@ -49,7 +49,7 @@ sub t011_serialize_integer : Test(2) {    #{{{
     $hessian_string = $client->serialize_chunk(-1);
     like( $hessian_string, qr/\x8f/, "Processed -1." );
 
-}    #}}}
+}
 
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
@@ -61,7 +61,7 @@ sub t015_serialize_float : Test(1) {    #{{{
         qr/D\x40\x28\x80\x00\x00\x00\x00\x00/,
         "Processed 12.25"
     );
-}    #}}}
+}
 
 sub t017_serialize_array : Test(2) {    #{{{
     my $self = shift;
@@ -75,7 +75,7 @@ sub t017_serialize_array : Test(2) {    #{{{
     cmp_deeply( $datastructure, $processed_datastructure,
         "Mapped a simple array back to itself." );
 
-}    #}}}
+}
 
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
@@ -88,7 +88,7 @@ sub t020_serialize_hash_map : Test(2) {    #{{{
     my $processed_datastructure = $client->deserialize_message();
     cmp_deeply( $datastructure, $processed_datastructure,
         "Mapped a simple hash back to itself." );
-}    #}}}
+}
 
 sub t021_serialize_object : Test(1) {    #{{{
     my $self     = shift;
@@ -107,7 +107,7 @@ sub t021_serialize_object : Test(1) {    #{{{
     $client->input_string($hessian_serialized);
     my $processed_data = $client->deserialize_message();
     cmp_deeply( $processed_obj, $processed_data, "Compared datastructures." );
-}    #}}}
+}
 
 sub t022_serialize_mixed : Test(1) {    #{{{
     my $self = shift;
@@ -125,7 +125,7 @@ sub t022_serialize_mixed : Test(1) {    #{{{
     my $processed = $client->deserialize_message();
     cmp_deeply( $processed, $datastructure,
         "Matched a complex datastructure to itself." );
-}    #}}}
+}
 
 sub t023_serialize_date : Test(2) {    #{{{
     my $self = shift;
@@ -147,7 +147,7 @@ sub t023_serialize_date : Test(2) {    #{{{
     my $processed_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_time );
 
-}    #}}}
+}
 
 sub t025_serialize_call : Test(3) {    #{{{
     my $self = shift;
@@ -172,7 +172,7 @@ sub t025_serialize_call : Test(3) {    #{{{
         $datastructure->{call},
         "Received same structure as call."
     );
-}    #}}}
+}
 
 sub t030_client_request : Test(3) {    #{{{
     my $self    = shift;
@@ -199,7 +199,7 @@ sub t030_client_request : Test(3) {    #{{{
     );
     isa_ok( $reply_body, 'ARRAY', 'Datastructure returned in response body' );
 
-}    #}}}
+}
 
 sub t032_fail_client_request : Test(1) {    #{{{
     my $self = shift;
@@ -219,7 +219,7 @@ sub t032_fail_client_request : Test(1) {    #{{{
             "Received expected exception from servlet." );
     }
 
-}    #}}}
+}
 
 "one, but we're not the same";
 

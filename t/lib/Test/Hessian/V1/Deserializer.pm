@@ -33,7 +33,7 @@ sub t007_initialize_hessian_obj : Test(4) {    #{{{
         "Do not have methods for hessian version 2"
     );
 
-}    #}}}
+}
 
 sub t008_initialize_hessian_obj : Test(2) {    #{{{
     my $self        = shift;
@@ -50,7 +50,7 @@ sub t008_initialize_hessian_obj : Test(2) {    #{{{
         "Hessian version 1 methods have been composed."
     );
 
-}    #}}}
+}
 
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
@@ -59,7 +59,7 @@ sub t010_read_fixed_length_typed : Test(1) {    #{{{
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
-}    #}}}
+}
 
 sub t012_read_fixed_length_anonymous : Test(1) {    #{{{
     my $self         = shift;
@@ -68,7 +68,7 @@ sub t012_read_fixed_length_anonymous : Test(1) {    #{{{
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
-}    #}}}
+}
 
 sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
     my $self         = shift;
@@ -79,7 +79,7 @@ sub t013_read_type_reference_list_fixed_length : Test(1) {    #{{{
     my $datastructure = $hessian_obj->deserialize_data();
     ### Got data: "\n".Dump($datastructure)."\n"
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
-}    #}}}
+}
 
 sub t015_read_typed_map : Test(3) {    #{{{
     my $self         = shift;
@@ -95,7 +95,7 @@ sub t015_read_typed_map : Test(3) {    #{{{
     like( $datastructure->{mileage},
         qr/\d+/, 'Mileage attribute is an integer.' );
 
-}    #}}}
+}
 
 sub t016_read_referenced_datastructure : Test(1) {    #{{{
     my $self         = shift;
@@ -107,7 +107,7 @@ sub t016_read_referenced_datastructure : Test(1) {    #{{{
 
     my $reference_list = $hessian_obj->reference_list();
     isa_ok( $datastructure, 'LinkedList', "Object parsed by deserializer" );
-}    #}}}
+}
 
 sub t017_sparse_array_map : Test(2) {    #{{{
     my $self         = shift;
@@ -123,7 +123,7 @@ sub t017_sparse_array_map : Test(2) {    #{{{
         { 1 => 'fee', 16 => 'fie', 256 => 'foe' },
         "Received expected datastructure."
     );
-}    #}}}
+}
 
 sub t019_object_definition : Test(2) {    #{{{
     my $self         = shift;
@@ -137,7 +137,7 @@ sub t019_object_definition : Test(2) {    #{{{
       $hessian_obj->deserialize_data( { input_string => $object_data } );
     is( $object->color(), 'green', 'Correctly accessed object color' );
     is( $object->model(), 'civic', 'Correclty accessed object model' );
-}    #}}}
+}
 
 sub t021_remote_object_reference : Test(2) {    #{{{
     my $self         = shift;
@@ -151,7 +151,7 @@ sub t021_remote_object_reference : Test(2) {    #{{{
         or $self->FAIL_ALL('Could not build object for test.TestObj');
     my $string = $datastructure->remote_url();
     is($string, "http://slytherin/ejbhome?id=69Xm8-zW");
-}    #}}}
+}
 
 "one, but we're not the same";
 

@@ -35,7 +35,7 @@ sub t004_initialize_hessian_obj : Test(4) {    #{{{
         "Do not have methods for hessian version 1"
     );
 
-}    #}}}
+}
 
 sub t008_initialize_hession_obj : Test(2) {    #{{{
     my $self        = shift;
@@ -52,7 +52,7 @@ sub t008_initialize_hession_obj : Test(2) {    #{{{
         "Hessian version 2 methods have been composed."
     );
 
-}    #}}}
+}
 
 sub t010_read_fixed_length_typed : Test(1) {    #{{{
     my $self         = shift;
@@ -61,7 +61,7 @@ sub t010_read_fixed_length_typed : Test(1) {    #{{{
     $hessian_obj->input_string($hessian_data);
     my $datastructure = $hessian_obj->deserialize_data();
     cmp_deeply( $datastructure, [ 0, 1 ], "Received expected datastructure." );
-}    #}}}
+}
 
 sub t011_read_variable_length_typed : Test(1) {    #{{{
     my $self         = shift;
@@ -73,7 +73,7 @@ sub t011_read_variable_length_typed : Test(1) {    #{{{
         [ 0, 1, 262143 ],
         "Received expected datastructure."
     );
-}    #}}}
+}
 
 sub t012_read_fixed_length_type : Test(1) {    #{{{
     my $self         = shift;
@@ -85,7 +85,7 @@ sub t012_read_fixed_length_type : Test(1) {    #{{{
         [ 0, 1, 262143 ],
         "Received expected datastructure."
     );
-}    #}}}
+}
 
 sub t013_read_variable_length_untyped : Test(1) {    #{{{
     my $self         = shift;
@@ -98,7 +98,7 @@ sub t013_read_variable_length_untyped : Test(1) {    #{{{
         [ 0, 1, 12.25, 262143, 'hello, ', 1, 'world' ],
         "Received expected datastructure."
     );
-}    #}}}
+}
 
 sub t014_read_fixed_length_untyped : Test(1) {    #{{{
     my $self         = shift;
@@ -110,7 +110,7 @@ sub t014_read_fixed_length_untyped : Test(1) {    #{{{
         [ 1, 2, 3, 4, 5, 6, 7, 8 ],
         "Received expected untyped list of length 8."
     );
-}    #}}}
+}
 
 sub t020_read_typed_map : Test(3) {    #{{{
     my $self         = shift;
@@ -125,7 +125,7 @@ sub t020_read_typed_map : Test(3) {    #{{{
         'Beetle', 'Model attribute has correct value.' );
     like( $datastructure->{mileage},
         qr/\d+/, 'Mileage attribute is an integer.' );
-}    #}}}
+}
 
 sub t023_read_untyped_map : Test(1) {    #{{{
     my $self         = shift;
@@ -138,7 +138,7 @@ sub t023_read_untyped_map : Test(1) {    #{{{
         { 1 => 'hello', word => 'Beetle' },
         "Correctly interpreted datastructure."
     );
-}    #}}}
+}
 
 sub t030_read_class_definition : Test(2) {    #{{{
     my $self         = shift;
@@ -156,7 +156,7 @@ sub t030_read_class_definition : Test(2) {    #{{{
     push @{ $self->{class_ref} }, $datastructure;
     pass("Token test that only passes.");
     pass("Token test that only passes.");
-}    #}}}
+}
 
 sub t031_basic_object : Test(3) {    #{{{
     my $self          = shift;
@@ -171,7 +171,7 @@ sub t031_basic_object : Test(3) {    #{{{
 
     is( $example_cap->boat(), 'wingy', "Boat is correct." );
 
-}    #}}}
+}
 
 sub t032_object_long_form : Test(2) {    #{{{
     my $self          = shift;
@@ -180,7 +180,7 @@ sub t032_object_long_form : Test(2) {    #{{{
 
     is( $example_car->model(), 'civic', "Correct car from referenced class." );
     is( $example_car->color(), 'green', "Correct color from class." );
-}    #}}}
+}
 
 sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     my $self       = shift;
@@ -193,7 +193,7 @@ sub t033_retrieve_object_from_reference : Test(2) {    #{{{
     my $example_car = $self->{client}->deserialize_data();
     is( $example_car->model(), 'civic', "Correct car from referenced object." );
     is( $example_car->color(), 'green', "Correct color from class." );
-}    #}}}
+}
 
 sub t050_test_int_m0x80000000 : Test(1) {    #{{{
     my $self = shift;
@@ -206,7 +206,7 @@ sub t050_test_int_m0x80000000 : Test(1) {    #{{{
         "Parsed correct int. Byteorder = $byte_order" )
       or $self->FAIL_ALL(
         "Unable to process integer." . "  Byteorder = $byte_order" );
-}    #}}}
+}
 
 sub t055_test_double_3_14159 : Test(1) {    #{{{
     my $self         = shift;
@@ -214,7 +214,7 @@ sub t055_test_double_3_14159 : Test(1) {    #{{{
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
     is( $datastructure, 3.14159, "Parsed correct double." );
-}    #}}}
+}
 
 sub t060_test_double_65_536 : Test(1) {    #{{{
     my $self         = shift;
@@ -224,7 +224,7 @@ sub t060_test_double_65_536 : Test(1) {    #{{{
 
     is( $datastructure, 65.536, 'Correct value for 32 bit double' );
 
-}    #}}}
+}
 
 sub t065_test_double_m32768_0 : Test(1) {    #{{{
     my $self         = shift;
@@ -232,7 +232,7 @@ sub t065_test_double_m32768_0 : Test(1) {    #{{{
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
     is( $datastructure, -32768.0, "Parsed correct double." );
-}    #}}}
+}
 
 sub t070_test_double_0_001 : Test(1) {    #{{{
     my $self         = shift;
@@ -240,7 +240,7 @@ sub t070_test_double_0_001 : Test(1) {    #{{{
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
     is( $datastructure, 0.001, 'Correct value for 32 bit double' );
-}    #}}}
+}
 
 sub t075_test_long_mOx80000000 : Test(1) {    #{{{
     my $self         = shift;
@@ -248,7 +248,7 @@ sub t075_test_long_mOx80000000 : Test(1) {    #{{{
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
     is( $datastructure, -0x80000000, "Parsed 32 bit long." );
-}    #}}}
+}
 
 sub t080_test_long_64_bit_0x80000000 : Test(1) {    #{{{
     my $self         = shift;
@@ -256,7 +256,7 @@ sub t080_test_long_64_bit_0x80000000 : Test(1) {    #{{{
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
     is( $datastructure, 0x80000000, "Parsed correct long." );
-}    #}}}
+}
 
 sub t085_test_long_64_bit_m0x80000000 : Test(1) {    #{{{
     my $self         = shift;
@@ -264,13 +264,13 @@ sub t085_test_long_64_bit_m0x80000000 : Test(1) {    #{{{
     $self->{client}->input_string($hessian_data);
     my $datastructure = $self->{client}->deserialize_data();
     is( $datastructure, -0x80000001, "Parsed correct long." );
-}    #}}}
+}
 
 sub class_instance_generator {    #{{{
     my ( $self, $object_definition ) = @_;
     $self->{client}->input_string($object_definition);
     return $self->{client}->deserialize_data();
-}    #}}}
+}
 
 "one, but we're not the same";
 

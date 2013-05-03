@@ -28,7 +28,7 @@ sub read_string_handle_chunk  {    #{{{
 #    binmode( $input_handle, 'utf8' );
     $string = $self->read_from_inputhandle($length);
     return $string;
-}    #}}}
+}
 
 "one, but we're not the same";
 

@@ -14,7 +14,7 @@ use Hessian::Translator::V2;
 sub prep001_version : Test(startup) {    #{{{
     my $self = shift;
     $self->{version} = 2;
-}    #}}}
+}
 
 sub t006_compose_version : Test(1) {    #{{{
     my $self   = shift;
@@ -24,7 +24,7 @@ sub t006_compose_version : Test(1) {    #{{{
     }
     'Version role has been composed.';
 
-}    #}}}
+}
 
 "one, but we're not the same";
 

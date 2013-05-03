@@ -26,7 +26,7 @@ sub read_binary_handle_chunk  {    #{{{
 
     my $binary = $self->read_from_inputhandle($length);
     return $binary;
-}    #}}}
+}
 
 "one, but we're not the same";
 

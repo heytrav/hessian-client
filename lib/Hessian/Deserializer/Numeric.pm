@@ -18,7 +18,7 @@ sub read_boolean {    #{{{
         $hessian_value =~ /T/ ? 1
       : $hessian_value =~ /F/ ? 0
       :                         die "Not an acceptable boolean value";
-}    #}}}
+}
 
 sub read_integer {    #{{{
     my ( $self, $hessian_data ) = @_;
@@ -32,7 +32,7 @@ sub read_integer {    #{{{
       : $octet_count == 3 ? _read_triple_octet( \@chars, 0xd4 )
       :                     _read_quadruple_octet( \@depends_on_endian );
     return $result;
-}    #}}}
+}
 
 sub read_long {    #{{{
     my ( $self, $hessian_data ) = @_;
@@ -48,7 +48,7 @@ sub read_long {    #{{{
       : _read_full_long($raw_octets);    #\@chars );
                                          #_read_quadruple_octet( \@chars,
     return $result;
-}    #}}}
+}
 
 sub read_double {    #{{{
     my ( $self, $octet ) = @_;
@@ -66,13 +66,13 @@ sub read_double {    #{{{
 
     #_read_quadruple_octet_double($octet)
     return $double_value;
-}    #}}}
+}
 
 sub _read_single_octet {    #{{{
     my ( $octet, $octet_shift ) = @_;
     my $integer = $octet - $octet_shift;
     return $integer;
-}    #}}}
+}
 
 sub _read_double_octet {    #{{{
     my ( $bytes, $octet_shift ) = @_;
@@ -81,7 +81,7 @@ sub _read_double_octet {    #{{{
         my $integer = ( ( $bytes->[0] - $octet_shift ) << 8 ) + $bytes->[1];
         return $integer;
     }
-}    #}}}
+}
 
 sub _read_triple_octet {    #{{{
     my ( $bytes, $octet_shift ) = @_;
@@ -93,19 +93,19 @@ sub _read_triple_octet {    #{{{
           $bytes->[2];
         return $integer;
     }
-}    #}}}
+}
 
 sub _read_quadruple_long_octet {    #{{{
     my $bytes = shift;
     my $integer = unpack "N", $bytes;
     $integer -= 2**32 if $integer >= 2**31;
     return $integer;
-}    #}}}
+}
 
 sub _read_quadruple_octet {    #{{{
     my $bytes = shift;
     return unpack "l", pack "C*", @{$bytes};
-}    #}}}
+}
 
 sub _read_quadruple_float_octet {    #{{{
     my $bytes = shift;
@@ -121,13 +121,13 @@ sub _read_quadruple_float_octet {    #{{{
         $sum -= 2**32 if $sum >= 2**31;
         return $sum;
     }
-}    #}}}
+}
 
 sub _read_full_long {    #{{{
     my $string    = shift;
     my $net_int64 = net_to_int64($string);
     return "$net_int64";
-}    #}}}
+}
 
 sub _read_compact_double {    #{{{
     my $compact_octet = shift;
@@ -136,7 +136,7 @@ sub _read_compact_double {    #{{{
     my $chars_size = scalar @chars;
     my $float      = _read_quadruple_float_octet( \@chars );
     return $float;
-}    #}}}
+}
 
 sub _read_quadruple_octet_double {    #{{{
     my $octets = shift;
@@ -151,7 +151,7 @@ sub _read_quadruple_octet_double {    #{{{
 
     #     $double = str2float($hex_string);
     return $double;
-}    #}}}
+}
 
 sub _read_full_double {    #{{{
     my ( $self, $double ) = @_;
@@ -160,7 +160,7 @@ sub _read_full_double {    #{{{
     my @double_chars = $self->is_big_endian() ? @chars : reverse @chars;
     my $double_value = unpack 'F', pack 'C*', @double_chars;
     return $double_value;
-}    #}}}
+}
 
 sub read_integer_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -192,7 +192,7 @@ sub read_integer_handle_chunk {    #{{{
     }
     return $number;
 
-}    #}}}
+}
 
 sub read_long_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -228,7 +228,7 @@ sub read_long_handle_chunk {    #{{{
 
     }
     return $number;
-}    #}}}
+}
 
 sub read_double_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -268,13 +268,13 @@ sub read_double_handle_chunk {    #{{{
     }
     $number = $self->read_double($data);
     return $number;
-}    #}}}
+}
 
 sub read_boolean_handle_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
     return $self->read_boolean($first_bit);
 
-}    #}}}
+}
 
 "one, but we're not the same";
 

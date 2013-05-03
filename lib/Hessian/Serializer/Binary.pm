@@ -13,7 +13,7 @@ sub write_binary {    #{{{
     
     my $result = join "" => @message;
     return $result;
-}    #}}}
+}
 
 
 "one, but we're not the same";

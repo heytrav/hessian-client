@@ -17,7 +17,7 @@ sub write_integer {    #{{{
       && $integer <= 262143 ? _write_triple_octet( $integer, 0xd4 )
       :                       'I' . _write_quadruple_octet($integer);
     return $result;
-}    #}}}
+}
 
 sub write_long {    #{{{
     my ( $self, $long ) = @_;
@@ -27,7 +27,7 @@ sub write_long {    #{{{
       : -262144 <= $long && $long <= 262143 ? _write_triple_octet( $long, 0x3c )
       :                                       'L' . _write_full_long($long);
     return $result;
-}    #}}}
+}
 
 sub write_double {    #{{{
     my ( $self, $double ) = @_;
@@ -50,7 +50,7 @@ sub write_double {    #{{{
 
     return $hessian_string;
 
-}    #}}}
+}
 
 sub write_boolean {    #{{{
     my ( $self, $bool_val ) = @_;
@@ -58,19 +58,19 @@ sub write_boolean {    #{{{
         $bool_val =~ /(?:1|t(?:rue)?)/i  ? 'T'
       : $bool_val =~ /(?:0|f(?:alse)?)/i ? 'F'
       :                                    'N';
-}    #}}}
+}
 
 sub _write_quadruple_octet {    #{{{
     my $integer = shift;
     my $new_int = pack 'N', $integer;
     return $new_int;
-}    #}}}
+}
 
 sub _write_single_octet {    #{{{
     my ( $number, $octet_shift ) = @_;
     my $new_int = pack "C*", ( $number + $octet_shift );
     return $new_int;
-}    #}}}
+}
 
 sub _write_double_octet {    #{{{
     my ( $integer, $octet_shift ) = @_;
@@ -81,7 +81,7 @@ sub _write_double_octet {    #{{{
     my $high_bit = ( ( $integer - $bytes[0] ) >> 8 ) + $octet_shift;
     my $new_int = pack 'C*', $high_bit, $bytes[0];
     return $new_int;
-}    #}}}
+}
 
 sub _write_triple_octet {    #{{{
     my ( $integer, $octet_shift ) = @_;
@@ -93,7 +93,7 @@ sub _write_triple_octet {    #{{{
       ( ( $integer - $bytes[0] - ( $bytes[1] >> 8 ) ) >> 16 ) + $octet_shift;
     my $new_int = pack 'C*', $high_bit, $bytes[1], $bytes[0];
     return $new_int;
-}    #}}}
+}
 
 sub _write_full_long {    #{{{
         # This will probably only work with Math::BigInt or similar
@@ -101,20 +101,20 @@ sub _write_full_long {    #{{{
     my $int64      = int64($long);
     my $net_string = int64_to_net($int64);
     return $net_string;
-}    #}}}
+}
 
 sub _write_single_octet_float {    #{{{
     my $double = shift;
     my $hessian_string = pack 'c*', $double;
     return $hessian_string;
-}    #}}}
+}
 
 sub _write_double_octet_float {    #{{{
     my $double = shift;
     my $hessian_string = pack 'n', unpack 'S', pack "s", $double;
     return $hessian_string;
 
-}    #}}}
+}
 
 sub _write_full_double {    #{{{
     my $double         = shift;
@@ -122,7 +122,7 @@ sub _write_full_double {    #{{{
     my @chars          = unpack 'C*', $native_float;
     my $hessian_string = pack 'C*', reverse @chars;
     return $hessian_string;
-}    #}}}
+}
 
 "one, but we're not the same";
 

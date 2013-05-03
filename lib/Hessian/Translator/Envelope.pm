@@ -18,7 +18,7 @@ sub read_message_chunk {    #{{{
       if $first_bit eq $self->end_of_datastructure_symbol();
     my $datastructure = $self->read_message_chunk_data($first_bit);
     return $datastructure;
-}    #}}}
+}
 
 sub read_version {    #{{{
     my $self = shift;
@@ -28,7 +28,7 @@ sub read_version {    #{{{
     my $hessian_version = join "." => @values;
     return $hessian_version;
 
-}    #}}}
+}
 
 sub read_envelope {    #{{{
     my $self = shift;
@@ -73,7 +73,7 @@ sub read_envelope {    #{{{
     }
     my $packet = $self->read_packet($packet_body);
     return { envelope => { packet => $packet, meta => \@chunks } };
-}    #}}}
+}
 
 sub read_header_or_footer {    #{{{
     my $self = shift;
@@ -82,7 +82,7 @@ sub read_header_or_footer {    #{{{
     $first_bit = $self->read_from_inputhandle(1);
     my $header = $self->read_string_handle_chunk($first_bit);
     return $header;
-}    #}}}
+}
 
 sub read_packet_chunk {    #{{{
     my ( $self, $first_bit ) = @_;
@@ -109,14 +109,14 @@ sub read_packet_chunk {    #{{{
     }
 
     return $packet_string;
-}    #}}}
+}
 
 sub read_packet {    #{{{
     my ( $self, $packet_string ) = @_;
     return FIXED NONVOID {
         $self->deserialize_message( { input_string => $packet_string } );
     };
-}    #}}}
+}
 
 sub write_hessian_packet {    #{{{
     my ( $self, $packet ) = @_;
@@ -133,7 +133,7 @@ sub write_hessian_packet {    #{{{
     return \@packets;
 
     
-}    #}}}
+}
 
 sub write_hessian_message {    #{{{
     my ( $self, $hessian_data ) = @_;
@@ -164,7 +164,7 @@ sub write_hessian_message {    #{{{
         $hessian_message = $self->write_hessian_chunk($hessian_data);
     }
     return $hessian_message;
-}    #}}}
+}
 
 sub write_hessian_envelope {    #{{{
     my ( $self, $envelope ) = @_;
@@ -186,7 +186,7 @@ sub write_hessian_envelope {    #{{{
     $envelope_string .= $self->end_of_datastructure_symbol();
     return $envelope_string;
 
-}    #}}}
+}
 
 "one, but we're not the same";
 

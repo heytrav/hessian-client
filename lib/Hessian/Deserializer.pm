@@ -26,8 +26,8 @@ has 'input_handle' => (    #{{{
                 error => "Unable to read from string input." );
             return $input_handle;
         }
-    }#}}}
-);    #}}}
+    }
+);
 
 after 'input_string' => sub {    #{{{
     my $self = shift;
@@ -36,19 +36,19 @@ after 'input_string' => sub {    #{{{
     # process. input handle should then re-initialize itself the next time it
     # is called.
     $self->clear_input_handle();
-};    #}}}
+};
 
 before qw/deserialize_data deserialize_message/ => sub {    #{{{
     my ( $self, $input ) = @_;
     my $input_string = $input->{input_string};
     $self->input_string($input_string) if $input_string;
-};    #}}}
+};
 
 sub deserialize_data {    #{{{
     my ( $self, $args ) = @_;
     my $result = $self->read_hessian_chunk($args);
     return $result;
-}    #}}}
+}
 
 sub deserialize_message {    #{{{
     my ( $self, $args ) = @_;
@@ -65,12 +65,12 @@ sub deserialize_message {    #{{{
               or $e->isa('MessageIncomplete::X');
     }
     return $result;
-}    #}}}
+}
 
 sub next_token {    #{{{
     my $self = shift;
     return $self->deserialize_message();
-}    #}}}
+}
 
 sub process_message {    #{{{
     my $self = shift;
@@ -85,7 +85,7 @@ sub process_message {    #{{{
         }
     }
     return $tokens;
-}    #}}}
+}
 
 "one, but we're not the same";
 

@@ -6,7 +6,7 @@ sub write_chunk {    #{{{
     my $string = shift;
     my $hessian_message = pack 'n/a*', $string;
     return $hessian_message;
-}    #}}}
+}
 
 sub write_string  {    #{{{
     my ($self, $params) = @_;
@@ -16,7 +16,7 @@ sub write_string  {    #{{{
     my @string_chunks = @{ $params->{chunks} };
     my $message = $self->hessianify_chunks( $prefixes, @string_chunks );
     return join "" => @{$message};
-}    #}}}
+}
 
 sub write_xml {    #{{{
     my ($self, $params) = @_;
@@ -28,7 +28,7 @@ sub write_xml {    #{{{
         @xml_chunks 
       );
     return join "" => @{$message};
-}    #}}}
+}
 
 sub  write_packet { #{{{
     my ($self, $params) = @_;
@@ -38,7 +38,7 @@ sub  write_packet { #{{{
        prefix => "\x4f", last_prefix => "P" 
         }, @packets);
     return $message;
-} #}}}
+}
 
 sub hessianify_chunks {    #{{{
     my ($self, $prefixes, @chunks ) = @_;
@@ -52,7 +52,7 @@ sub hessianify_chunks {    #{{{
     my $processed_last_chunk = ($last_prefix . write_chunk($last_chunk));
     push @message, $processed_last_chunk;
     return \@message;
-}    #}}}
+}
 
 "one, but we're not the same";
 

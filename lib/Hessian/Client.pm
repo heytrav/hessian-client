@@ -18,7 +18,7 @@ use Class::Std;
         my ( $self, $id, $args ) = @_;
         my $hessian = Hessian::Translator->new( version => $args->{version} );
         $self->set_translator($hessian);
-    }    #}}}
+    }
 
     sub AUTOMETHOD {    #{{{
         my ( $self, $id, @args ) = @_;
@@ -35,7 +35,7 @@ use Class::Std;
             return $self->_call_remote($datastructure);
           }
 
-    }    #}}}
+    }
 
     sub _call_remote {    #{{{
         my ( $self, $datastructure ) = @_;
@@ -58,7 +58,7 @@ use Class::Std;
         }
         ServiceException->throw( error => "No reponse from " . $service );
 
-    }    #}}}
+    }
 
 }
 

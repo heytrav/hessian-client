@@ -57,7 +57,7 @@ sub read_date_handle_chunk {    #{{{
     }
     $datetime->set_time_zone('UTC');
     return $datetime;
-}    #}}}
+}
 
 "one, but we're not the same";
 

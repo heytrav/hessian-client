@@ -30,7 +30,7 @@ sub t007_compose_serializer : Test(2) {    #{{{
 
     can_ok( $client, qw/serialize_chunk/, );
 
-}    #}}}
+}
 
 sub t009_serialize_string : Test(1) {    #{{{
     my $self = shift;
@@ -38,7 +38,7 @@ sub t009_serialize_string : Test(1) {    #{{{
     $client->serializer();
     my $hessian_string = $client->serialize_chunk("hello");
     like( $hessian_string, qr/S\x{00}\x{05}hello/, "Created Hessian string." );
-}    #}}}
+}
 
 sub t011_serialize_integer : Test(2) {    #{{{
     my $self = shift;
@@ -50,7 +50,7 @@ sub t011_serialize_integer : Test(2) {    #{{{
     $hessian_string = $client->serialize_chunk(-1);
     like( $hessian_string, qr/\x8f/, "Processed -1." );
 
-}    #}}}
+}
 
 sub t015_serialize_float : Test(1) {    #{{{
     my $self = shift;
@@ -62,7 +62,7 @@ sub t015_serialize_float : Test(1) {    #{{{
         qr/D\x40\x28\x80\x00\x00\x00\x00\x00/,
         "Processed 12.25"
     );
-}    #}}}
+}
 
 sub t017_serialize_array : Test(2) {    #{{{
     my $self = shift;
@@ -77,7 +77,7 @@ sub t017_serialize_array : Test(2) {    #{{{
     cmp_deeply( $processed_datastructure, $datastructure,
         "Mapped a simple array back to itself." );
 
-}    #}}}
+}
 
 sub t020_serialize_hash_map : Test(2) {    #{{{
     my $self = shift;
@@ -91,7 +91,7 @@ sub t020_serialize_hash_map : Test(2) {    #{{{
     my $processed_datastructure = $client->deserialize_data();
     cmp_deeply( $datastructure, $processed_datastructure,
         "Mapped a simple hash back to itself." );
-}    #}}}
+}
 
 sub t021_serialize_mixed : Test(1) {    #{{{
     my $self = shift;
@@ -110,7 +110,7 @@ sub t021_serialize_mixed : Test(1) {    #{{{
     my $processed = $client->deserialize_message();
     cmp_deeply( $processed, $datastructure,
         "Matched a complex datastructure to itself." );
-}    #}}}
+}
 
 sub t022_serialize_object : Test(1) {    #{{{
     my $self     = shift;
@@ -129,7 +129,7 @@ sub t022_serialize_object : Test(1) {    #{{{
     $client->input_string($hessian_obj);
     my $processed_obj = $client->deserialize_message();
     cmp_deeply( $processed_obj, $some_obj, "Processed object as expected." );
-}    #}}}
+}
 
 sub t023_serialize_date : Test(2) {    #{{{
     my $self = shift;
@@ -151,7 +151,7 @@ sub t023_serialize_date : Test(2) {    #{{{
     $client->input_string($hessian_compact_date);
     my $processed_compact_time = $client->deserialize_message();
     $self->compare_date( $date, $processed_compact_time );
-}    #}}}
+}
 
 sub t025_serialize_call : Test(3) {    #{{{
     my $self = shift;
@@ -176,7 +176,7 @@ sub t025_serialize_call : Test(3) {    #{{{
         $datastructure->{call},
         "Received same structure as call."
     );
-}    #}}}
+}
 
 sub t027_serialize_enveloped_message : Test(2) {    #{{{
     my $self = shift;
@@ -209,7 +209,7 @@ sub t027_serialize_enveloped_message : Test(2) {    #{{{
     }
 
 
-}    #}}}
+}
 
 "one, but we're not the same";
 

@@ -34,7 +34,7 @@ sub assemble_class {    #{{{
     }
     return $simple_obj;
 
-}    #}}}
+}
 
 sub read_typed_list_element {    #{{{
     ### read_typed_list_element
@@ -76,7 +76,7 @@ sub read_typed_list_element {    #{{{
         }
     }
     return $element;
-}    #}}}
+}
 
 sub read_list_type {    #{{{
     ### read_list_type
@@ -84,7 +84,7 @@ sub read_list_type {    #{{{
     my $type_length = $self->read_from_inputhandle(1);
     my $type        = $self->read_string_handle_chunk($type_length);
     return $type;
-}    #}}}
+}
 
 sub store_fetch_type {    #{{{
     ### store_fetch_type
@@ -100,7 +100,7 @@ sub store_fetch_type {    #{{{
 
     }
     return $type;
-}    #}}}
+}
 
 sub store_class_definition {    #{{{
     ### store_class_definition
@@ -120,7 +120,7 @@ sub store_class_definition {    #{{{
     my $class_definition = { type => $class_type, fields => \@field_list };
     push @{ $self->class_definitions() }, $class_definition;
     return $class_definition;
-}    #}}}
+}
 
 sub read_hessian_chunk {    #{{{
     ### read_hessian_chunk
@@ -137,7 +137,7 @@ sub read_hessian_chunk {    #{{{
     EndOfInput::X->throw( error => 'Reached end of datastructure.' )
       if $first_bit eq $self->end_of_datastructure_symbol();
     return $self->read_simple_datastructure($first_bit);
-}    #}}}
+}
 
 sub fetch_class_for_data {    #{{{
     ### fetch_class_for_data
@@ -146,7 +146,7 @@ sub fetch_class_for_data {    #{{{
     my $class_definition_number = $self->read_integer_handle_chunk($length);
     return $self->instantiate_class($class_definition_number);
 
-}    #}}}
+}
 
 sub instantiate_class {    #{{{
     ### instantiate_class
@@ -161,7 +161,7 @@ sub instantiate_class {    #{{{
             type      => $class_type
         }
     );
-}    #}}}
+}
 
 sub read_list_length {    #{{{
     ### read_list_length
@@ -185,7 +185,7 @@ sub read_list_length {    #{{{
     }
     ### found array length: $array_length
     return $array_length;
-}    #}}}
+}
 
 sub write_hessian_chunk {    #{{{
     ### write_hessian_chunk
@@ -222,7 +222,7 @@ sub write_hessian_chunk {    #{{{
         }
     }
     return $hessian_element;
-}    #}}}
+}
 
 sub write_composite_element {    #{{{
     ### write_composite_element
@@ -243,7 +243,7 @@ sub write_composite_element {    #{{{
         }
     }
     return $hessian_string;
-}    #}}}
+}
 
 sub write_scalar_element {    #{{{
     my ( $self, $element ) = @_;
@@ -262,7 +262,7 @@ sub write_scalar_element {    #{{{
         }
     }
     return $hessian_element;
-}    #}}}
+}
 
 sub write_hessian_array {    #{{{
     my ( $self, $datastructure ) = @_;
@@ -273,12 +273,12 @@ sub write_hessian_array {    #{{{
     }
     $anonymous_array_string .= "z";
     return $anonymous_array_string;
-}    #}}}
+}
 
 sub read_composite_datastructure {    #{{{
     my ( $self, $first_bit ) = @_;
     return $self->read_composite_data($first_bit);
-}    #}}}
+}
 
 #sub read_map_handle {    #{{{
 #    my $self    = shift;
@@ -316,7 +316,7 @@ sub read_composite_datastructure {    #{{{
 #    my $map = defined $type ? bless $datastructure => $type : $datastructure;
 #    return $map;
 
-#}    #}}}
+#}
 
 sub read_v1_type {    #{{{
     my ( $self, $list_bit ) = @_;
@@ -334,7 +334,7 @@ sub read_v1_type {    #{{{
 
     return { type => $type, next_bit => $array_length } if $type;
     return { next_bit => $first_bit };
-}    #}}}
+}
 
 #sub read_remote_object {    #{{{
 #    my $self        = shift;
@@ -354,7 +354,7 @@ sub read_v1_type {    #{{{
 #            class_def => $class_definition
 #        }
 #    );
-#}    #}}}
+#}
 
 "one, but we're not the same";
 
