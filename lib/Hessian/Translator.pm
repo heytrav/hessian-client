@@ -1,4 +1,4 @@
-package Hessian::Translator 1.03001;
+package Hessian::Translator 1.04;
 
 use Moose;
 
@@ -175,7 +175,7 @@ Hessian::Translator - Base class for Hessian serialization/deserialization.
 
 B<Hessian::Translator> and associated subclasses and roles provides
 serialization/deserialization of data and Perl datastructures into Hessian
-protocol.  
+protocol.
 
 On its own, this class really only provides some of the more basic functions
 required for Hessian processing such as the I<type list> for datatypes, the
@@ -185,7 +185,7 @@ deserialization behaviours only takes place when needed. Depending on how
 the translator is initialized and which methods are called on the object, it
 is possibly to specialize the object for either Hessian 1.0 or Hessian 2.0
 processing and to selectively include methods for serialization and or
-deserialization.  
+deserialization.
 
 
 

@@ -5,9 +5,14 @@ use Module::Build;
 my $builder = Module::Build->new(
     module_name => 'Hessian::Translator',
     license     => 'perl',
-    dist_author => 'William Travis Holton <cromulent2000_eisley@yahoo.de>',
+    dist_author => 'William Travis Holton <heytrav@cpan.org>',
     dist_version_from    => 'lib/Hessian/Translator.pm',
     recursive_test_files => 1,
+    meta_merge           => {
+        resources => {
+            repository => 'https://github.com/heytrav/hessian-client.git',
+        }
+    },
     requires             => {
         'Test::More'                    => 0,
         'Test::Class'                   => 0,
