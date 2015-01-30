@@ -180,4 +180,23 @@ Make a POE filter for this perhaps.
 
 
 
+=head1 SEE ALSO
+
+L<http://hessian.caucho.com/>
+
+
+
+=head1 AUTHOR
+
+William Travis Holton <heytrav@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2008 by William Travis Holton.
+
+This library is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
+
+
+
 =back
